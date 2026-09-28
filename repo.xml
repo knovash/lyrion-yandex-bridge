@@ -17,12 +17,12 @@
     <plugins>
         <plugin
             name="LyrionYandexBridge"
-            version="1.0"
+            version="1.1"
             target="unix|mac"
             minTarget="8.0"
             maxTarget="*"
-            sha="106e1608b90cf022dbe608ed2061a34a542d6ec0"
-            url="https://github.com/knovash/lyrion-yandex-bridge/releases/download/v1.0/lyrion-yandex-bridge-v1.0.zip"
+            sha="438129f9cb6ef64b5ca1a6d1f9e1dfadb41e7ec3"
+            url="https://github.com/knovash/lyrion-yandex-bridge/releases/download/v1.1/lyrion-yandex-bridge-v1.1.zip"
             creator="Konstantin"
             email="novash.ki@gmail.com"
         >
