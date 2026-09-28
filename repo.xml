@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    LMS Custom Repository descriptor for Lyrion Yandex Bridge.
+
+    USERS: Add the raw GitHub URL of this file to:
+      LMS Settings -> Plugins -> Additional Repositories
+      URL: https://raw.githubusercontent.com/knovash/lyrion-yandex-bridge/main/repo.xml
+
+    MAINTAINERS: When publishing a new version, update sha (sha1sum of zip)
+    and url (GitHub release asset URL).
+-->
+<extensions>
+    <details>
+        <title lang="EN">Lyrion Yandex Bridge Repository</title>
+        <title lang="RU">Репозиторий Lyrion Yandex Bridge</title>
+    </details>
+    <plugins>
+        <plugin
+            name="LyrionYandexBridge"
+            version="1.0"
+            target="unix|mac"
+            minTarget="8.0"
+            maxTarget="*"
+            sha="106e1608b90cf022dbe608ed2061a34a542d6ec0"
+            url="https://github.com/knovash/lyrion-yandex-bridge/releases/download/v1.0/lyrion-yandex-bridge-v1.0.zip"
+            creator="Konstantin"
+            email="novash.ki@gmail.com"
+        >
+            <title lang="EN">Lyrion Yandex Bridge</title>
+            <title lang="RU">Lyrion Yandex Bridge (Умный дом Яндекс)</title>
+            <desc lang="EN">Yandex Smart Home devices (music) for LMS players. Runs a java client: web setup on port 8888, Yandex OAuth, cloud relay. Java 11+ required.</desc>
+            <desc lang="RU">Устройства «музыка» в Умном доме Яндекса для плееров LMS. Запускает java-клиент: веб-настройки на порту 8888, авторизация Яндекс, облачный транспорт. Требуется Java 11+.</desc>
+        </plugin>
+    </plugins>
+</extensions>
