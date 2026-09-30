@@ -26,6 +26,10 @@ bin/
 ### VS Code ###
 .vscode/
 
+### IntelliJ IDEA (в git не держим) ###
+.idea/
+*.iml
+
 ### Mac OS ###
 .DS_Store
 

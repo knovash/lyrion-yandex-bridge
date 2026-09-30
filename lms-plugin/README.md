@@ -54,12 +54,13 @@ http://<ip-lms>:8888/ — авторизация в Яндексе/Spotify, на
 
 ## Публикация для всех пользователей (own plugin repository)
 
-Готовые файлы дистрибутива: `dist-lms/lyrion-yandex-bridge-v1.6.zip` (плагин) и `dist-lms/repo.xml`
-(дескриптор репозитория с актуальным SHA1).
+Готовые файлы дистрибутива: `dist-lms/lyrion-yandex-bridge-v1.6.zip` (плагин) и корневой `repo.xml`
+(дескриптор репозитория с актуальным SHA1; лежит в корне проекта и заливается
+в корень репозитория как есть).
 
 Одноразовая публикация на GitHub (5 минут):
 1. Создайте ПУБЛИЧНЫЙ репозиторий `https://github.com/new` → имя `lyrion-yandex-bridge` (owner: knovash).
-2. Загрузите в ветку main файл `dist-lms/repo.xml` (в корень репозитория, имя repo.xml).
+2. Загрузите в ветку main корневой файл `repo.xml` этого проекта (в корень репозитория, как есть).
 3. Создайте Release: Releases → Draft a new release → tag `v1.6` → прикрепите файл
    `dist-lms/lyrion-yandex-bridge-v1.6.zip` → Publish. Имя asset не меняйте
    (URL из repo.xml указывает на него).
@@ -72,5 +73,5 @@ http://<ip-lms>:8888/ — авторизация в Яндексе/Spotify, на
 1. Поднять `<version>` в `lms-plugin/LyrionYandexBridge/install.xml`, в pom.xml
    и jarName в `LyrionYandexBridge/ClientProcess.pm` (assembly берёт имя jar из pom автоматически).
 2. `mvn package` → обновить `dist-lms/lyrion-yandex-bridge-v<версия>.zip`, пересчитать `sha1sum`,
-   поправить `version`, `sha` и `url` в `dist-lms/repo.xml` → залить repo.xml в репозиторий,
+   поправить `version`, `sha` и `url` в корневом `repo.xml` → закоммитить и запушить main,
    zip — в новый Release. LMS у установивших пользователей сам предложит обновление.

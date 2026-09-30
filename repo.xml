@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     LMS Custom Repository descriptor for Lyrion Yandex Bridge.
+    Живёт в КОРНЕ проекта и пушится в корень репозитория как есть —
+    LMS читает его по raw-URL ветки main.
 
     USERS: Add the raw GitHub URL of this file to:
       LMS Settings -> Plugins -> Additional Repositories
