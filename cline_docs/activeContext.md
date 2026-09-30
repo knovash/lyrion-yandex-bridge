@@ -1,0 +1,22 @@
+# Active Context — что сейчас
+
+## Статус: v1.6 опубликован, всё зелёное (проверено 01.10)
+
+- **v1.6** в GitHub Release (sha zip совпадает с repo.xml), код запушен в `main`
+  (коммиты: `fafbf98` → `820f325` → `08c5df8`).
+- Основной фикс v1.6: **формат ответа навыка «Раз Два»** — раньше текст уходил в `payload`,
+  Яндекс говорил «навык не отвечает»; теперь `response/text/end_session/version` (см. systemPatterns.md).
+- `repo.xml` живёт в корне проекта = корень репозитория; `dist-lms/` — staging zip-ов.
+- Remote: SSH `git@github.com:knovash/lyrion-yandex-bridge.git`, ветка master → main.
+
+## Что в работе
+- Memory Bank (`cline_docs/` + `.clinerules`) — создаётся сейчас, коммитится в публичный репо.
+
+## Следующие шаги (кандидаты)
+1. Обновить СВОЙ рабочий инстанс плагина до v1.6 и проверить навык вживую:
+   сказать навыку «это комната <название>», затем «что играет».
+2. Разобрать открытые TODO (список в progress.md).
+
+## Окружение
+- Рабочая машина: linux, JDK 14 (target 11), Maven; LMS в локальной сети.
+- Облако: sa_server на Zeabur, сервис `service-6a98566721fc3e07432ef076`, логи — Runtime logs.
