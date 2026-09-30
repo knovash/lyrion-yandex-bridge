@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <!-- Консоль (только INFO и выше) -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} %c{1}.%method - %msg%n" charset="UTF-8"/>
+        </Console>
+
+        <!-- Файл data/log.txt (только INFO и выше, дописывается - история падений сохраняется) -->
+        <File name="File" fileName="data/log.txt" append="true">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} %c{1}.%method - %msg%n" charset="UTF-8"/>
+        </File>
+    </Appenders>
+    <Loggers>
+        <Root level="info">
+            <AppenderRef ref="Console" level="info"/>
+            <AppenderRef ref="File" level="info"/>
+        </Root>
+    </Loggers>
+</Configuration>

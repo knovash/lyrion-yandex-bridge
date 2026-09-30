@@ -1,0 +1,232 @@
+package knovash.saclient.utils;
+
+import lombok.extern.log4j.Log4j2;
+import knovash.saclient.Main;
+import knovash.saclient.http.HttpClientWrapper;
+import knovash.saclient.http.HttpResponseResult;
+import knovash.saclient.utils.levenstein.Levenstein;
+import knovash.saclient.yandex.Yandex;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static knovash.saclient.Main.*;
+
+@Log4j2
+public class Utils {
+
+    public static boolean checkIpIsLms(String ip) {
+        log.info("CHECK IP: " + ip);
+        String uri = "http://" + ip + ":9000";
+        try {
+            HttpClientWrapper httpClient = new HttpClientWrapper();
+            HttpResponseResult result = httpClient.doHead(uri, null);
+            if (result.isSuccess()) {
+                for (org.apache.http.Header header : result.getHeaders()) {
+                    if ("Server".equalsIgnoreCase(header.getName()) &&
+                            header.getValue().contains("Lyrion Music Server")) {
+                        return true;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.debug("IP check failed for {}: {}", ip, e.getMessage());
+        }
+        return false;
+    }
+
+    public static String getMyIpAddress() {
+        String myip = null;
+        Enumeration<NetworkInterface> interfaces = null;
+        try {
+            interfaces = NetworkInterface.getNetworkInterfaces();
+        } catch (SocketException e) {
+            throw new RuntimeException(e);
+        }
+        while (interfaces.hasMoreElements()) {
+            NetworkInterface networkInterface = interfaces.nextElement();
+            try {
+                if (!networkInterface.isUp())
+                    continue;
+            } catch (SocketException e) {
+                throw new RuntimeException(e);
+            }
+            Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
+            while (addresses.hasMoreElements()) {
+                InetAddress addr = addresses.nextElement();
+//                log.info(networkInterface.getDisplayName() + " " + addr.getHostAddress());
+                if (addr.getHostAddress().contains("192.")) {
+                    myip = addr.getHostAddress();
+                }
+            }
+        }
+        Main.myIp = myip;
+        log.info("MY IP: " + myip);
+        return myip;
+    }
+
+
+
+
+    public static String ping(Integer index) {
+        String lmsip = "192.168.1.52";
+        String ip = "192.168.1." + index;
+        log.info("PING " + index);
+        if (lmsip.equals(ip)) return ip;
+        return null;
+    }
+
+//    public static String checkIp(String fullIp, Integer index) {
+//        if (index > 124) return null;
+//        InetAddress inetAddress = null;
+//        try {
+//            inetAddress = InetAddress.getByName(fullIp);
+//        } catch (UnknownHostException ignored) {
+//        }
+//        byte[] ip = inetAddress.getAddress();
+//        ip[3] = Byte.parseByte(String.valueOf(index));
+//        String ipTry = null;
+//        try {
+//            InetAddress address = InetAddress.getByAddress(ip);
+//            ipTry = address.toString().substring(1);
+//            if (address.isReachable(1000) && checkIpIsLms(ipTry)) {
+//                log.info("LMS IP OK: " + ipTry);
+//                return ipTry;
+//            }
+//        } catch (Exception ignored) {
+//        }
+//        return null;
+//    }
+
+    public static Map<Integer, Integer> stringSplitToIntMap(String text, String split1, String split2) {
+        return Arrays.stream(text.split(split1))
+                .map(s -> s.split(split2))
+                .collect(Collectors.toMap(s -> s[0], s -> s[1]))
+                .entrySet().stream()
+                .collect(Collectors.toMap(entry -> Integer.valueOf(entry.getKey()), entry -> Integer.valueOf(entry.getValue())));
+    }
+
+    public static Map<Integer, Integer> stringSplitToIntMap2(String text, String split1, String split2) {
+        if (text == null || text.isEmpty()) {
+            return new HashMap<>();
+        }
+        return Arrays.stream(text.split(split1))
+                .map(s -> s.split(split2))
+                .filter(arr -> arr.length == 2) // Игнорировать некорректные элементы
+                .collect(Collectors.toMap(
+                        arr -> Integer.parseInt(arr[0]),
+                        arr -> Integer.parseInt(arr[1]),
+                        (oldVal, newVal) -> newVal // Обработка дубликатов: берем последнее значение
+                ));
+    }
+
+    public static String mapToString(Map<Integer, Integer> headerMap) {
+        if (headerMap == null) return "---";
+        return headerMap.entrySet().stream().map(e -> e.getKey() + ":" + e.getValue())
+                .collect(Collectors.joining(","));
+    }
+
+    public static String readFile(String path) throws IOException {
+        Path filePath = Path.of(path);
+        String content = Files.readString(filePath);
+        return content;
+    }
+
+    public static void sleep(int msec) {
+        log.info("SLEEP: " + msec);
+        try {
+            Thread.sleep(msec);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+//        log.info("SLEEP FINISH");
+    }
+
+    //    https://stackoverflow.com/questions/10893313/how-to-convert-cyrillic-letters-to-english-latin-in-java-string
+    public static String convertCyrilicToLatin(String message) {
+        String result = message.replace("дж", "j")
+                .replace("у", "oo");
+        char[] abcCyr = {' ', 'а', 'б', 'в', 'г', 'д', 'ѓ', 'е', 'ж', 'з', 'ѕ', 'и', 'ј', 'к', 'л', 'љ', 'м', 'н', 'њ', 'о', 'п', 'р', 'с', 'т', 'ќ', 'у', 'ф', 'х', 'ц', 'ч', 'џ', 'ш', 'э', 'ю', 'я', 'А', 'Б', 'В', 'Г', 'Д', 'Ѓ', 'Е', 'Ж', 'З', 'Ѕ', 'И', 'Ј', 'К', 'Л', 'Љ', 'М', 'Н', 'Њ', 'О', 'П', 'Р', 'С', 'Т', 'Ќ', 'У', 'Ф', 'Х', 'Ц', 'Ч', 'Џ', 'Ш', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '/', '-'};
+        String[] abcLat = {" ", "a", "b", "v", "g", "d", "]", "e", "zh", "z", "y", "i", "j", "k", "l", "q", "m", "n", "w", "o", "p", "r", "s", "t", "'", "u", "f", "h", "c", "ch", "x", "{", "e", "u", "y", "A", "B", "V", "G", "D", "}", "E", "Zh", "Z", "Y", "I", "J", "K", "L", "Q", "M", "N", "W", "O", "P", "R", "S", "T", "KJ", "U", "F", "H", "C", ":", "X", "{", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "1", "2", "3", "4", "5", "6", "7", "8", "9", "/", "-"};
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < result.length(); i++) {
+            for (int x = 0; x < abcCyr.length; x++) {
+                if (result.charAt(i) == abcCyr[x]) {
+                    builder.append(abcLat[x]);
+                }
+            }
+        }
+        result = builder.toString();
+        return result;
+    }
+
+
+    public static void readRoomsAndAliceIds() {
+        log.debug("READ " + config.fileRoomsAndAliceIds);
+        roomsAndAliceIds = JsonUtils.jsonFileToMap(config.fileRoomsAndAliceIds, String.class, String.class);
+        if (roomsAndAliceIds == null) {
+            roomsAndAliceIds = new HashMap<>();
+            log.info("READ NO ROOMS");
+            return;
+        }
+        log.info("READ: " + Main.roomsAndAliceIds);
+    }
+
+    public static void writeRoomsAndAliceIds() {
+        JsonUtils.mapToJsonFile(roomsAndAliceIds, config.fileRoomsAndAliceIds);
+    }
+
+    public static void readRoomsAndPlayers() {
+        log.debug("READ " + config.fileRoomsAndPlayers);
+        roomsAndPlayers = JsonUtils.jsonFileToMap(config.fileRoomsAndPlayers, String.class, String.class);
+        if (roomsAndPlayers == null) {
+            roomsAndPlayers = new HashMap<>();
+            log.info("READ NO ROOMS AND PLAYERS");
+            return;
+        }
+        log.info("READ: " + Main.roomsAndPlayers);
+    }
+
+    public static void writeRoomsAndPlayers() {
+        log.info("WRITE ROOMS AND PLAYERS: " + roomsAndPlayers);
+        JsonUtils.mapToJsonFile(roomsAndPlayers, config.fileRoomsAndPlayers);
+    }
+
+    public static String roomNameByNearest(String approxRoomName) {
+//        log.info("GET CORRECT ROOM NAME BY: " + approxRoomName);
+        String correctRoom = Levenstein.searchTextInList(approxRoomName, Yandex.rooms);
+        if (correctRoom == null) {
+            log.info("ERROR ROOM " + approxRoomName + " NOT EXISTS IN YANDEX SMART HOME " + approxRoomName);
+            return null;
+        }
+//        log.info("CORRECT ROOM: " + approxRoomName + " -> " + correctRoom);
+        return correctRoom;
+    }
+
+    public static String getCorrectPlayerName(String player) {
+        log.info("START: " + player);
+        List<String> players = lmsPlayers.players.stream().map(p -> p.name).collect(Collectors.toList());
+        player = Utils.convertCyrilicToLatin(player);
+        String correctPlayer = Levenstein.getNearestElementInListWord(player, players);
+        if (correctPlayer == null) log.info("ERROR PLAYER " + player + " NOT EXISTS IN LMS ");
+        log.info("CORRECT PLAYER: " + player + " -> " + correctPlayer);
+        return correctPlayer;
+    }
+
+    public static List<String> linesFromList(List<String> list, int index, int lines) {
+//   показывать из плейлиста часть сторок до и после играющего трека
+        int left = lines;
+        int start = Math.max(0, index - left);
+        int end = Math.min(list.size(), start + lines * 2 + 1);
+        int delta = lines * 2 + 1 - (end - start);
+        int start2 = Math.max(0, start - delta);
+//        log.info("INDEX: " + index + " LEFT: " + left + " START: " + start + " END: " + end + " DELTA: " + delta);
+        return new ArrayList<>(list.subList(start2, end));
+    }
+}

@@ -1,0 +1,15 @@
+package knovash.saclient.yandex.provider.response;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class StateZ {
+    public String instance;
+    public String value;
+    public boolean relative = false;
+    public ActionResult action_result = new ActionResult();
+}

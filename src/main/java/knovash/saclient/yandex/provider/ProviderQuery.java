@@ -1,0 +1,236 @@
+package knovash.saclient.yandex.provider;
+
+import lombok.extern.log4j.Log4j2;
+import knovash.saclient.Context;
+import knovash.saclient.lms.Player;
+import knovash.saclient.yandex.provider.response.*;
+import knovash.saclient.utils.JsonUtils;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static knovash.saclient.Main.*;
+
+@Log4j2
+public class ProviderQuery {
+
+    private static Player player;
+
+    public static Context providerQueryRun(Context context) {
+        log.info(start);
+        String body = context.body;
+        List<String> xRequestIdList = context.requestHeaders.get("X-request-id");
+        String xRequestId = xRequestIdList.get(0);
+//        log.info("XREQUESTID: " + xRequestId);
+        log.info("BODY: " + body);
+
+        Payload bodyPojo = JsonUtils.jsonToPojo(body, Payload.class);
+        String json;
+//   если чтото пошло не так вернуть пустой список устройств
+//            json = "{\"request_id\":\"" + xRequestId + "\",\"payload\":{\"devices\":[]}}";
+        if (smartHome.devices.size() == 0) log.info("ERROR - no registered LMS players in Alice home");
+        ResponseYandex responseYandex = new ResponseYandex();
+        responseYandex.request_id = xRequestId;
+
+        lmsPlayers.updatePlayers(); // providerQueryRun TODO тут апдейт нужен только для обновления списка подключенных плееров
+
+
+        List<Device> jsonDevices = bodyPojo.devices.stream()
+                .map(requestDevice -> {
+                    Device device = smartHome.deviceById(requestDevice.id);
+//                    из-за того, что запрос от Яндекса приходит до завершения синхронизации.
+//                    Код не обрабатывает корректно случай отсутствия устройства: после вывода предупреждения
+//                    он не прерывает обработку и не возвращает устройство с ошибкой, а продолжает использовать null.
+                    if (device == null) {
+                        log.warn("Device not found for externalId: {}", requestDevice.id);
+                        // возвращаем устройство с ошибкой
+                        Device errorDevice = new Device();
+                        errorDevice.id = requestDevice.id;
+                        errorDevice.error_code = "DEVICE_UNREACHABLE";
+                        errorDevice.error_message = "Устройство не найдено";
+
+                        errorDevice.capabilities = new ArrayList<>(); // ИСПРАВЛЕНИЕ
+                        return errorDevice;
+                    } else {
+                        log.info("UPDATE DIVECE CAPABILITIES " + device.name + " " + device.type);
+//                        обратиться к каждому девайсу и обновить его свойства
+                        device = updateDeviceCapabilities(device);
+                    }
+                    Device minimal = new Device();
+                    minimal.id = requestDevice.id; // ID из запроса!
+                    minimal.capabilities = device.capabilities;
+                    minimal.properties = device.properties;
+                    minimal.error_code = device.error_code;
+                    minimal.error_message = device.error_message;
+                    // Обнуляем лишние поля (или настройте сериализацию на игнорирование null)
+                    minimal.type = null;
+                    minimal.name = null;
+                    minimal.room = null;
+                    minimal.aliases = null;
+                    minimal.external_id = null;
+                    minimal.skill_id = null;
+                    minimal.household_id = null;
+                    minimal.groups = null;
+                    minimal.action_result = null;
+                    return minimal;
+                })
+                .collect(Collectors.toList());
+
+        responseYandex.payload = new Payload();
+        responseYandex.payload.devices = jsonDevices;
+
+// объект ответа преобразовать в json ответа
+        json = JsonUtils.pojoToJson(responseYandex);
+        json = json.replaceAll("(\"value\" :) \"([0-9a-z]+)\"", "$1 $2");
+        context.bodyResponse = json;
+//        log.info("JSON " + json);
+        context.code = 200;
+        log.info(finish);
+        return context;
+    }
+
+    private static void updateOtherDevice(Device device) {
+        log.info("DEVICE OTHER START" + device);
+        Capability capability = device.capabilities.stream()
+                .filter(c -> "devices.capabilities.on_off".equals(c.type))
+                .findFirst()
+                .orElse(null);
+        if (capability == null) {
+            log.warn("No on_off capability found for device {}", device.id);
+            return;
+        }
+        // Инициализируем state, если он null
+        if (capability.state == null) {
+            capability.state = new State();
+            capability.state.instance = "on";
+            capability.state.relative = false;
+            capability.state.action_result = new ActionResult();
+            capability.state.action_result.status = "DONE";
+        }
+        capability.state = new State();
+        capability.state.instance = capability.parameters.instance;
+        capability.state.relative = false;
+        capability.state.action_result = new ActionResult();
+        capability.state.action_result.status = "DONE";
+
+        log.info("DEVICE NAME: " + device.name);
+        log.info("DEVICE ROOM: " + device.room);
+
+        Player player1 = lmsPlayers.playerByRoom(device.room);
+        if (player1 == null) {
+            // кнопка-устройство в комнате без плеера (например, старая запись):
+            // не падаем, отвечаем Яндексу "устройство недоступно"
+            log.warn("UPDATE OTHER DEVICE SKIPPED: no player in room '" + device.room + "' (" + device.name + ")");
+            device.error_code = "DEVICE_UNREACHABLE";
+            device.error_message = "Player not found in room";
+            return;
+        }
+        switch (device.name) {
+            case "Отдельно":
+                log.info("CASE Отдельно " + player1.name + " " + player1.separate);
+                capability.state.value = String.valueOf(player1.separate);
+                break;
+            case "Вместе":
+                log.info("CASE Вместе " + player1.name + " " + !player1.separate);
+                capability.state.value = String.valueOf(!player1.separate);
+                break;
+            case "Повтор":
+                player1.status();
+                log.info("CASE Повтор " + player1.name + " " + player1.repeat);
+                capability.state.value = String.valueOf(player1.repeat);
+                break;
+            case "Рандом":
+                player1.status();
+                log.info("CASE Рандом " + player1.name + " " + player1.shuffle);
+                capability.state.value = String.valueOf(player1.shuffle);
+                break;
+            default:
+                capability.state.value = "false";
+                break;
+        }
+
+        //if ("Отдельно".equals(device.name)) {
+        //    Player player1 = lmsPlayers.playerByRoom(device.room);
+        //    capability.state.value = String.valueOf(player1.separate);
+        //
+        //} else
+        //    capability.state.value = "false";
+
+        log.info("DEVICE OTHER UPDATED: {}", device);
+        device.error_code = null;
+        device.error_message = null;
+
+    }
+
+    private static Device updateDeviceCapabilities(Device device) {
+
+        // если пришел не Музыка девайс
+        if (!device.type.equals("devices.types.media_device.receiver")) {
+            updateOtherDevice(device);
+            return device;
+        }
+
+        log.info("DEVICE UPDATE " + device.room + " " + device.id);
+// взять плеер по id устройства в умном доме
+        player = lmsPlayers.playerByRoom(device.room);
+        log.info("PLAYER: " + player);
+
+// https://yandex.ru/dev/dialogs/smart-home/doc/ru/concepts/response-codes#codes-api
+// требование яндекс при модерации навыка, показывать устройство недоступно
+
+// если плеер не существует - вернуть устройство с ошибкой
+        if (player == null) {
+            log.info("DEVICE_UNREACHABLE player = null");
+            device.error_code = "DEVICE_UNREACHABLE";
+            device.error_message = "Устройство потеряно";
+            log.info("DEVICE UPDATED");
+            return device;
+        }
+
+        if (!player.connected) { // updateDevice
+            log.info("DEVICE_UNREACHABLE mode real = null");
+            device.error_code = "DEVICE_UNREACHABLE";
+            device.error_message = "Устройство потеряно";
+            log.info("DEVICE UPDATED");
+            return device;
+        }
+
+// если плеер существует и отвечает - обратиться к плееру и обновить все его значения
+        device.error_code = null;
+        device.error_message = null;
+        device.capabilities.forEach(capability -> changeCapability(capability));
+        return device;
+    }
+
+    private static void changeCapability(Capability capability) {
+        if (capability.state == null) {
+            capability.state = new State();
+            capability.state.instance = capability.parameters.instance;
+            capability.state.relative = false;
+            capability.state.action_result = new ActionResult();
+            capability.state.action_result.status = "DONE";
+//            capability.state.value = null;
+//            capability.state.action_result.error_code = null;
+//            capability.state.action_result.error_message = null;
+        }
+
+        switch (capability.parameters.instance) {
+            case ("volume"):
+                capability.state.value = player.volumeGet();
+                log.info("UPDATE CAPABILITY : " + capability.parameters.instance + " VALUE: " + capability.state.value + " PLAYER: " + player.name);
+                break;
+            case ("on"):
+                capability.state.value = String.valueOf(player.playing);
+                log.info("UPDATE CAPABILITY : " + capability.parameters.instance + " VALUE: " + capability.state.value + " PLAYER: " + player.name);
+                break;
+            case ("channel"):
+                capability.state.value = "1";
+                log.info("UPDATE CAPABILITY : " + capability.parameters.instance + " VALUE: " + capability.state.value + " PLAYER: " + player.name);
+                break;
+            default:
+                log.info("ERROR CAPABILITY NOT FOUND");
+                break;
+        }
+    }
+}

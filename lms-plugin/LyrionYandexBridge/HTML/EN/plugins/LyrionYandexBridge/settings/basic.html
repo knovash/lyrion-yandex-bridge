@@ -1,0 +1,50 @@
+[% PROCESS settings/header.html %]
+
+	[% IF status %]
+	[% WRAPPER setting title="PLUGIN_LYRION_YANDEX_BRIDGE_STATUS" desc="PLUGIN_LYRION_YANDEX_BRIDGE_STATUS_DESC" %]
+		<table style="width:100%">
+			<tr><td style="width:28%; padding:2px 6px; vertical-align:top;"><b>LMS</b></td><td style="padding:2px 6px;">[% status.lms %]</td></tr>
+			<tr><td style="padding:2px 6px; vertical-align:top;"><b>LMS players</b></td><td style="padding:2px 6px;">[% status.players %]</td></tr>
+			<tr><td style="padding:2px 6px; vertical-align:top;"><b>Yandex</b></td><td style="padding:2px 6px;">[% status.yandex %]</td></tr>
+			<tr><td style="padding:2px 6px; vertical-align:top;"><b>Yandex rooms</b></td><td style="padding:2px 6px;">[% status.rooms %]</td></tr>
+			<tr><td style="padding:2px 6px; vertical-align:top;"><b>Music devices</b></td><td style="padding:2px 6px;">[% status.music %]</td></tr>
+			<tr><td style="padding:2px 6px; vertical-align:top;"><b>Spotify</b></td><td style="padding:2px 6px;">[% status.spotify %]</td></tr>
+			<tr><td style="padding:2px 6px; vertical-align:top;"><b>Cloud</b></td><td style="padding:2px 6px;">[% status.cloud %]
+			[% IF status.cloudconnected %]
+				&nbsp;<span style="color:green; font-weight:bold;">Connected</span>
+			[% ELSE %]
+				&nbsp;<a href="[% status.authurl %]" target="lybauth"><button type="button">[% "PLUGIN_LYRION_YANDEX_BRIDGE_CONNECTYA" | string %]</button></a>
+			[% END %]
+			</td></tr>
+		</table>
+	[% END %]
+	[% END %]
+
+	[% WRAPPER setting title="PLUGIN_LYRION_YANDEX_BRIDGE_AUTORUN" desc="PLUGIN_LYRION_YANDEX_BRIDGE_AUTORUN_DESC" %]
+		<input name="pref_autorun" id="pref_autorun" type="checkbox" [% IF prefs.pref_autorun %] checked [% END %]>
+		[% "PLUGIN_LYRION_YANDEX_BRIDGE_RUNNING_$running" | string %][% IF running %] (pid [% pid %]) [% END %]
+		[% IF running %]&nbsp<input name="restart" type="submit" value=[% "PLUGIN_LYRION_YANDEX_BRIDGE_RESTART" | string %]>[% END %]
+		&nbsp&nbsp<b><a href="[% weburl %]" target="lyb">[% "PLUGIN_LYRION_YANDEX_BRIDGE_WEBUI" | string %]</a></b>
+		[% IF lasterror %]<br><pre style="color:red; white-space: pre-wrap;">[% lasterror %]</pre>[% END %]
+	[% END %]
+
+	[% WRAPPER setting title="PLUGIN_LYRION_YANDEX_BRIDGE_JAVAPATH" desc="PLUGIN_LYRION_YANDEX_BRIDGE_JAVAPATH_DESC" %]
+		<input type="text" class="stdedit" name="pref_javapath" id="pref_javapath" value="[% prefs.pref_javapath %]" size="60">
+	[% END %]
+
+	[% WRAPPER setting title="PLUGIN_LYRION_YANDEX_BRIDGE_PORT" desc="PLUGIN_LYRION_YANDEX_BRIDGE_PORT_DESC" %]
+		<input type="text" class="stdedit" name="pref_port" id="pref_port" value="[% prefs.pref_port %]" size="6">
+	[% END %]
+
+	[% WRAPPER setting title="PLUGIN_LYRION_YANDEX_BRIDGE_BIND" desc="PLUGIN_LYRION_YANDEX_BRIDGE_BIND_DESC" %]
+		<select class="stdedit" name="pref_bind" id="pref_bind">
+			<option [% IF prefs.pref_bind == 'localhost' %]selected[% END %] value="localhost">[% "PLUGIN_LYRION_YANDEX_BRIDGE_BIND_LOCALHOST" | string %]</option>
+			<option [% IF prefs.pref_bind == '0.0.0.0' %]selected[% END %] value="0.0.0.0">[% "PLUGIN_LYRION_YANDEX_BRIDGE_BIND_ALL" | string %]</option>
+		</select>
+	[% END %]
+
+	[% WRAPPER setting title="PLUGIN_LYRION_YANDEX_BRIDGE_OPTS" desc="PLUGIN_LYRION_YANDEX_BRIDGE_OPTS_DESC" %]
+		<input type="text" class="stdedit" name="pref_opts" id="pref_opts" value="[% prefs.pref_opts %]" size="100">
+	[% END %]
+
+[% PROCESS settings/footer.html %]

@@ -1,0 +1,28 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.1.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.1.0 http://maven.apache.org/xsd/assembly-2.1.0.xsd">
+    <id>lms-plugin</id>
+    <formats>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <fileSets>
+        <!-- perl-файлы плагина, strings, install.xml, HTML-шаблон -->
+        <fileSet>
+            <directory>lms-plugin</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>LyrionYandexBridge/**</include>
+            </includes>
+        </fileSet>
+    </fileSets>
+
+    <files>
+        <!-- java-клиент внутрь плагина -->
+        <file>
+            <source>target/lyrion-yandex-bridge-1.5.jar</source>
+            <outputDirectory>LyrionYandexBridge/Bin</outputDirectory>
+        </file>
+    </files>
+</assembly>

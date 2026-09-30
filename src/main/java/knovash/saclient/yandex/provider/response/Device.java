@@ -1,0 +1,33 @@
+package knovash.saclient.yandex.provider.response;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Log4j2
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Device {
+
+    public String type = "devices.types.media_device.receiver";
+    public String name = "музыка";
+    public String id;
+    public String room;
+    public List<Capability> capabilities = new ArrayList<>();
+    public List<Property> properties = new ArrayList<>();
+    public List<String> aliases = new ArrayList<>();
+    @JsonIgnore
+    public String external_id; // TODO удалить
+    public String skill_id;
+    public String household_id;
+    public List<String> groups;
+    public ActionResult action_result;
+    public String error_code = null;
+    public String error_message = null;
+}

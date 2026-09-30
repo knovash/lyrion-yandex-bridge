@@ -1,0 +1,78 @@
+package knovash.saclient.web;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import knovash.saclient.Main;
+import knovash.saclient.lms.Player;
+import knovash.saclient.yandex.Yandex;
+
+import java.util.Objects;
+
+/**
+ * JSON-сводка состояния клиента для страницы плагина LMS (GET /status.json).
+ */
+public class StatusJson {
+
+    public static String get() {
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode root = mapper.createObjectNode();
+
+        // LMS
+        ObjectNode lms = root.putObject("lms");
+        lms.put("ip", Main.config.lmsIp == null ? "" : Main.config.lmsIp);
+        lms.put("port", Main.config.lmsPort == null ? "" : Main.config.lmsPort);
+        lms.put("online", Boolean.TRUE.equals(Main.lmsServerOnline));
+
+        // плееры LMS
+        ArrayNode players = root.putArray("players");
+        if (Main.lmsPlayers != null && Main.lmsPlayers.players != null) {
+            for (Player p : Main.lmsPlayers.players) {
+                if (p == null) continue;
+                ObjectNode pn = players.addObject();
+                pn.put("name", p.name == null ? "" : p.name);
+                pn.put("room", p.room == null ? "" : p.room);
+                pn.put("connected", p.connected);
+            }
+        }
+
+        // Яндекс
+        ObjectNode yandex = root.putObject("yandex");
+        yandex.put("loggedIn", Main.config.yandexLoggedIn());
+        yandex.put("name", Main.config.yandexName == null ? "" : Main.config.yandexName);
+        ArrayNode rooms = root.putArray("rooms");
+        if (Yandex.rooms != null) Yandex.rooms.forEach(rooms::add);
+
+        ArrayNode musicLocal = root.putArray("musicLocal");
+        if (Main.smartHome != null && Main.smartHome.devices != null) {
+            Main.smartHome.devices.stream()
+                    .filter(Objects::nonNull)
+                    .filter(d -> "музыка".equalsIgnoreCase(d.name))
+                    .map(d -> d.room)
+                    .filter(Objects::nonNull)
+                    .forEach(musicLocal::add);
+        }
+        ArrayNode musicYandex = root.putArray("musicYandex");
+        if (Main.yandexInfoDevices != null) {
+            Main.yandexInfoDevices.stream()
+                    .filter(Objects::nonNull)
+                    .filter(d -> "музыка".equalsIgnoreCase(d.name))
+                    .map(d -> d.roomName)
+                    .filter(Objects::nonNull)
+                    .forEach(musicYandex::add);
+        }
+
+        // Spotify
+        ObjectNode spotify = root.putObject("spotify");
+        spotify.put("loggedIn", Main.config.spotifyLoggedIn());
+        spotify.put("minutesLeft", Math.max(0,
+                (int) ((Main.config.spotifyExpiresAt - System.currentTimeMillis()) / 60000L)));
+
+        // Облако
+        ObjectNode cloud = root.putObject("cloud");
+        cloud.put("url", Main.config.serverHttpUrl);
+        cloud.put("connected", Main.cloudClient != null && Main.cloudClient.isConnected());
+
+        return root.toString();
+    }
+}

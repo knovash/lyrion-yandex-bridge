@@ -1,0 +1,83 @@
+PLUGIN_LYRION_YANDEX_BRIDGE
+	EN	Lyrion Yandex Bridge (Yandex Smart Home)
+	RU	Lyrion Yandex Bridge (Умный дом Яндекс)
+
+PLUGIN_LYRION_YANDEX_BRIDGE_DESC
+	EN	Run the Lyrion Yandex Bridge: Yandex Smart Home devices for LMS players (web setup on port 8888)
+	RU	Запускает Lyrion Yandex Bridge: устройства «музыка» в УДЯ для плееров LMS (веб-настройки на порту 8888)
+
+PLUGIN_LYRION_YANDEX_BRIDGE_STATUS
+	EN	Client status
+	RU	Состояние клиента
+
+PLUGIN_LYRION_YANDEX_BRIDGE_STATUS_DESC
+	EN	Live status from the client (updated when the page opens)
+	RU	Текущее состояние из самого клиента (обновляется при открытии страницы)
+
+PLUGIN_LYRION_YANDEX_BRIDGE_CONNECTYA
+	EN	Connect via Yandex
+	RU	Подключиться через Яндекс
+
+PLUGIN_LYRION_YANDEX_BRIDGE_AUTORUN
+	EN	Start the client
+	RU	Запуск клиента
+
+PLUGIN_LYRION_YANDEX_BRIDGE_AUTORUN_DESC
+	EN	Automatically start Lyrion Yandex Bridge when LMS starts. The client talks to LMS at 127.0.0.1.
+	RU	Автоматически запускать Lyrion Yandex Bridge при старте LMS. Клиент подключается к LMS на 127.0.0.1.
+
+PLUGIN_LYRION_YANDEX_BRIDGE_RUNNING_0
+	EN	Not running
+	RU	Не запущен
+
+PLUGIN_LYRION_YANDEX_BRIDGE_RUNNING_1
+	EN	Running
+	RU	Работает
+
+PLUGIN_LYRION_YANDEX_BRIDGE_RESTART
+	EN	Restart
+	RU	Перезапустить
+
+PLUGIN_LYRION_YANDEX_BRIDGE_WEBUI
+	EN	Open client web interface
+	RU	Открыть веб-интерфейс клиента
+
+PLUGIN_LYRION_YANDEX_BRIDGE_JAVAPATH
+	EN	Path to java
+	RU	Путь к java
+
+PLUGIN_LYRION_YANDEX_BRIDGE_JAVAPATH_DESC
+	EN	Leave empty for auto-detect (java from PATH or /usr/lib/jvm). Java 11+ required.
+	RU	Оставьте пустым для автопоиска (java из PATH или /usr/lib/jvm). Требуется Java 11+.
+
+PLUGIN_LYRION_YANDEX_BRIDGE_PORT
+	EN	Client web port
+	RU	Порт веб-интерфейса клиента
+
+PLUGIN_LYRION_YANDEX_BRIDGE_PORT_DESC
+	EN	Port of the client web interface and provider API (default 8888).
+	RU	Порт веб-интерфейса и API провайдера УДЯ (по умолчанию 8888).
+
+PLUGIN_LYRION_YANDEX_BRIDGE_BIND
+	EN	Network access
+	RU	Доступ из сети
+
+PLUGIN_LYRION_YANDEX_BRIDGE_BIND_DESC
+	EN	"Localhost only" - web interface is reachable from this machine. "All interfaces" - also from other devices in your LAN.
+	RU	«Только локально» — веб-интерфейс доступен только с этого компьютера. «Все интерфейсы» — также с других устройств локальной сети.
+
+PLUGIN_LYRION_YANDEX_BRIDGE_BIND_LOCALHOST
+	EN	Localhost only
+	RU	Только локально
+
+PLUGIN_LYRION_YANDEX_BRIDGE_BIND_ALL
+	EN	All interfaces
+	RU	Все интерфейсы
+
+PLUGIN_LYRION_YANDEX_BRIDGE_OPTS
+	EN	Extra arguments
+	RU	Дополнительные аргументы
+
+PLUGIN_LYRION_YANDEX_BRIDGE_OPTS_DESC
+	EN	Extra command line arguments passed to the client (e.g. --lms.ip=192.168.1.131).
+	RU	Дополнительные аргументы командной строки клиента (например, --lms.ip=192.168.1.131).

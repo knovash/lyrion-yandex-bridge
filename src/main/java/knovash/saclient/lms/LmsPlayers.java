@@ -1,0 +1,562 @@
+package knovash.saclient.lms;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+import knovash.saclient.lms.RequestParameters;
+import knovash.saclient.lms.Requests;
+import knovash.saclient.lms.Response;
+import knovash.saclient.lms.ServerStatus;
+import knovash.saclient.utils.JsonUtils;
+import knovash.saclient.utils.levenstein.Levenstein;
+import knovash.saclient.utils.Utils;
+import knovash.saclient.player.ActionsSync;
+
+import java.time.LocalTime;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static java.time.temporal.ChronoUnit.MINUTES;
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static knovash.saclient.lms.LmsSearchForIp.isLmsServer;
+import static knovash.saclient.Main.*;
+import static knovash.saclient.web.PagePlayers.*;
+
+@Log4j2
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class LmsPlayers {
+
+    public List<Player> players = new ArrayList<>();
+    public String btPlayerName = "HomePod";
+    public String btPlayerAliceId;
+    public int delayUpdate = 5; // MINUTES
+    public int delayExpire = 10; // MINUTES
+    public boolean lastThis = true;
+    public static ServerStatus serverStatus = new ServerStatus();
+    public List<String> autoRemoteUrls = new ArrayList<>();
+    public Boolean toggleWake = true; // TODO еще не используется
+    public Boolean toggleVoice = true; // TODO еще не используется
+    public Map<Integer, Integer> scheduleAll = new HashMap<>(Map.of(
+            0, 10,
+            7, 15,
+            9, 20,
+            20, 15,
+            22, 5));
+    public Boolean volumeAmpLms = false;
+    public Boolean volumeAmpFfmpeg = false;
+    private String lastUpdateTime;
+
+    public void checkUpdated() {
+        if (lastUpdateTime == null) log.info("--- !!! UPDATE EXPIRED ERROR !!! ---");
+        LocalTime lastTime = LocalTime.parse(this.lastUpdateTime).truncatedTo(SECONDS);
+        LocalTime nowTime = LocalTime.now(zoneId).truncatedTo(SECONDS);
+        long diff = lastTime.until(nowTime, MINUTES);
+        Boolean expired = diff > delayExpire || diff < 0;
+        if (expired) log.info("--- !!! UPDATE EXPIRED ERROR !!! ---");
+        //else log.info("OK");
+
+    }
+
+    public void saveUpdsteTime() {// сохранить последнее время обновления
+        this.lastUpdateTime = LocalTime.now(zoneId).truncatedTo(SECONDS).toString();
+        //log.info("LAST UPDATE TIME: " + this.lastUpdateTime);
+//        lmsPlayers.write();
+    }
+
+
+    public void updatePlayers() {
+        log.info(start);
+        if (!lmsServerOnline) {
+            log.info("LMS OFF LINE");
+            return;
+        }
+        if (lmsPlayers.players == null) lmsPlayers.players = new ArrayList<>();
+        String json = Requests.postToLmsForJsonBody(RequestParameters.statusServer().toString());
+//        log.info("JSON SERVER STATUS: " + json);
+        if (json == null) return;
+        json = JsonUtils.replaceSpace(json);
+        json = json.replaceAll("\"newversion.*</a>\\.\"", "\"newversion\": \"--\"");
+        ServerStatus serverStatus = JsonUtils.jsonToPojo(json, ServerStatus.class);
+
+//        log.info("OBJ SERVER STATUS: " + serverStatus);
+        if (serverStatus == null) return;
+        if (serverStatus.result == null || serverStatus.result.players_loop == null) {
+            log.warn("UPDATE PLAYERS SKIPPED: LMS not ready (empty serverstatus)");
+            return;
+        }
+        if (players != null) this.players.stream().forEach(p -> p.statusClear()); // очистить все плеееры
+
+        serverStatus.result.players_loop.stream()
+                .filter(pl -> lmsPlayers.playerByName(pl.name) == null)
+                .forEach(pl -> {
+                    log.info("ADD NEW PLAYER " + pl.name);
+                    lmsPlayers.players.add(new Player(pl.name));
+                });
+
+        serverStatus.result.players_loop.stream()
+                .filter(pl -> lmsPlayers.playerByName(pl.name) != null)
+                .forEach(pl -> lmsPlayers.playerByName(pl.name).update(pl));
+
+
+        lmsPlayers.players.stream()
+                .sorted(Comparator.comparing(p -> !p.connected))
+                .forEach(p ->
+                        log.info(String.format("" +
+                                        "UPDATED PLAYER: %-14s" +
+                                        "ROOM: %-10s " +
+                                        "CONNECTED: %-6s " +
+                                        "SEPARATED: %-6s " +
+                                        "MODE: %-6s ",
+                                p.name,
+                                p.room,
+                                p.connected,
+                                p.separate,
+                                p.mode
+                        )));
+        this.saveUpdsteTime();
+        log.info(finish);
+    }
+
+    public void write() {
+        log.info("WRITE: " + config.fileLmsPlayers);
+        JsonUtils.pojoToJsonFile(this, config.fileLmsPlayers);
+    }
+
+    public void read() {
+        log.debug("READ: " + config.fileLmsPlayers);
+        LmsPlayers lp = JsonUtils.jsonFileToPojo(config.fileLmsPlayers, LmsPlayers.class);
+        if (lp != null) {
+            this.players = lp.players;
+            this.autoRemoteUrls = lp.autoRemoteUrls;
+            this.toggleWake = lp.toggleWake;
+            this.btPlayerName = lp.btPlayerName;
+            this.delayUpdate = lp.delayUpdate;
+            this.delayExpire = lp.delayExpire;
+            this.lastThis = lp.lastThis;
+        }
+        log.info("LMS PLAYERS: " + lmsPlayers.players.stream().filter(Objects::nonNull).map(player -> player.name).collect(Collectors.toList()));
+    }
+
+    public Player playerByName(String name) {
+        if (name == null) return null;
+        Player player;
+        if (name == null || this == null || this.players == null) return null;
+        player = this.players.stream()
+                .filter(p -> name.equals(p.name))
+                .findFirst()
+                .orElse(null);
+        if (player == null) log.debug("PLAYER NOT FOUND BY NAME: " + name);
+        return player;
+    }
+
+    public Player playerByNearestName(String playerName) {
+        if (playerName == null) return null;
+        List<String> players = this.players.stream().map(p -> p.name).collect(Collectors.toList());
+        playerName = Utils.convertCyrilicToLatin(playerName);
+        String correctPlayerName = Levenstein.getNearestElementInListWord(playerName, players);
+        if (correctPlayerName == null) {
+            log.info("PLAYER " + playerName + " NOT EXISTS IN LMS ");
+            return null;
+        }
+        log.info("CORRECT PLAYER NAME: " + playerName + " -> " + correctPlayerName);
+        Player correctPlayer = this.playerByName(correctPlayerName);
+        return correctPlayer;
+    }
+
+    public Player playerByRoom(String room) {
+        if (room == null) return null;
+        return this.players.stream()
+                .filter(Objects::nonNull)
+                .filter(p -> room.equals(p.room))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public String roomByPlayerName(String playerName) {
+        if (playerName == null) return null;
+        return this.players.stream()
+                .filter(Objects::nonNull)
+                .filter(p -> playerName.equals(p.name))
+                .map(p -> p.room)
+                .findFirst()
+                .orElse(null);
+    }
+
+    public Player playerByNearestRoom(String room) {
+        if (room == null) return null;
+        room = Utils.roomNameByNearest(room);
+        return this.playerByRoom(room);
+    }
+
+    public Player lastPlayedPlayer(List<Player> players) {
+        Player ssss = null;
+        if (players == null || players.isEmpty()) {
+            log.info(">> list empty. run lmsPlayers.players.stream()");
+            ssss = lmsPlayers.players.stream()
+                    .filter(player -> player.connected)
+                    .sorted(Comparator.comparing(Player::getLastPlayTimePlayer,
+                            Comparator.nullsLast(Comparator.naturalOrder())).reversed())
+                    .peek(player -> log.info(player.name + " " + player.lastPlayTimePlayer))
+                    .findFirst()
+                    .orElse(null);
+
+            if (ssss != null) log.info("LAST PLAYED " + ssss.name + " " + ssss.lastPlayTimePlayer);
+            else {
+                ssss = lmsPlayers.players.get(0);
+                log.info("LAST PLAYED NULL ERROR " + ssss);
+            }
+        } else {
+            log.info("LIST " + players.size());
+            ssss = players.stream()
+                    .peek(player -> log.info(player.name + " " + player.lastPlayTimePlayer))
+                    .filter(player -> player.connected)
+                    .sorted(Comparator.comparing(Player::getLastPlayTimePlayer,
+                            Comparator.nullsLast(Comparator.naturalOrder())).reversed())
+                    .peek(player -> log.info("FILTERED: " + player.name + " " + player.lastPlayTimePlayer))
+                    .findFirst()
+                    .orElse(null);
+
+            if (ssss != null) log.info("LAST PLAYED " + ssss.name + " " + ssss.lastPlayTimePlayer);
+            else {
+                ssss = players.get(0);
+                log.info("LAST PLAYED NULL ERROR " + ssss);
+            }
+        }
+        return ssss;
+    }
+
+    public Player playingPlayer(String exceptName, boolean exceptSeparated) {
+        // найти играющий плеер, приоритет последний включившийся
+        List<Player> playingPlayers = playingPlayers(exceptName, exceptSeparated);
+        if (playingPlayers == null || playingPlayers.isEmpty()) {
+            return null;
+        }
+        return playingPlayers.stream()
+                .sorted(Comparator.comparing(Player::getLastPlayTimePlayer,
+                        Comparator.nullsLast(Comparator.naturalOrder())).reversed())
+                .findFirst()
+                .orElse(null);
+    }
+
+    public List<Player> playingPlayers(String exceptName, boolean exceptSeparated) {
+        // найти все играющие плееры
+        // включи вместе
+        log.info(start);
+        log.info("ПРОВЕРЯТЬ ЧТО СОСТОЯНИЕ ПЛЕЕРОВ ОБНОВЛЕНО !!!");
+        this.checkUpdated();
+//        lmsPlayers.fastUpdateServer(); // тут надо потому что иногда вызывается после unsync all
+
+        List<Player> playingPlayers = this.players.stream()
+                .filter(p -> !exceptSeparated || !p.separate) // исключить отдельные
+                .filter(p -> p.playing) // выбрать играющие
+                .filter(p -> !exceptName.equals(p.name)) // кроме этого
+                //.filter(p -> {
+                //    if (TOGGLE_HLS_CHECK.value)
+                //    if (p.status().current_title.contains("Apple")) {
+                //        log.info("APPLE HLS SKIP PLAYING PLAYER");
+                //        return false;
+                //    }
+                //    return true;
+                //})
+                .collect(Collectors.toList());
+        if (playingPlayers == null || playingPlayers.isEmpty()) {
+            log.info("NO PLAYING PLAYERS. EXCEPT NAME: " + exceptName + ". EXCEPT SEPARATED: " + exceptSeparated);
+            log.info(finish);
+            return null;
+        }
+        log.info("SEARCH FOR PLAYING. EXCEPT NAME: " + exceptName + ". EXCEPT SEPARATED: " + exceptSeparated + " PLAYING PLAYERS: " + playingPlayers.stream().map(player -> player.name).collect(Collectors.toList()));
+        log.info(finish);
+        return playingPlayers;
+    }
+
+    public List<String> playingPlayersNames(String exceptName, Boolean exceptSeparated) {
+        List<Player> playingPlayers = playingPlayers(exceptName, exceptSeparated);
+        if (playingPlayers == null || playingPlayers.isEmpty()) return Collections.emptyList();
+        return playingPlayers.stream().map(p -> p.name).collect(Collectors.toList());
+    }
+
+    public String playerSave(HashMap<String, String> parameters) {
+        log.info(line);
+
+        String playerName = parameters.getOrDefault(player_name_value, "null");
+        String roomName = parameters.getOrDefault(player_room_value, "null");
+        String delay = parameters.getOrDefault(player_delay_value, "null");
+        String volumeMax = parameters.getOrDefault(player_volume_max_value, "null");
+        String schedule = parameters.getOrDefault(player_schedule_value, "null");
+//        log.info("name: " + playerName);
+//        log.info("room: " + roomName);
+//        log.info("delay: " + delay);
+//        log.info("volumeMax: " + volumeMax);
+//        log.info("schedule: " + schedule);
+
+
+        if (playerName.equals("null") || roomName.equals("null") || delay.equals("null") || schedule.equals("null")) {
+            log.info("ERROR PARAMETER NULL");
+            return "NULL";
+        }
+        Player player = this.playerByName(playerName); // берем плеер из найденных в лмс и апдейтим его настройки
+        player.delay = Integer.valueOf(delay);
+        player.volume_high = Integer.valueOf(volumeMax);
+        player.schedule = Utils.stringSplitToIntMap2(schedule, ",", ":");
+        log.info("PLAYER UPDATE PARAMETERS: " + parameters);
+//        SwitchVoiceCommand.room = roomName;
+//        Player playerNew =
+
+        log.info("PLAYER SET ROOM START>>>>>>");
+        ActionsSync.selectNewPlayerInRoom(playerName, roomName, false); // playerSave
+        log.info("PLAYER SET ROOM FINISHED <<<<");
+
+//        log.info("SELECT PLAYER NEW: " + playerNew);
+        write();
+        log.info("FINISH PLAYER SAVE");
+        log.info(line);
+        return "OK";
+    }
+
+    public String playerRemove(HashMap<String, String> parameters) {
+        log.info("PLAYER SAVE PARAMETERS: " + parameters);
+        String playerName = parameters.getOrDefault(player_name_value, "null");
+        String roomName = parameters.getOrDefault(player_room_value, "null");
+        log.info("name: " + playerName);
+        log.info("room: " + roomName);
+
+        Player player = this.playerByName(playerName);
+
+        String id = null;
+
+        log.info("PLAYER REMOVE: " + player);
+        this.players.remove(player);
+//        if (id != null) smartHome.devices.remove(smartHome.deviceByExternalId(id));
+        if (id != null) smartHome.devices.remove(smartHome.deviceById(id));
+//        Device device = SmartHome.getDeviceById(id);
+        write();
+        return "OK";
+    }
+
+    public void delayExpireSave(HashMap<String, String> parameters) {
+        String tmp = parameters.get(delay_expire_value);
+        if (tmp == null) return;
+        delayExpire = Integer.parseInt(tmp);
+        write();
+    }
+
+    //public void toggleWakeSave(HashMap<String, String> parameters) {
+    //    String tmp = parameters.get(toggle_wake_value);
+    //    log.info("TMP: =========== " + tmp);
+    //    if (tmp == null) return;
+    //    toggleWake = Boolean.valueOf(tmp);
+    //    write();
+    //}
+    //
+    //public void toggleVoiceSave(HashMap<String, String> parameters) {
+    //    String tmp = parameters.get(toggle_voice_value);
+    //    log.info("TMP: =========== " + tmp);
+    //    if (tmp == null) return;
+    //    toggleVoice = Boolean.valueOf(tmp);
+    //    write();
+    //}
+    //
+    //public void autoremoteSave(HashMap<String, String> parameters) {
+    //    log.info("START " + parameters);
+    //    String tmp = parameters.get(autoremote_value);
+    //    log.info("TMP " + tmp);
+    //    if (tmp == null) return;
+    //    if (autoRemoteUrls == null) autoRemoteUrls = new ArrayList<>();
+    //    autoRemoteUrls.add(tmp);
+    //    write();
+    //}
+    //
+    //public void autoremoteRemove(HashMap<String, String> parameters) {
+    //    log.info("START " + parameters);
+    //    String tmp = parameters.get(autoremote_value);
+    //    log.info("TMP " + tmp);
+    //    if (tmp == null) return;
+    //    if (autoRemoteUrls == null) autoRemoteUrls = new ArrayList<>();
+    //    autoRemoteUrls.remove(tmp);
+    //    write();
+    //}
+    //
+    //public void lastThisSave(HashMap<String, String> parameters) {
+    //    String tmp = parameters.get(last_this_value);
+    //    if (tmp == null) return;
+    //    lastThis = Boolean.parseBoolean(tmp);
+    //    write();
+    //}
+    //
+    //public void volumeAmpLmsSave(HashMap<String, String> parameters) {
+    //    String tmp = parameters.get(volume_amp_lms);
+    //    if (tmp == null) return;
+    //    volumeAmpLms = Boolean.parseBoolean(tmp);
+    //    write();
+    //}
+    //
+    //public void volumeAmpFfmpegSave(HashMap<String, String> parameters) {
+    //    String tmp = parameters.get(volume_amp_ffmpeg);
+    //    if (tmp == null) return;
+    //    volumeAmpFfmpeg = Boolean.parseBoolean(tmp);
+    //    log.info("FFMPEG: " +volumeAmpFfmpeg);
+    //    write();
+    //}
+
+    public void lmsSave(HashMap<String, String> parameters) {
+        String tmp1 = parameters.get(lms_ip_value);
+        String tmp2 = parameters.get(lms_port_value);
+        if (tmp1 == null || tmp2 == null) return;
+        config.lmsIp = tmp1;
+        config.lmsPort = tmp2;
+        config.save();
+        this.searchForLmsIp();
+        log.info("\nUPDATE LMS PLAYERS");
+        this.updatePlayers(); // после сохранения ip lms обновить плееры
+    }
+
+    //public void volumioSave(HashMap<String, String> parameters) {
+    //    log.info("PARAMETERS: " + parameters);
+    //    String tmp1 = parameters.get(volumio_ip_value);
+    //    log.info(tmp1);
+    //    if (tmp1 == null) return;
+    //    config.volumioIp = tmp1;
+    //    log.info(config);
+    //    config.save();
+    //}
+
+    public void turnOffMusicAll() { // для Таскер только
+        log.info("STOP ALL");
+        this.players.parallelStream()
+                .filter(player -> player.connected)
+                .forEach(player -> player.turnOffMusic());
+    }
+
+//    public void autoremoteRequest() {
+//        log.info("REQUEST TASKER AUTOREMOTE REFRESH");
+//        log.info("URLS SIZE: {}", this.autoRemoteUrls.size());
+//        this.autoRemoteUrls.forEach(url -> {
+//            log.info("POST TO AUTOREMOTE: {}", url);
+//            try {
+//                HttpResponse response = Request.Post(url)
+//                        .connectTimeout(5000)
+//                        .socketTimeout(5000)
+//                        .execute()
+//                        .returnResponse();
+//                int statusCode = response.getStatusLine().getStatusCode();
+//
+//                log.error("POST. Status: {}, URL: {}", statusCode, url);
+//
+//            } catch (Exception e) {
+//                log.error("POST ERROR. URL: " + url, e);
+//            }
+//        });
+//    }
+
+    public List<List<String>> syncgroups() {
+        Response response = Requests.postToLmsForResponse(RequestParameters.syncgroups().toString());
+        this.players.forEach(p -> p.sync = false); // очистка состояний синхронизации всех плееров
+        if (response == null) return null;
+        if (response.result.syncgroups_loop == null) return null;
+//        log.info("SYNCGROUPS LOOP: " + response.result.syncgroups_loop);
+        List<List<String>> syncMemberNames = response.result.syncgroups_loop.stream()
+                .map(syncgroupsLoop -> syncgroupsLoop.sync_member_names)
+//                .map(s -> List.of(s.split(",")))
+                .map(s -> new ArrayList<>(Arrays.asList(s.split(",")))) // ← теперь изменяемые
+                .collect(Collectors.toList());
+        List<Object> result = new ArrayList<>();
+        syncMemberNames.forEach(collection -> result.addAll(collection));
+        syncMemberNames.forEach(group -> group.forEach(name -> lmsPlayers.playerByName(name).sync = true));
+        log.info("SYNCGROUPS: " + syncMemberNames);
+        return syncMemberNames;
+    }
+
+    public void searchForLmsIp() {
+        log.info("START");
+//        if (Utils.checkIpIsLms(config.lmsIp)) {
+        if (isLmsServer(config.lmsIp, 9000)) {
+            log.info("from config ok");
+            return;
+        }
+        log.info("SEARCH FOR LMS IP");
+        String lmsIp = LmsSearchForIp.findServerIp();
+        if (lmsIp != null) {
+            log.info("LMS IP: " + lmsIp);
+            config.lmsIp = lmsIp;
+            config.save();
+        } else {
+            log.info("ERROR LMS NOT FOUND");
+        }
+    }
+
+    public void logPlayersNames() {
+        log.info("LMS PLAYERS: " + lmsPlayers.players.stream().filter(Objects::nonNull).map(player -> player.name).collect(Collectors.toList()));
+    }
+
+    public LmsPlayers syncAll() {
+        lmsPlayers.players.forEach(p -> p.syncTo(this.players.get(0).name));
+        return lmsPlayers;
+    }
+
+    public LmsPlayers stopAll() {
+        log.info("ALL PLAYERS UNSYNC");
+        lmsPlayers.players.parallelStream().forEach(p -> p.unsync());
+        return lmsPlayers;
+    }
+
+    public LmsPlayers unsyncAll() {
+        log.info("ALL PLAYERS UNSYNC");
+        lmsPlayers.players.parallelStream().forEach(p -> p.unsync());
+        return lmsPlayers;
+    }
+
+    public LmsPlayers volumeSave() {
+        log.info("ALL PLAYERS SAVE CURRENT VOLUME");
+        lmsPlayers.players.parallelStream().forEach(p -> p.savedPlaylistVolume = p.volumeGet());
+        return lmsPlayers;
+    }
+
+    public LmsPlayers volumeRestore() {
+        log.info("ALL PLAYERS RESTORE SAVED VOLUME");
+        lmsPlayers.players.parallelStream().forEach(p -> p.volumeSet(p.savedPlaylistVolume));
+        return lmsPlayers;
+    }
+
+    public LmsPlayers volumeSet(Integer volume) {
+        log.info("ALL PLAYERS RESTORE SAVED VOLUME");
+        lmsPlayers.players.parallelStream().forEach(p -> p.volumeSet(String.valueOf(volume)));
+        return lmsPlayers;
+    }
+
+    public LmsPlayers wakeUpAll() {
+        log.info("ALL PLAYERS WAKEUP");
+        lmsPlayers.players.parallelStream().forEach(p -> p.ifExpiredAndNotPlayingUnsyncWakeSetVolume(null));
+        return lmsPlayers;
+    }
+
+    public LmsPlayers waitSeconds(Integer delay) {
+        log.info("wait " + delay + " second");
+        try {
+            Thread.sleep(delay * 1000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        return lmsPlayers;
+    }
+
+    public Player playerByPlayerNameOrRoomName(String playerName, String roomName) {
+        log.info("PLAYER: " + playerName + " ROOM: " + roomName);
+        Player player = null;
+        if ("btremote".equals(playerName)) player = lmsPlayers.playerByNearestName(lmsPlayers.btPlayerName);
+        if (player != null) return player;
+        player = lmsPlayers.playerByNearestName(playerName);
+        if (player != null) return player;
+        player = lmsPlayers.playerByNearestRoom(playerName);
+        if (player != null) return player;
+        player = lmsPlayers.playerByNearestRoom(roomName);
+        if (player != null) return player;
+        player = lmsPlayers.playerByNearestName(roomName);
+        if (player != null) return player;
+        return null;
+    }
+
+
+}
