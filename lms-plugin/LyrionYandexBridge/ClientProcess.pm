@@ -20,7 +20,7 @@ my $prefs      = preferences('plugin.lyrionyandexbridge');
 my $server     = preferences('server');
 my $log        = logger('plugin.lyrionyandexbridge');
 
-my $jarName      = 'lyrion-yandex-bridge-1.5.jar';
+my $jarName      = 'lyrion-yandex-bridge-1.6.jar';
 my $pluginModule = 'Plugins::LyrionYandexBridge::Plugin';
 my $pidFile;
 

@@ -131,11 +131,26 @@ public class CloudClient {
 
                 ObjectNode response = mapper.createObjectNode();
                 response.put("correlationId", correlationId);
-                JsonNode providerJson = parseJson(providerBody);
-                if (providerJson != null && providerJson.isObject()) {
-                    response.setAll((ObjectNode) providerJson);
-                } else if (providerBody != null) {
-                    response.put("payload", providerBody);
+                if (path.startsWith("/alice")) {
+                    // Навык «Раз Два» — вебхук Диалогов: Яндекс требует формат
+                    // {"response":{"text":...,"end_session":true},"version":"1.0"}.
+                    // Раньше текст уходил в "payload" — без поля "response" Яндекс
+                    // отвечал «навык не отвечает». correlationId остаётся сверху:
+                    // облако матчит по нему ответ с запросом, Яндекс лишнее поле
+                    // игнорирует (как и в ответах УДЯ /v1.0/...).
+                    String text = providerBody == null || providerBody.isEmpty()
+                            ? "произошла ошибка, попробуйте позже" : providerBody;
+                    ObjectNode aliceResponse = response.putObject("response");
+                    aliceResponse.put("text", text);
+                    aliceResponse.put("end_session", true);
+                    response.put("version", "1.0");
+                } else {
+                    JsonNode providerJson = parseJson(providerBody);
+                    if (providerJson != null && providerJson.isObject()) {
+                        response.setAll((ObjectNode) providerJson);
+                    } else if (providerBody != null) {
+                        response.put("payload", providerBody);
+                    }
                 }
                 String responseJson = mapper.writeValueAsString(response);
                 WebSocket w = ws;

@@ -19,9 +19,9 @@
     </fileSets>
 
     <files>
-        <!-- java-клиент внутрь плагина -->
+        <!-- java-клиент внутрь плагина (имя берётся из pom: artifactId-version) -->
         <file>
-            <source>target/lyrion-yandex-bridge-1.5.jar</source>
+            <source>${project.build.directory}/${project.build.finalName}.jar</source>
             <outputDirectory>LyrionYandexBridge/Bin</outputDirectory>
         </file>
     </files>

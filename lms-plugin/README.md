@@ -7,8 +7,8 @@
 ## Сборка
 ```
 mvn package
-# → target/lyrion-yandex-bridge-1.5.jar (fat-jar)
-# → target/lyrion-yandex-bridge-1.5-lms-plugin.zip (плагин)
+# → target/lyrion-yandex-bridge-1.6.jar (fat-jar)
+# → target/lyrion-yandex-bridge-1.6-lms-plugin.zip (плагин)
 ```
 
 ## Установка (Debian/Ubuntu, LMS из пакета lyrionmusicserver)
@@ -16,7 +16,7 @@ mvn package
 плагинов LMS его не трогает (в отличие от InstalledPlugins, откуда LMS может
 удалять плагины при отложенных операциях):
 ```
-sudo unzip -o target/lyrion-yandex-bridge-1.5-lms-plugin.zip -d /usr/share/squeezeboxserver/Plugins/
+sudo unzip -o target/lyrion-yandex-bridge-1.6-lms-plugin.zip -d /usr/share/squeezeboxserver/Plugins/
 sudo chown -R squeezeboxserver:nogroup /usr/share/squeezeboxserver/Plugins/LyrionYandexBridge
 sudo systemctl restart lyrionmusicserver
 ```
@@ -54,14 +54,14 @@ http://<ip-lms>:8888/ — авторизация в Яндексе/Spotify, на
 
 ## Публикация для всех пользователей (own plugin repository)
 
-Готовые файлы дистрибутива: `dist-lms/lyrion-yandex-bridge-v1.5.zip` (плагин) и `dist-lms/repo.xml`
+Готовые файлы дистрибутива: `dist-lms/lyrion-yandex-bridge-v1.6.zip` (плагин) и `dist-lms/repo.xml`
 (дескриптор репозитория с актуальным SHA1).
 
 Одноразовая публикация на GitHub (5 минут):
 1. Создайте ПУБЛИЧНЫЙ репозиторий `https://github.com/new` → имя `lyrion-yandex-bridge` (owner: knovash).
 2. Загрузите в ветку main файл `dist-lms/repo.xml` (в корень репозитория, имя repo.xml).
-3. Создайте Release: Releases → Draft a new release → tag `v1.5` → прикрепите файл
-   `dist-lms/lyrion-yandex-bridge-v1.5.zip` → Publish. Имя asset не меняйте
+3. Создайте Release: Releases → Draft a new release → tag `v1.6` → прикрепите файл
+   `dist-lms/lyrion-yandex-bridge-v1.6.zip` → Publish. Имя asset не меняйте
    (URL из repo.xml указывает на него).
 4. Готово. Пользователям дать ссылку для LMS (Настройки → Плагины → Дополнительные репозитории):
    `https://raw.githubusercontent.com/knovash/lyrion-yandex-bridge/main/repo.xml`
@@ -70,7 +70,7 @@ http://<ip-lms>:8888/ — авторизация в Яндексе/Spotify, на
 
 Выпуск новой версии:
 1. Поднять `<version>` в `lms-plugin/LyrionYandexBridge/install.xml`, в pom.xml
-   и jarName в `LyrionYandexBridge/ClientProcess.pm`.
+   и jarName в `LyrionYandexBridge/ClientProcess.pm` (assembly берёт имя jar из pom автоматически).
 2. `mvn package` → обновить `dist-lms/lyrion-yandex-bridge-v<версия>.zip`, пересчитать `sha1sum`,
    поправить `version`, `sha` и `url` в `dist-lms/repo.xml` → залить repo.xml в репозиторий,
    zip — в новый Release. LMS у установивших пользователей сам предложит обновление.
