@@ -23,7 +23,8 @@
 - `Tasker.forTaskerPlaylist`: для запроса из Tasker сделать запрос `playlist_cur_index`.
 - `LmsPlayers`: `toggleWake`, `toggleVoice` — объявлены, ещё не используются.
 - `Player`: добавить проверку содержимого плейлиста при сохранении/загрузке.
-- `ActionsAsync.channelPlayByName` (закомментирован): плохо ищет по-английски (транслит).
+- **«включи избранное <название>»** — РЕАЛИЗОВАНО в ветке dev (FavoritesSearch + Utils.translit),
+  в релизе main ещё нет; после выката убрать TODO из README.
 - `ProviderQuery`: `updatePlayers()` нужен только для списка подключенных плееров — оптимизировать.
 - `Device.external_id` — удалить (не используется).
 - `ProviderAction`: несколько `parallelStream()` с пометкой TODO — проверить необходимость.

@@ -4,10 +4,12 @@ import lombok.extern.log4j.Log4j2;
 import knovash.saclient.lms.Player;
 import knovash.saclient.yandex.SmartHome;
 import knovash.saclient.Tasker;
+import knovash.saclient.utils.levenstein.FavoritesSearch;
 import knovash.saclient.yandex.provider.response.Device;
 import knovash.saclient.spotify.Spotify;
 import knovash.saclient.yandex.Yandex;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
 
@@ -375,27 +377,30 @@ public class ActionsAsync {
     }
 
 
-    // TODO плохо ищет на англиском, он получает текст на руском и делает транслит
-    //public static String channelPlayByName(String command, Player player) {
-    //    log.info("CHANNEL PLAY BY NAME");
-    //    String target = command.replaceAll(".*(канал|избранное)\\S*\\s", "")
-    //            .replaceAll("\"", "").replaceAll("\\s\\s", " ");
-    //    log.info("TARGET LMS CHANNEL: " + target);
-    //    ActionsSync.answer = "Не успела выполнить команду";
-    //    CompletableFuture.runAsync(() -> {
-    //        List<String> playlist = player.favorites();
-    //        playlist.forEach(log::info);
-    //        String latin = Utils.convertCyrilicToLatin(target);
-    //        String channel = Levenstein.searchTitleInFavorites(latin, playlist);
-    //        log.info("CHANNEL: " + channel);
-    //        int index = playlist.indexOf(channel) + 1;
-    //        channel = channel.replaceAll(":.*", "");
-    //        player.ifExpiredAndNotPlayingUnsyncWakeSetVolume(null, false).playChannel(String.valueOf(index));
-    //        ActionsSync.answer = "Включаю канал " + index + ", " + channel;
-    //    });
-    //    Utils.sleep(2000);
-    //    return ActionsSync.answer;
-    //}
+    // «включи избранное <название>» / «включи канал <название>» — найти закладку в Избранном
+    // LMS по названию (русский запрос транслитится, названия нормализуются обеими сторонами)
+    // и включить её на плеере. Поиск и ответ — синхронно (один быстрый запрос к LMS),
+    // включение канала — в фоне.
+    public static String channelPlayByName(Player player, String command) {
+        log.info("CHANNEL PLAY BY NAME: {}", command);
+        String target = command
+                .replaceFirst("^(включи|включить)\\s+(избранное|канал)\\S*\\s+", "")
+                .replace("\"", "")
+                .replaceAll("\\s\\s", " ")
+                .trim();
+        log.info("TARGET LMS CHANNEL: {}", target);
+        if (target.isEmpty()) return "скажите название закладки";
+        List<String> favorites = player.favorites();
+        String channel = FavoritesSearch.find(target, favorites);
+        log.info("CHANNEL FOUND: {}", channel);
+        if (channel == null) return "не нашла такую закладку, скажите точнее";
+        int index = favorites.indexOf(channel) + 1; // нумерация каналов LMS с 1
+        String name = channel.replaceAll(":.*", "");
+        CompletableFuture.runAsync(() -> player
+                .ifExpiredAndNotPlayingUnsyncWakeSetVolume(null, false)
+                .playChannel(String.valueOf(index)));
+        return "Включаю " + name;
+    }
 
 //     PRIVATE  ------------
 

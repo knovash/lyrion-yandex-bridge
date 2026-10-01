@@ -166,6 +166,45 @@ public class Utils {
         return result;
     }
 
+    // Транслитерация ДЛЯ НЕЧЁТКОГО ПОИСКА (русская речь <-> английские названия в LMS).
+    // Подобрана под fuzzy-матчинг (дж->j, х->h, я->a), НЕ для красивого вывода.
+    // Старый convertCyrilicToLatin не трогаем — он используется в поиске плееров.
+    private static final String TRANSLIT_FROM = "абвгдежзийклмнопрстуфхцчшщэюяыё";
+    private static final String[] TRANSLIT_TO = {
+            "a", "b", "v", "g", "d", "e", "j", "z", "i", "y", "k", "l", "m", "n", "o", "p",
+            "r", "s", "t", "u", "f", "h", "c", "ch", "sh", "sh", "e", "u", "a", "y", "e"};
+
+    public static String translit(String text) {
+        if (text == null) return "";
+        String src = text.toLowerCase()
+                .replace("дж", "j")
+                .replace("кс", "x");
+        StringBuilder sb = new StringBuilder(src.length());
+        for (char c : src.toCharArray()) {
+            int i = TRANSLIT_FROM.indexOf(c);
+            if (i >= 0) {
+                sb.append(TRANSLIT_TO[i]);
+                continue;
+            }
+            if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == ' ') {
+                sb.append(c);
+                continue;
+            }
+            if ("-_.:,/()&+«»\"'".indexOf(c) >= 0) {
+                sb.append(' '); // разделители превращаем в пробел: "Hip-Hop" -> "hip hop"
+                continue;
+            }
+            // ь, ъ и прочее — выбрасываем
+        }
+        return sb.toString();
+    }
+
+    /** Нормализация для поиска: lower -> транслит -> пробелы схлопнуты. */
+    public static String normalizeForSearch(String text) {
+        if (text == null) return "";
+        return translit(text).replaceAll("\\s+", " ").trim();
+    }
+
 
     public static void readRoomsAndAliceIds() {
         log.debug("READ " + config.fileRoomsAndAliceIds);
