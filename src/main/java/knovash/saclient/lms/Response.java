@@ -37,6 +37,9 @@ public class Response {
         public String title;
         public List<Loop_loop> loop_loop;
         public List<SyncgroupsLoop> syncgroups_loop;
+        public List<ArtistsLoop> artists_loop;
+        public List<AlbumsLoop> albums_loop;
+        public List<TitlesLoop> titles_loop;
     }
 
     @Data
@@ -58,5 +61,32 @@ public class Response {
     public static class SyncgroupsLoop{
         public String sync_member_names;
         public String sync_members;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ArtistsLoop {
+        public String id;
+        public String artist;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class AlbumsLoop {
+        public String id;
+        public String album;
+        public String artist;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class TitlesLoop {
+        public String id;
+        public String title;
+        public String artist;
+        public String album;
     }
 }

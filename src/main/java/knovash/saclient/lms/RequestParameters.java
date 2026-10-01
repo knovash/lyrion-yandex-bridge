@@ -58,6 +58,31 @@ public class RequestParameters {
         return RequestToLms.create(player, new String[]{"favorites", "items", "0", "100"});
     }
 
+    // Поиск по медиатеке LMS (локальная коллекция): подстрочный, поэтому вызывается по словам
+    public static RequestToLms searchArtists(String terms) {
+        return RequestToLms.create("", new String[]{"artists", "0", "20", "search:" + terms});
+    }
+
+    public static RequestToLms searchAlbums(String terms) {
+        return RequestToLms.create("", new String[]{"albums", "0", "20", "search:" + terms});
+    }
+
+    public static RequestToLms searchTitles(String terms) {
+        return RequestToLms.create("", new String[]{"titles", "0", "20", "search:" + terms});
+    }
+
+    /**
+     * type: artist | album | track. В современных LMS работают db:-ссылки
+     * (проверено на LMS 26.x: "playlist play db:album.id=X" и т.п.);
+     * вариант "artist_id:X" молча не играет.
+     */
+    public static RequestToLms playLibraryItem(String player, String type, String id) {
+        String db = "track".equals(type) ? "db:track.id=" + id
+                : "album".equals(type) ? "db:album.id=" + id
+                : "db:contributor.id=" + id;
+        return RequestToLms.create(player, new String[]{"playlist", "play", db});
+    }
+
     public static RequestToLms favoritesAdd(String player, String url, String title) {
         return RequestToLms.create(player, new String[]{"favorites", "add", "url:" + url, "title:" + title});
     }
