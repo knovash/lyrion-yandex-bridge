@@ -30,6 +30,10 @@ mvn package        # желательно после rm -rf target (см. «Гр
 - В git НЕ попадают: `config.json` (там живые токены!), `data/`, `target/`, `dist-lms/*.zip`,
   `.idea/`, `*.iml`, `dependency-reduced-pom.xml` — всё в `.gitignore`.
 - Перед публикацией чего-либо нового проверять `git grep -I -E 'y0__|BQA…|AQAr…|ins_…'` на токены.
+- Ветки: `master` → GitHub `main` = РЕЛИЗНАЯ (repo.xml для пользователей живёт на main).
+  `dev` = экспериментальная: пушится как `git push origin dev`, в релизы НЕ идёт,
+  repo.xml/Releases на main не трогает; себе ставим вручную zip-ом из dev-сборки.
+- Слив dev → master → публикация релиза ТОЛЬКО по чек-листу (Release раньше пуша repo.xml).
 
 ## Справочные проекты (готовые решения — искать там!)
 - `/home/konstantin/IdeaProjects/squeeze-alice` — предшественник клиента (lms, provider, voice, spotify, Tasker, auth, web).
