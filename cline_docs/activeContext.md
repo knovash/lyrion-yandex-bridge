@@ -24,6 +24,12 @@
   score<=1 и длина >=5; короткий запрос (<=5 симв.) — допуск score<=1 (иначе «зюзя»~SZA).
 - **РЕШЕНИЕ: все три фичи живут только в dev, в релиз не идут**, пока владелец не решит иначе.
   При выпуске: merge dev→master + чек-лист релиза + убрать TODO из README.
+- **sa_server: мультипользовательская маршрутизация готова (локально, ждёт деплой на Zeabur)**:
+  `YandexUserResolver` (access_token → login.yandex.ru/info → числовой uid, кэш 6ч) +
+  `YandexController`: приоритет `?uid=` → токен запроса (заголовок Authorization или
+  session.user.access_token) → свой клиент; fallback anyUid только при одном клиенте.
+  Сборка: `JAVA_HOME=~/.jdks/corretto-18.0.2 mvn package` → target/cloud-server-1.0.jar
+  (app.jar — старая ручная копия, игнорировать). Деплой на Zeabur — вручную владельцем.
 - Тестовый стенд: LMS 192.168.1.131 (root/ssh, пароль у владельца), плагин в
   cache/InstalledPlugins, НЕТ unzip — jar обновлять scp-ом прямо в Bin/ + рестарт LMS
   (поднятие ~60-90с, проверка http://localhost:8888/ с бокса). E2E: POST /alice/ с
