@@ -89,6 +89,8 @@ public class HandleVoiceAlice {
                 return ActionsAsync.whatsVolume(player);
             if (command.contains("где пульт"))
                 return "пульт подключен к " + lmsPlayers.btPlayerName;
+            if (command.startsWith("найди файл") || command.startsWith("найти файл"))
+                return ActionsAsync.filePlayByName(player, command);
             if (command.startsWith("найди") || command.startsWith("найти"))
                 return ActionsAsync.libraryPlayByName(player, command);
             if (command.startsWith("включи избранное") || command.startsWith("включи канал"))

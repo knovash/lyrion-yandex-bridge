@@ -71,6 +71,20 @@ public class RequestParameters {
         return RequestToLms.create("", new String[]{"titles", "0", "20", "search:" + terms});
     }
 
+    // Вся медиатека целиком (для «найди файл»: нечёткий матчинг на стороне клиента,
+    // LMS-подстрочный поиск не находит транслит «смэк»~«Smack»)
+    public static RequestToLms libraryAllArtists() {
+        return RequestToLms.create("", new String[]{"artists", "0", "99999"});
+    }
+
+    public static RequestToLms libraryAllAlbums() {
+        return RequestToLms.create("", new String[]{"albums", "0", "99999"});
+    }
+
+    public static RequestToLms libraryAllTitles() {
+        return RequestToLms.create("", new String[]{"titles", "0", "99999"});
+    }
+
     /**
      * type: artist | album | track. В современных LMS работают db:-ссылки
      * (проверено на LMS 26.x: "playlist play db:album.id=X" и т.п.);

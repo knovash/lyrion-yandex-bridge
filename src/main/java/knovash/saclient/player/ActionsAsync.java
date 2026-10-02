@@ -422,7 +422,8 @@ public class ActionsAsync {
         if (target.isEmpty()) return "скажите что найти";
         String terms = Utils.normalizeForSearch(target); // транслит + нормализация
         log.info("TERMS (translit): {}", terms);
-        List<LibrarySearch.Candidate> candidates = searchLibraryCandidates(player, terms);
+        List<LibrarySearch.Candidate> candidates =
+                searchLibraryCandidates(player, searchWords(target, terms), true);
         LibrarySearch.Candidate best = LibrarySearch.findBest(terms, candidates);
         log.info("LIBRARY FOUND: {}", best);
         if (best == null) return "в медиатеке не нашла, скажите точнее";
@@ -432,7 +433,8 @@ public class ActionsAsync {
         } else if ("album".equals(best.type)) {
             what = "альбом " + best.name + (best.info == null ? "" : " (" + best.info + ")");
         } else {
-            what = "трек " + best.name + (best.info == null ? "" : " — " + best.info);
+            what = "трек " + best.name
+                    + (best.info == null || best.info.isEmpty() || "No Artist".equals(best.info) ? "" : " — " + best.info);
         }
         CompletableFuture.runAsync(() -> player
                 .ifExpiredAndNotPlayingUnsyncWakeSetVolume(null, false)
@@ -440,15 +442,88 @@ public class ActionsAsync {
         return "Включаю " + what;
     }
 
-    /** Кандидаты из медиатеки: по каждому слову (>=3 символов) — артисты/альбомы/треки, без дублей. */
-    private static List<LibrarySearch.Candidate> searchLibraryCandidates(Player player, String terms) {
+    // «найди файл <название>» — поиск ТОЛЬКО в локальных файлах LMS (Music Folder):
+    // альбом -> включить альбом; артист -> все файлы артиста; иначе файл/трек.
+    // Берём ВСЮ медиатеку (артисты+альбомы+треки) и матчим нечётко на клиенте:
+    // подстрочный поиск LMS не находит транслит («смэк»~«Smack», «продиджи»~«Prodigy»).
+    public static String filePlayByName(Player player, String command) {
+        log.info("FILE PLAY BY NAME: {}", command);
+        String target = command.replaceFirst("^(найди|найти)\\s+файл\\S*\\s+", "")
+                .replace("\"", "")
+                .replaceAll("\\s\\s", " ")
+                .trim();
+        log.info("TARGET FILE: {}", target);
+        if (target.isEmpty()) return "скажите название файла";
+        String terms = Utils.normalizeForSearch(target);
+        log.info("TERMS (translit): {}", terms);
+        List<LibrarySearch.Candidate> candidates = allLibraryCandidates(player);
+        LibrarySearch.Candidate best = LibrarySearch.findBest(terms, candidates, true); // album > artist > track
+        log.info("FILE FOUND: {}", best);
+        if (best == null) return "в файлах не нашла, скажите точнее";
+        String what;
+        if ("artist".equals(best.type)) {
+            what = "всё от " + best.name;
+        } else if ("album".equals(best.type)) {
+            what = "альбом " + best.name + (best.info == null || best.info.isEmpty() ? "" : " (" + best.info + ")");
+        } else {
+            String by = (best.info == null || best.info.isEmpty() || "No Artist".equals(best.info)) ? "" : " — " + best.info;
+            what = "файл " + best.name + by;
+        }
+        CompletableFuture.runAsync(() -> player
+                .ifExpiredAndNotPlayingUnsyncWakeSetVolume(null, false)
+                .playLibraryItem(best.type, best.id));
+        return "Включаю " + what;
+    }
+
+    /** Все кандидаты медиатеки: артисты + альбомы + треки (одним запросом на категорию). */
+    private static List<LibrarySearch.Candidate> allLibraryCandidates(Player player) {
+        List<LibrarySearch.Candidate> list = new ArrayList<>();
+        for (Response.ArtistsLoop a : player.libraryAllArtists()) {
+            if (a == null || a.artist == null) continue;
+            list.add(new LibrarySearch.Candidate("artist", a.id, a.artist, null, a.artist));
+        }
+        for (Response.AlbumsLoop a : player.libraryAllAlbums()) {
+            if (a == null || a.album == null) continue;
+            String matchName = (a.artist == null || a.artist.isEmpty()) ? a.album : a.artist + " " + a.album;
+            list.add(new LibrarySearch.Candidate("album", a.id, a.album, a.artist, matchName));
+        }
+        for (Response.TitlesLoop t : player.libraryAllTitles()) {
+            if (t == null || t.title == null) continue;
+            String matchName = (t.artist == null || t.artist.isEmpty()) ? t.title : t.artist + " " + t.title;
+            list.add(new LibrarySearch.Candidate("track", t.id, t.title, t.artist, matchName));
+        }
+        log.info("ALL LIBRARY CANDIDATES: {}", list.size());
+        return list;
+    }
+
+    /**
+     * Слова для поиска LMS в ДВУХ формах: исходная (кириллица — в БД имена файлов
+     * могут быть кириллицей) и транслит (латинские имена), >=3 символов, без дублей.
+     */
+    private static List<String> searchWords(String original, String translit) {
+        List<String> words = new ArrayList<>();
+        for (String w : original.toLowerCase().split("[^\\p{L}\\p{N}]+")) {
+            if (w.length() >= 3 && !words.contains(w)) words.add(w);
+        }
+        for (String w : translit.split(" ")) {
+            if (w.length() >= 3 && !words.contains(w)) words.add(w);
+        }
+        log.info("SEARCH WORDS (original + translit): {}", words);
+        return words;
+    }
+
+    /** Кандидаты из медиатеки: по каждому слову — альбомы/треки (+артисты), без дублей. */
+    private static List<LibrarySearch.Candidate> searchLibraryCandidates(Player player,
+                                                                         List<String> words,
+                                                                         boolean includeArtists) {
         Map<String, LibrarySearch.Candidate> unique = new LinkedHashMap<>();
-        for (String word : terms.split(" ")) {
-            if (word.length() < 3) continue;
-            for (Response.ArtistsLoop a : player.librarySearchArtists(word)) {
-                if (a == null || a.artist == null) continue;
-                unique.putIfAbsent("artist:" + a.id,
-                        new LibrarySearch.Candidate("artist", a.id, a.artist, null, a.artist));
+        for (String word : words) {
+            if (includeArtists) {
+                for (Response.ArtistsLoop a : player.librarySearchArtists(word)) {
+                    if (a == null || a.artist == null) continue;
+                    unique.putIfAbsent("artist:" + a.id,
+                            new LibrarySearch.Candidate("artist", a.id, a.artist, null, a.artist));
+                }
             }
             for (Response.AlbumsLoop a : player.librarySearchAlbums(word)) {
                 if (a == null || a.album == null) continue;

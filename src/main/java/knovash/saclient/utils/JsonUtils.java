@@ -37,23 +37,22 @@ public class JsonUtils {
     }
 
     public static <T> T jsonToPojo(String json, Class<T> clazz) {
-//        log.info("JSON: " + json);
-        if (json.equals("") || json.equals(null)) return null;
-        json = json.replace("\\", "");
-        //        catch (JsonMappingException e){}
+        if (json == null || json.equals("")) return null;
         try {
             return objectMapper.readValue(json, clazz);
-        } catch (MismatchedInputException e) {
-            log.info("ERROR " + e);
-            return null;
-        } catch (JsonMappingException e) {
-            log.info("ERROR " + e);
-            return null;
         } catch (JsonProcessingException e) {
-            log.info("ERROR " + e);
-            return null;
+            // fallback для исторически кривых ответов (лишние backslash):
+            // пробуем починить заменой и распарсить повторно.
+            // ВАЖНО: не делать replace ДО основного парсинга — валидный JSON
+            // с эскейпами (например названия треков с кавычкой "7\" Version")
+            // иначе ломается и весь список теряется.
+            try {
+                return objectMapper.readValue(json.replace("\\", ""), clazz);
+            } catch (JsonProcessingException e2) {
+                log.info("ERROR " + e2);
+                return null;
+            }
         }
-//        return null;
     }
 
     public static <T> String listToJson(List<T> list) {

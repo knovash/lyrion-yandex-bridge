@@ -81,8 +81,9 @@ public class FavoritesSearch {
     }
 
     private static int wordThreshold(String word) {
-        // короткие слова (<=2) должны совпадать точно, иначе ложные срабатывания;
+        // 2-символьные слова — допуск 1 («ап»~up, «май»~my); в составе последовательности
+        // слов это безопасно (матчатся ВСЕ слова по порядку);
         // 3+ буквы — допуск max(2, len/2): «дип»≈deep, «бейс»≈bass
-        return word.length() <= 2 ? 0 : Math.max(2, word.length() / 2);
+        return word.length() <= 2 ? 1 : Math.max(2, word.length() / 2);
     }
 }

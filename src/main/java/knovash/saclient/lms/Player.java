@@ -597,6 +597,28 @@ public class Player {
         return new ArrayList<>();
     }
 
+    // Вся медиатека целиком (артисты/альбомы/треки) — для клиентского нечёткого матчинга
+    public List<Response.ArtistsLoop> libraryAllArtists() {
+        Response response = Requests.postToLmsForResponse(RequestParameters.libraryAllArtists().toString());
+        if (response != null && response.result != null && response.result.artists_loop != null)
+            return response.result.artists_loop;
+        return new ArrayList<>();
+    }
+
+    public List<Response.AlbumsLoop> libraryAllAlbums() {
+        Response response = Requests.postToLmsForResponse(RequestParameters.libraryAllAlbums().toString());
+        if (response != null && response.result != null && response.result.albums_loop != null)
+            return response.result.albums_loop;
+        return new ArrayList<>();
+    }
+
+    public List<Response.TitlesLoop> libraryAllTitles() {
+        Response response = Requests.postToLmsForResponse(RequestParameters.libraryAllTitles().toString());
+        if (response != null && response.result != null && response.result.titles_loop != null)
+            return response.result.titles_loop;
+        return new ArrayList<>();
+    }
+
     /** Включить на плеере элемент медиатеки: type = artist | album | track. */
     public Player playLibraryItem(String type, String id) {
         log.info("PLAYER: " + this.name + " PLAY LIBRARY " + type + " id=" + id);
