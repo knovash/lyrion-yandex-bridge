@@ -20,6 +20,7 @@
 | v1.4 | 30.09 | Полировка InfoClient/Main — сводка «Client status» |
 | v1.5 | 30.09 | CloudClient: облачный транспорт WebSocket (вместо прямых вызовов) |
 | v1.6 | 01.10 | Фикс формата ответа навыка (`response` вместо `payload`); имя jar в assembly — из pom |
+| v1.7 | 03.10 | «включи избранное <название>» (fuzzy+транслит), «найди <название>» (медиатека), «найди файл <название>» (альбом→артист→файл), фикс JsonUtils (backslash), пороги матчинга |
 
 ## Открытые TODO (из кода)
 - `Tasker.forTaskerPlaylist`: для запроса из Tasker сделать запрос `playlist_cur_index`.

@@ -1,13 +1,14 @@
 # Active Context — что сейчас
 
-## Статус: v1.6 опубликован, всё зелёное (проверено 01.10)
+## Статус: v1.7 — релиз в процессе (03.10)
 
-- **v1.6** в GitHub Release (sha zip совпадает с repo.xml), код запушен в `main`
-  (коммиты: `fafbf98` → `820f325` → `08c5df8`).
-- Основной фикс v1.6: **формат ответа навыка «Раз Два»** — раньше текст уходил в `payload`,
-  Яндекс говорил «навык не отвечает»; теперь `response/text/end_session/version` (см. systemPatterns.md).
-- `repo.xml` живёт в корне проекта = корень репозитория; `dist-lms/` — staging zip-ов.
-- Remote: SSH `git@github.com:knovash/lyrion-yandex-bridge.git`, ветка master → main.
+- **v1.7 слита в master** (все фичи dev: «включи избранное…», «найди…», «найди файл…»,
+  фикс JsonUtils, пороги матчинга). Сборка чистая, тесты 15+21 зелёные, dist-lms/repo.xml готовы.
+  Порядок публикации: владелец создаёт GitHub Release v1.7 с zip → потом push master→main.
+- **sa_server задеплоен на Zeabur (владелец, 03.10)** и опубликован:
+  https://github.com/knovash/lyrion-yandex-bridge-server (секреты вычищены, env-only).
+  Мультипользовательская маршрутизация по access_token — в проде.
+- README обновлён под v1.7 (новые команды навыка, TODO поизбранному убран).
 
 ## Что в работе
 - **dev: «найди файл <название>» — ГОТОВО, e2e на живом LMS (01.10)**: приоритет альбом → артист
