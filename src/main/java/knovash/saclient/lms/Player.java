@@ -575,28 +575,6 @@ public class Player {
         return new ArrayList<>();
     }
 
-    // Поиск по медиатеке LMS (локальная коллекция файлов): артисты/альбомы/треки по подстроке
-    public List<Response.ArtistsLoop> librarySearchArtists(String terms) {
-        Response response = Requests.postToLmsForResponse(RequestParameters.searchArtists(terms).toString());
-        if (response != null && response.result != null && response.result.artists_loop != null)
-            return response.result.artists_loop;
-        return new ArrayList<>();
-    }
-
-    public List<Response.AlbumsLoop> librarySearchAlbums(String terms) {
-        Response response = Requests.postToLmsForResponse(RequestParameters.searchAlbums(terms).toString());
-        if (response != null && response.result != null && response.result.albums_loop != null)
-            return response.result.albums_loop;
-        return new ArrayList<>();
-    }
-
-    public List<Response.TitlesLoop> librarySearchTitles(String terms) {
-        Response response = Requests.postToLmsForResponse(RequestParameters.searchTitles(terms).toString());
-        if (response != null && response.result != null && response.result.titles_loop != null)
-            return response.result.titles_loop;
-        return new ArrayList<>();
-    }
-
     // Вся медиатека целиком (артисты/альбомы/треки) — для клиентского нечёткого матчинга
     public List<Response.ArtistsLoop> libraryAllArtists() {
         Response response = Requests.postToLmsForResponse(RequestParameters.libraryAllArtists().toString());

@@ -58,19 +58,6 @@ public class RequestParameters {
         return RequestToLms.create(player, new String[]{"favorites", "items", "0", "100"});
     }
 
-    // Поиск по медиатеке LMS (локальная коллекция): подстрочный, поэтому вызывается по словам
-    public static RequestToLms searchArtists(String terms) {
-        return RequestToLms.create("", new String[]{"artists", "0", "20", "search:" + terms});
-    }
-
-    public static RequestToLms searchAlbums(String terms) {
-        return RequestToLms.create("", new String[]{"albums", "0", "20", "search:" + terms});
-    }
-
-    public static RequestToLms searchTitles(String terms) {
-        return RequestToLms.create("", new String[]{"titles", "0", "20", "search:" + terms});
-    }
-
     // Вся медиатека целиком (для «найди файл»: нечёткий матчинг на стороне клиента,
     // LMS-подстрочный поиск не находит транслит «смэк»~«Smack»)
     public static RequestToLms libraryAllArtists() {

@@ -24,13 +24,8 @@ public class LibrarySearch {
         public final String matchName; // имя для сопоставления (обычно "артист название")
     }
 
-    public static Candidate findBest(String target, List<Candidate> candidates) {
-        return findBest(target, candidates, false);
-    }
-
     /**
-     * albumsFirst: приоритет album > artist > track (для «найди файл»),
-     * иначе artist > album > track (для «найди»).
+     * albumsFirst: приоритет album > artist > track (для «найди файл»).
      * Если полного совпадения нет — fallback: отбрасываем самые короткие слова
      * запроса (запрос может быть «артист + альбом»), пока не найдётся совпадение.
      */
