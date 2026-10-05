@@ -406,13 +406,13 @@ public class ActionsAsync {
         return "Включаю " + name;
     }
 
-    // «найди файл <название>» — поиск ТОЛЬКО в локальных файлах LMS (Music Folder):
+    // «включи файл <название>» — поиск ТОЛЬКО в локальных файлах LMS (Music Folder):
     // альбом -> включить альбом; артист -> все файлы артиста; иначе файл/трек.
     // Берём ВСЮ медиатеку (артисты+альбомы+треки) и матчим нечётко на клиенте:
     // подстрочный поиск LMS не находит транслит («смэк»~«Smack», «продиджи»~«Prodigy»).
     public static String filePlayByName(Player player, String command) {
         log.info("FILE PLAY BY NAME: {}", command);
-        String target = command.replaceFirst("^(найди|найти)\\s+файл\\S*\\s+", "")
+        String target = command.replaceFirst("^(включи|включить)\\s+файл\\S*\\s+", "")
                 .replace("\"", "")
                 .replaceAll("\\s\\s", " ")
                 .trim();
