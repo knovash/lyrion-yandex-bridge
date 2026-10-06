@@ -46,13 +46,21 @@ sub _clientStatus {
 	$st{'lms'} = ($d->{'lms'}->{'online'} ? $on : $off) . ' '
 		. ($d->{'lms'}->{'ip'} || '') . ':' . ($d->{'lms'}->{'port'} || '');
 
-	# селекты выбора комнаты для каждого плеера (только комната, без остальных настроек)
+	# селекты выбора комнаты для каждого плеера (только комната, без остальных настроек).
+	# inyandex: устройство этой комнаты зарегистрировано в Яндексе (тот же список,
+	# что и «Music devices in Yandex»)
+	my @yandexmusic = @{$d->{'musicYandex'} || []};
 	my @roomsel;
 	for my $p (@{$d->{'players'} || []}) {
 		my $room = defined $p->{'room'} ? $p->{'room'} : '';
 		my @rooms = @{$d->{'rooms'} || []};
 		unshift @rooms, $room if $room ne '' && !grep { $_ eq $room } @rooms;
-		push @roomsel, { 'name' => $p->{'name'} || '', 'room' => $room, 'options' => \@rooms };
+		push @roomsel, {
+			'name'      => $p->{'name'} || '',
+			'room'      => $room,
+			'options'   => \@rooms,
+			'inyandex'  => ($room ne '' && grep { $_ eq $room } @yandexmusic) ? 1 : 0,
+		};
 	}
 	$st{'roomselects'} = \@roomsel;
 

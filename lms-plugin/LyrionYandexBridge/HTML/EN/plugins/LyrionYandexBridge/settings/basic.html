@@ -33,6 +33,11 @@
 					<option value="[% r %]"[% IF r == rs.room %] selected[% END %]>[% r %]</option>
 				[% END %]
 			</select>
+			[% IF rs.inyandex %]
+				&nbsp;<span style="color:green">in Yandex</span>
+			[% ELSIF rs.room != '' %]
+				&nbsp;<span style="color:red">not in Yandex</span>
+			[% END %]
 			</td></tr>
 		[% END %]
 		</table>
