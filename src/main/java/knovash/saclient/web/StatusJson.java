@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import knovash.saclient.Main;
 import knovash.saclient.SpotifyApi;
-import knovash.saclient.lms.LmsSearchForIp;
 import knovash.saclient.lms.Player;
 import knovash.saclient.yandex.Yandex;
 
@@ -25,11 +24,9 @@ public class StatusJson {
         ObjectNode lms = root.putObject("lms");
         lms.put("ip", Main.config.lmsIp == null ? "" : Main.config.lmsIp);
         lms.put("port", Main.config.lmsPort == null ? "" : Main.config.lmsPort);
-        // кэшированный флаг может ложно быть false (разовый медленный ответ): при false/null
-        // делаем живую проверку (она же обновляет флаг для updatePlayers)
-        boolean lmsOnline = Boolean.TRUE.equals(Main.lmsServerOnline)
-                || LmsSearchForIp.isLmsServer(Main.config.lmsIp, Integer.parseInt(Main.config.lmsPort));
-        lms.put("online", lmsOnline);
+        // только кэшированный флаг: live-проверка здесь делала status.json медленным и
+        // усиливала шторм запросов к однопоточному HTTP LMS; флаг самолечится в updatePlayers
+        lms.put("online", Boolean.TRUE.equals(Main.lmsServerOnline));
 
         // плееры LMS
         ArrayNode players = root.putArray("players");

@@ -17,6 +17,9 @@ use Slim::Utils::Prefs;
 my $prefs = preferences('plugin.lyrionyandexbridge');
 my $log   = logger('plugin.lyrionyandexbridge');
 
+# анти-шторм refresh: вкладка настроек LMS может отправлять форму repeatedly
+my $lastRefreshRequest = 0;
+
 sub name { 'PLUGIN_LYRION_YANDEX_BRIDGE' }
 
 sub page { 'plugins/LyrionYandexBridge/settings/basic.html' }
@@ -32,7 +35,7 @@ sub prefs {
 sub _clientStatus {
 	my $port = $prefs->get('port') || 8888;
 
-	my $ua = LWP::UserAgent->new(timeout => 3);
+	my $ua = LWP::UserAgent->new(timeout => 6);
 	my $resp = eval { $ua->get("http://127.0.0.1:$port/status.json") };
 	return unless $resp && $resp->is_success;
 
@@ -160,11 +163,15 @@ sub handler {
 
 			# попросить клиент перечитать плееров и user/info — тогда блок Client status
 			# (Music devices in Yandex и пр.) на ЭТОЙ же отрисовке будет свежим:
-			# _clientStatus вызывается ниже по ходу обработчика и читает обновлённый /status.json
-			eval {
-				$ua->post("http://127.0.0.1:$port/form", { 'action' => 'statusbar_refresh' });
-				$log->info('client refresh requested after settings save');
-			};
+			# _clientStatus вызывается ниже по ходу обработчика и читает обновлённый /status.json.
+			# Не чаще раза в 10с: HTTP LMS однопоточный, частые refresh-штормы тормозят его.
+			if (time() - $lastRefreshRequest > 10) {
+				$lastRefreshRequest = time();
+				eval {
+					$ua->post("http://127.0.0.1:$port/form", { 'action' => 'statusbar_refresh' });
+					$log->info('client refresh requested after settings save');
+				};
+			}
 		}
 
 		# radio/checkbox отсылаются только в состоянии "вкл"
