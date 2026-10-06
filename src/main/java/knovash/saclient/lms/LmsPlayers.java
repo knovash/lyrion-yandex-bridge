@@ -287,14 +287,28 @@ public class LmsPlayers {
     }
 
     // установка ТОЛЬКО комнаты плеера (для страницы плагина LMS: action=player_room_set,
-    // без delay/volume_max/schedule — их меняет только веб-страница клиента /players)
+    // без delay/volume_max/schedule — их меняет только веб-страница клиента /players).
+    // Пустая комната = снять комнату с плеера (пункт «—» в выпадающем списке плагина).
     public String playerRoomSet(HashMap<String, String> parameters) {
         log.info(line);
         String playerName = parameters.getOrDefault(player_name_value, "null");
         String roomName = parameters.getOrDefault(player_room_value, "null");
-        if (playerName.equals("null") || roomName.equals("null") || roomName.isEmpty()) {
+        if (playerName.equals("null") || roomName == null) {
             log.info("ERROR PARAMETER NULL");
             return "NULL";
+        }
+        Player player = this.playerByName(playerName);
+        if (player == null) {
+            log.info("ERROR PLAYER NOT FOUND: " + playerName);
+            return "NULL";
+        }
+        if (roomName.isEmpty()) {
+            log.info("PLAYER ROOM CLEAR: " + playerName + " (was " + player.room + ")");
+            player.room = null;
+            write();
+            log.info("FINISH PLAYER ROOM CLEAR");
+            log.info(line);
+            return "OK";
         }
         log.info("PLAYER ROOM SET: " + playerName + " -> " + roomName);
         ActionsSync.selectNewPlayerInRoom(playerName, roomName, false);

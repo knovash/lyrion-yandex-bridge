@@ -32,7 +32,9 @@ public class Parser {
     }
 
     private static List<String> splitByEqual(String text) {
-        return List.of(text.split("=(?![^{]*})"));
+        // limit=2: ключ=значение-в-котором-могут-быть-«=»; пустое значение ("a=") тоже сохраняется
+        // (split без лимита выбрасывает пустой хвост → p.get(1) падал на любом пустом параметре)
+        return List.of(text.split("=(?![^{]*})", 2));
     }
 
 }

@@ -147,7 +147,9 @@ sub handler {
 				# матчить надо ВНУТРИ цикла: $1 из блока grep снаружи не живёт (динамический скоуп)
 				next unless $k =~ /^lybroom_(.+)$/;
 				my ($player, $room) = ($1, $paramRef->{$k} // '');
-				next if !defined $room || $room eq '' || ($curroom{$player} // "\x00") eq $room;
+				# пустое значение = снять комнату с плеера (пункт «—» в селекте) — отправляем и его;
+				# пропускаем только если значение не изменилось
+				next if !defined $room || ($curroom{$player} // "\x00") eq $room;
 				my $r = eval { $ua->post("http://127.0.0.1:$port/form", {
 					'action'                => 'player_room_set',
 					# JSON::XS отдаёт Unicode-строки: LWP теряет wide-char значения при
