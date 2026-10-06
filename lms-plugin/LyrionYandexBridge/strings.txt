@@ -1,10 +1,10 @@
 PLUGIN_LYRION_YANDEX_BRIDGE
-	EN	Lyrion Yandex Bridge (Yandex Smart Home)
-	RU	Lyrion Yandex Bridge (Умный дом Яндекс)
+	EN	Lyrion Yandex Smart Home Bridge
+	RU	Lyrion Yandex Smart Home Bridge
 
 PLUGIN_LYRION_YANDEX_BRIDGE_DESC
-	EN	Run the Lyrion Yandex Bridge: Yandex Smart Home devices for LMS players (web setup on port 8888)
-	RU	Запускает Lyrion Yandex Bridge: устройства «музыка» в УДЯ для плееров LMS (веб-настройки на порту 8888)
+	EN	Integrate LMS players into Yandex Smart Home
+	RU	Интеграция плееров в умный дом
 
 PLUGIN_LYRION_YANDEX_BRIDGE_STATUS
 	EN	Client status
