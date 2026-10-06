@@ -17,7 +17,12 @@
   сканирует/не подменяет, НО проверку isLmsServer делает обязательно (18c4358): она
   выставляет lmsServerOnline — без неё updatePlayers NPE (Boolean null) и одноразовый
   60s-ретрай не спасал (клиент навсегда offline после старта при неготовом LMS).
-  LOG теперь: FORCED BY ARGS (127.0.0.1) - OK / NOT READY YET. На боксе вернул
+  LOG теперь: FORCED BY ARGS (127.0.0.1) - OK / NOT READY YET.
+  + b0389cc: флаг lmsServerOnline «протухал» от разового таймаута HEAD-проверки → updatePlayers
+  вечно выходил по LMS OFF LINE (плагин показывал disconnect при живом LMS). Теперь при
+  !=true updatePlayers сам перепроверяет isLmsServer (шедулер дёргает периодически →
+  самолечение); Boolean.TRUE.equals заодно закрыл NPE на null.
+ На боксе вернул
   lmsIp=127.0.0.1 (при ОСТАНОВЛЕННОМ клиенте). Также всплыл известный NPE lmsServerOnline
   при раннем старте — лечится штатным 60s-ретраем (подтверждено: players подхватились).
 - **Music devices in Yandex не обновлялся по Apply — ГРАБЛИ+фикс (06.10, 87c52fd)**:
