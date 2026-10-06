@@ -70,7 +70,14 @@ public class LmsPlayers {
 
     public void updatePlayers() {
         log.info(start);
-        if (!lmsServerOnline) {
+        if (!Boolean.TRUE.equals(lmsServerOnline)) {
+            // флаг мог протухнуть (разовый таймаут HEAD-проверки при старте/refresh):
+            // перепроверяем, а не сдаёмся — иначе все последующие updatePlayers вечно
+            // выходили бы по «LMS OFF LINE», хотя сервер давно поднялся
+            log.info("LMS OFFLINE FLAG - RECHECK " + config.lmsIp + ":" + config.lmsPort);
+            lmsServerOnline = isLmsServer(config.lmsIp, Integer.parseInt(config.lmsPort));
+        }
+        if (!Boolean.TRUE.equals(lmsServerOnline)) {
             log.info("LMS OFF LINE");
             return;
         }
