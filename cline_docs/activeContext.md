@@ -20,7 +20,8 @@
   Cloud — только connected/no connection (URL и дубль Connected убраны, кнопка Подключиться
   осталась при отключении); LMS — состояние ПЕРЕД адресом; строка Yandex rooms убрана;
   Music devices — двумя отдельными строками 'Music devices in plugin'/'Music devices in Yandex'; Spotify — connected + имя пользователя из
-  api /v1/me (StatusJson: spotify.user, кэш 10 мин, fallback id). /status.json поле
+  api /v1/me (StatusJson: spotify.user, кэш 10 мин, fallback id); при not authorized — кнопка
+  'Login to Spotify' → /auth_spotify клиента (strings: LOGINSPOTIFY RU/EN). /status.json поле
   minutesLeft оставлено. Проверка рендера: /settings/plugins/LyrionYandexBridge/settings/basic.html.
 - **Шум при пробуждении плееров — ВОССТАНОВЛЕНО 05.10**: при миграции squeeze-alice(systemd,
   /opt/squeeze-alice-1.0) → плагин потерялся config.silence (был пустой → PLAY SILENCE играл '').
