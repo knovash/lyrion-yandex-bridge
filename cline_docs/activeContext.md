@@ -111,8 +111,10 @@
   навыка, devices, tasker-настройки. Кнопка с confirm; на боксе НЕ нажимали.
   Cloud при отключении показывает 'not authorized' + кнопка 'Login to Yandex' (единообразно со
   Spotify 'not authorized' + 'Login to Spotify').
-- **Страница плагина LMS, блок Client status (06.10, деплой на .131, проверено рендером)**:
-  Cloud — только connected/no connection (URL и дубль Connected убраны, кнопка Подключиться
+- **Страница плагина LMS, блок Client status (06.10)**: СТРОКА LMS УДАЛЕНА (65d8f5d) — LMS
+  всегда localhost вместе с клиентом, статус только путал переходными 'disconnected'.
+  Остальное:
+  Cloud — только connected/not authorized (URL и дубль Connected убраны, кнопка Login
   осталась при отключении); LMS — состояние ПЕРЕД адресом; строка Yandex rooms убрана;
   Music devices — двумя отдельными строками 'Music devices in plugin'/'Music devices in Yandex'; Spotify — connected + имя пользователя из
   api /v1/me (StatusJson: spotify.user, кэш 10 мин, fallback id); при not authorized — кнопка
