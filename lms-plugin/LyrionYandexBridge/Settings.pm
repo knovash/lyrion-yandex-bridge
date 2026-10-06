@@ -105,7 +105,9 @@ sub handler {
 		Plugins::LyrionYandexBridge::ClientProcess->stop;
 		my $dir = Plugins::LyrionYandexBridge::ClientProcess::dataDir();
 		my $suffix = '.bak-reset-' . time();
-		for my $f (glob(catfile($dir, '*'))) {
+		# состояние клиента лежит в двух местах: config.json в корне dataDir и
+		# файлы *.json/*.properties в подкаталоге data/ (комнаты плееров, привязки, devices)
+		for my $f (glob(catfile($dir, '*')), glob(catfile($dir, 'data', '*'))) {
 			my ($name) = $f =~ m{([^/]+)$};
 			next if !-f $f;
 			next if $name eq 'log.txt' || $name eq 'client-stdout.log' || $name eq 'client.pid';
