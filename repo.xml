@@ -25,6 +25,7 @@
             maxTarget="*"
             sha="312c520745047cb025737aa630447cb528f5e9ac"
             url="https://github.com/knovash/lyrion-yandex-bridge/releases/download/v1.8.1/lyrion-yandex-bridge-v1.8.1.zip"
+            icon="https://raw.githubusercontent.com/knovash/lyrion-yandex-bridge/main/lms-plugin/LyrionYandexBridge/HTML/EN/plugins/LyrionYandexBridge/html/images/icon.png"
             creator="Konstantin"
             email="novash.ki@gmail.com"
         >
