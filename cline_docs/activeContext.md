@@ -12,7 +12,8 @@
 
 ## Что в работе
 - **Player rooms: бейдж присутствия устройства в Яндексе (06.10, a1a53f2, проверено)**:
-  рядом с селектом — зелёный 'in Yandex' / красный 'not in Yandex' (если комната назначена,
+  рядом с селектом — зелёный 'in Yandex' / красный 'not connected - update devices in
+  Yandex Smart Home' (если комната назначена,
   но её нет в musicYandex); без комнаты — ничего. Обновляется при открытии страницы/Apply.
 - **LMS disconnected 192.168.1.111 — ГРАБЛИ+фикс (06.10, 4d7c988)**: при старте клиента во
   время рестарта LMS автопоиск находил ЧУЖОЙ LMS в сети (.111) и перезаписывал конфиг.
@@ -47,7 +48,7 @@
   ГРАБЛИ ДЕПЛОЯ: рестарт LMS НЕ убивает detached java-клиент (systemd) — после scp jar проверять
   смену pid и при необходимости kill <pid> + рестарт. Проверено: 14 комнат загрузились.
 - **Плагин: секция Help внизу страницы настроек (06.10, деплой+проверено)** — ссылка на
-  README blob/main/README.md, текст 'Help README.md' (strings HELP/HELP_DESC RU/EN).
+  README blob/main/README.md, текст 'README.md' (strings HELP/HELP_DESC RU/EN).
 - **strings плагина (06.10, деплой+проверено)**: имя 'Lyrion Yandex Smart Home Bridge'
   (было 'Lyrion Yandex Bridge (Yandex Smart Home)'), описание EN 'Integrate LMS players into
   Yandex Smart Home' / RU 'Интеграция плееров в умный дом'.
