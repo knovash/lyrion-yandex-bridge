@@ -1,13 +1,16 @@
 # Active Context — что сейчас
 
-## Статус: v1.8 — ОПУБЛИКОВАН (06.10)
+## Статус: v1.8.1 — ОПУБЛИКОВАН (06.10)
 
 - **v1.7 ОПУБЛИКОВАНА полностью** (Release 02.10 + repo.xml на main) — старая запись «в процессе»
   была неактуальна.
 - **v1.8: master==dev==085db9c**, версия 1.8 в pom/install.xml/ClientProcess.pm, сборка чистая,
   dist-lms/lyrion-yandex-bridge-v1.8.zip (sha 96b7a902369d679bcdb2d2a341fe157067064d71),
   repo.xml → 1.8 (+новое имя/описание плагина). Release v1.8 создан владельцем, asset залит,
-  push master:main и dev выполнены (78e79fb..88c0a4c) — v1.8 В РЕЛИЗЕ, LMS предложит обновление.
+  push master:main и dev выполнены (78e79fb..88c0a4c) — v1.8 в релизе.
+- **v1.8.1 (antistorm-фикс) ОПУБЛИКОВАН через час после v1.8** (Release + asset 6251881,
+  sha 312c5207, push 2af8d0d..2be8aaf). Бокс владельца обновлён вручную до 1.8.1
+  (jar+ClientProcess.pm+install.xml, старый 1.8 jar удалён).
 - **sa_server задеплоен на Zeabur (владелец, 03.10)** и опубликован:
   https://github.com/knovash/lyrion-yandex-bridge-server (секреты вычищены, env-only).
   Мультипользовательская маршрутизация по access_token — в проде.
@@ -18,7 +21,7 @@
   live-чек в StatusJson + refresh на каждый saveSettings (вкладка настроек LMS шлёт форму
   повторно) грузили однопоточный HTTP LMS → флаг плясал, status.json >3с → блок Client status
   пропадал. Фикс: live-чек убран (флаг самолечится шедулером), refresh анти-шторм ≥10с,
-  _clientStatus timeout 6с. Это ПОСЛЕ опубликованной v1.8 — кандидат в v1.8.1/v1.9.
+  _clientStatus timeout 6с. Исправлено и выпущено в v1.8.1 (в тот же день).
 - **Player rooms: бейдж присутствия устройства в Яндексе (06.10, a1a53f2, проверено)**:
   рядом с селектом — зелёный 'in Yandex' / красный 'not connected - update devices in
   Yandex Smart Home' (если комната назначена,
