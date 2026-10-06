@@ -11,6 +11,9 @@
 - README обновлён под v1.7 (новые команды навыка, TODO поизбранному убран).
 
 ## Что в работе
+- **strings плагина (06.10, деплой+проверено)**: имя 'Lyrion Yandex Smart Home Bridge'
+  (было 'Lyrion Yandex Bridge (Yandex Smart Home)'), описание EN 'Integrate LMS players into
+  Yandex Smart Home' / RU 'Интеграция плееров в умный дом'.
 - **Плагин: секция Player rooms — выбор комнаты для каждого плеера (06.10, деплой+проверено)**:
   селекты lybroom_<player> (текущая комната selected; пустая опция = не назначена, POST не шлётся).
   При Save страницы плагин отправляет ТОЛЬКО изменившиеся комнаты клиенту: POST /form
