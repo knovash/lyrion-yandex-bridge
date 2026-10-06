@@ -304,4 +304,22 @@ public class SmartHome {
         JsonUtils.pojoToJsonFile(this, config.fileDevices);
     }
 
+    /**
+     * Восстановить локальные устройства из data/devices.json. Без этого список устройств
+     * жил только в памяти процесса и после рестарта клиента восстанавливался исключительно
+     * из Яндекса — при недоступном Яндексе устройства терялись.
+     */
+    public void read() {
+        SmartHome loaded = JsonUtils.jsonFileToPojo(config.fileDevices, SmartHome.class);
+        if (loaded != null && loaded.devices != null && !loaded.devices.isEmpty()) {
+            this.devices = loaded.devices;
+            log.info("LOCAL DEVICES LOADED: " + devices.stream()
+                    .filter(java.util.Objects::nonNull)
+                    .map(d -> d.room)
+                    .collect(Collectors.toList()));
+        } else {
+            log.info("NO LOCAL DEVICES IN " + config.fileDevices);
+        }
+    }
+
 }

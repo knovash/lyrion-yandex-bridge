@@ -75,8 +75,10 @@ public class Main {
             log.error("LMS INIT ERROR (LMS not ready yet?) - will retry in 60s: " + e);
         }
 
-        // УДЯ: устройства "Музыка" и кнопки-устройства. Отдельный метод: вызывается при старте,
+        // УДЯ: восстановить локальные устройства из файла, затем устройства "Музыка"
+        // и кнопки-устройства из Яндекса. Отдельный метод yandexInit: вызывается при старте,
         // после авторизации в Яндекс (LocalAuthYandex) и может вызываться повторно.
+        smartHome.read();
         yandexInit();
 
         // повтор инициализации через 60 с, если плееры не удалось получить при старте
@@ -128,6 +130,14 @@ public class Main {
         try {
             yandexInfoDevices = Yandex.devicesGetFromYandexInfo();
             log.info("YANDEX get yandexInfoDevices: " + yandexInfoDevices);
+            if (yandexInfoDevices == null) {
+                // Яндекс недоступен (разовая 500/таймаут) — НЕ затирать локальные устройства
+                // (комнаты, назначенные через плагин/страницу плееров), они восстановятся
+                // из devices.json при следующем старте, а Яндекс отдаст их при опросе провайдера
+                log.info("YANDEX INFO NOT AVAILABLE - KEEP LOCAL DEVICES: "
+                        + smartHome.devices.stream().filter(Objects::nonNull).map(device -> device.room).collect(Collectors.toList()));
+                return;
+            }
             Yandex.createMusicDevicesFromYandex(yandexInfoDevices);
             Yandex.createOtherDevicesFromYandexDevices(Yandex.otherDevices);
             log.info("YANDEX DEVICES saved local: " + smartHome.devices.stream().filter(Objects::nonNull).map(device -> device.room).collect(Collectors.toList()));

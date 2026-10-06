@@ -129,7 +129,7 @@ sub handler {
 		# пустое значение = не назначать). Применяем ДО возможного рестарта клиента из-за смены port/bind.
 		{
 			my $port = $prefs->get('port') || 8888;
-			my $ua = LWP::UserAgent->new(timeout => 4);
+			my $ua = LWP::UserAgent->new(timeout => 8);
 			my $cur = eval { JSON::XS::decode_json($ua->get("http://127.0.0.1:$port/status.json")->decoded_content) } || {};
 			my %curroom = map { ($_->{'name'} || '') => ($_->{'room'} || '') } @{ $cur->{'players'} || [] };
 			for my $k (sort keys %$paramRef) {
@@ -149,6 +149,14 @@ sub handler {
 				$log->info("player room from settings page: $player -> $room ("
 					. ($ok ? 'ok' : 'fail') . ")");
 			}
+
+			# попросить клиент перечитать плееров и user/info — тогда блок Client status
+			# (Music devices in Yandex и пр.) на ЭТОЙ же отрисовке будет свежим:
+			# _clientStatus вызывается ниже по ходу обработчика и читает обновлённый /status.json
+			eval {
+				$ua->post("http://127.0.0.1:$port/form", { 'action' => 'statusbar_refresh' });
+				$log->info('client refresh requested after settings save');
+			};
 		}
 
 		# radio/checkbox отсылаются только в состоянии "вкл"
