@@ -7,10 +7,19 @@ import knovash.saclient.spotify.spotify_pojo.*;
 import knovash.saclient.spotify.spotify_pojo.spotify_artists.SpotifyArtists;
 import knovash.saclient.utils.JsonUtils;
 import knovash.saclient.utils.Utils;
+import knovash.saclient.utils.levenstein.Levenstein;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static knovash.saclient.Main.*;
 
@@ -38,7 +47,7 @@ public class Spotify {
         return body;
     }
 
-    // ------- МЕТОДЫ ПОИСКА (НЕ ИЗМЕНЕНЫ) -------
+    // ------- МЕТОДЫ ПОИСКА -------
     public static class GetLinkResult {
 
         public final String uri;
@@ -50,83 +59,139 @@ public class Spotify {
         }
     }
 
+    /**
+     * Умный поиск Spotify. Проблема старого подхода (просто первый результат):
+     * «виктория бекхэм» → Spotify «угадывал» Viktor Tsoi, «backham victoria» → Victoria Dayneko.
+     * Теперь: транслит+нормализация запроса, вариант с обратным порядком слов,
+     * и выбор ЛУЧШЕГО результата по скорингу имени (порядок слов не важен, слова fuzzy).
+     */
+    private static GetLinkResult searchBest(String type, String target, Function<String, List<String[]>> search) {
+        log.info("SPOTIFY SEARCH " + type + ": " + target);
+        GetLinkResult best = null;
+        int bestScore = -1;
+        for (String q : searchQueries(target)) {
+            try {
+                List<String[]> items = search.apply(q);
+                if (items != null) {
+                    for (String[] item : items) {
+                        if (item == null || item.length < 2 || item[0] == null || item[1] == null) continue;
+                        int sc = matchScore(q, item[1]);
+                        if (sc > bestScore) {
+                            bestScore = sc;
+                            best = new GetLinkResult(item[0], item[1]);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.info("SPOTIFY SEARCH ERROR for '" + q + "': " + e);
+            }
+            if (bestScore >= 90) break; // точное/вложенное совпадение — дальше не ищем
+        }
+        log.info("SPOTIFY BEST " + type + ": " + (best == null ? "none" : best.name) + " (score " + bestScore + ")");
+        return best != null ? best : new GetLinkResult(null, null);
+    }
 
-    public static GetLinkResult getLinkArtist(String target) {
-        log.debug("SPOTIFY GET LINK FOR TARGET: " + target);
-        String encodedQuery = URLEncoder.encode(target, StandardCharsets.UTF_8);
-        String type = "artist";
-        String url = "https://api.spotify.com/v1/search?q=" + encodedQuery + "&type=" + type + "&limit=3&market=ES";
+    /** Варианты запроса: нормализованный (транслит) + те же слова в обратном порядке. */
+    static List<String> searchQueries(String target) {
+        String t = normalizeWords(target);
+        if (t.isEmpty()) return List.of(target == null ? "" : target.trim());
+        List<String> queries = new ArrayList<>(List.of(t));
+        List<String> words = new ArrayList<>(List.of(t.split(" ")));
+        Collections.reverse(words);
+        String reversed = String.join(" ", words);
+        if (!reversed.equals(t)) queries.add(reversed);
+        return queries;
+    }
+
+    private static String normalizeWords(String s) {
+        if (s == null) return "";
+        return Utils.normalizeForSearch(s).toLowerCase()
+                .replaceAll("[^\\p{L}\\p{N} ]", " ")
+                .replaceAll("\\s+", " ").trim();
+    }
+
+    /** Скоринг совпадения имени кандидата с запросом (порядок слов не важен, слова fuzzy). */
+    static int matchScore(String query, String candidateName) {
+        String c = normalizeWords(candidateName);
+        if (c.isEmpty() || query == null || query.isEmpty()) return 0;
+        if (c.equals(query)) return 100;
+        boolean contains = c.contains(query) || query.contains(c);
+        // «вхождение» засчитывается как сильное только при сопоставимой длине:
+        // иначе артист «Viktoria» получал 90 за одно слово из двух («viktoria bekhem»)
+        if (contains && Math.min(c.length(), query.length()) >= 0.6 * Math.max(c.length(), query.length())) {
+            return 90;
+        }
+        Set<String> qWords = new HashSet<>(List.of(query.split(" ")));
+        Set<String> cWords = new HashSet<>(List.of(c.split(" ")));
+        int matched = 0;
+        for (String qw : qWords) {
+            for (String cw : cWords) {
+                if (cw.equals(qw) || cw.contains(qw) || qw.contains(cw)
+                        || Levenstein.dist(qw.toCharArray(), cw.toCharArray())
+                           <= Math.max(1, Math.min(qw.length(), cw.length()) / 3)) {
+                    matched++;
+                    break;
+                }
+            }
+        }
+        if (matched == qWords.size()) return contains ? 85 : 80; // все слова запроса нашлись
+        if (matched * 2 >= qWords.size()) return 60;             // хотя бы половина
+        return contains ? 40 : 0;
+    }
+
+    private static String spotifySearchJson(String query, String type, int limit) {
+        String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8);
+        String url = "https://api.spotify.com/v1/search?q=" + encodedQuery + "&type=" + type + "&limit=" + limit + "&market=ES";
         String json = SpotifyRequests.requestGet(url);
         if (json == null) return null;
-        json = json.replace("\\\"", ""); // Осторожно: может повредить JSON
-        SpotifyArtists result = JsonUtils.jsonToPojo(json, SpotifyArtists.class);
-        if (result == null ||
-                result.artists == null ||
-                result.artists.items == null ||
-                result.artists.items.isEmpty())
-            return new GetLinkResult(null, null);
-        String uri = result.artists.items.get(0).uri;
-        String name = result.artists.items.get(0).name;
-        return new GetLinkResult(uri, name);
+        return json.replace("\\\"", ""); // Осторожно: может повредить JSON
+    }
+
+
+    public static GetLinkResult getLinkArtist(String target) {
+        return searchBest("artist", target, q -> {
+            SpotifyArtists r = JsonUtils.jsonToPojo(spotifySearchJson(q, "artist", 5), SpotifyArtists.class);
+            if (r == null || r.artists == null || r.artists.items == null) return List.of();
+            return r.artists.items.stream()
+                    .filter(Objects::nonNull)
+                    .map(a -> new String[]{a.uri, a.name})
+                    .collect(Collectors.toList());
+        });
     }
 
     public static GetLinkResult getLinkTrack(String target) {
-        log.debug("SPOTIFY GET LINK FOR TARGET: " + target);
-        String encodedQuery = URLEncoder.encode(target, StandardCharsets.UTF_8);
-        String type = "track";
-        String url = "https://api.spotify.com/v1/search?q=" + encodedQuery + "&type=" + type + "&limit=3&market=ES";
-        String json = SpotifyRequests.requestGet(url);
-        if (json == null) return null;
-        json = json.replace("\\\"", ""); // Осторожно: может повредить JSON
-        SpotifySearchTrack result = JsonUtils.jsonToPojo(json, SpotifySearchTrack.class);
-        if (result == null ||
-                result.tracks == null ||
-                result.tracks.items == null ||
-                result.tracks.items.isEmpty())
-            return null;
-        String uri = result.tracks.items.get(0).uri;
-        String name = result.tracks.items.get(0).artists.get(0).name + ", " + result.tracks.items.get(0).name;
-        return new GetLinkResult(uri, name);
+        return searchBest("track", target, q -> {
+            SpotifySearchTrack r = JsonUtils.jsonToPojo(spotifySearchJson(q, "track", 5), SpotifySearchTrack.class);
+            if (r == null || r.tracks == null || r.tracks.items == null) return List.of();
+            return r.tracks.items.stream()
+                    .filter(Objects::nonNull)
+                    .filter(t -> t.artists != null && !t.artists.isEmpty())
+                    .map(t -> new String[]{t.uri, t.artists.get(0).name + ", " + t.name})
+                    .collect(Collectors.toList());
+        });
     }
 
     public static GetLinkResult getLinkAlbum(String target) {
-        log.debug("SPOTIFY GET LINK FOR TARGET: " + target);
-        String encodedQuery = URLEncoder.encode(target, StandardCharsets.UTF_8);
-        String type = "album";
-        String url = "https://api.spotify.com/v1/search?q=" + encodedQuery + "&type=" + type + "&limit=3&market=ES";
-        String json = SpotifyRequests.requestGet(url);
-        if (json == null) return null;
-        json = json.replace("\\\"", ""); // Осторожно: может повредить JSON
-        SpotifySearchAlbum result = JsonUtils.jsonToPojo(json, SpotifySearchAlbum.class);
-        if (result == null ||
-                result.albums == null ||
-                result.albums.items == null ||
-                result.albums.items.isEmpty())
-            return null;
-        String uri = result.albums.items.get(0).uri;
-        String name = result.albums.items.get(0).artists.get(0).name + ", " + result.albums.items.get(0).name;
-        return new GetLinkResult(uri, name);
+        return searchBest("album", target, q -> {
+            SpotifySearchAlbum r = JsonUtils.jsonToPojo(spotifySearchJson(q, "album", 5), SpotifySearchAlbum.class);
+            if (r == null || r.albums == null || r.albums.items == null) return List.of();
+            return r.albums.items.stream()
+                    .filter(Objects::nonNull)
+                    .filter(a -> a.artists != null && !a.artists.isEmpty())
+                    .map(a -> new String[]{a.uri, a.artists.get(0).name + ", " + a.name})
+                    .collect(Collectors.toList());
+        });
     }
 
     public static GetLinkResult getLinkPlaylist(String target) {
-        log.debug("SPOTIFY GET LINK FOR TARGET: " + target);
-        String encodedQuery = URLEncoder.encode(target, StandardCharsets.UTF_8);
-        String type = "playlist";
-        String url = "https://api.spotify.com/v1/search?q=" + encodedQuery + "&type=" + type + "&limit=5&market=ES";
-        String json = SpotifyRequests.requestGet(url);
-        if (json == null) return null;
-        json = json.replace("\\\"", ""); // Осторожно: может повредить JSON
-        SpotifySearchPlaylist result = JsonUtils.jsonToPojo(json, SpotifySearchPlaylist.class);
-        if (result == null ||
-                result.playlists == null ||
-                result.playlists.items == null ||
-                result.playlists.items.isEmpty())
-            return null;
-        log.info("PLAYLISTS");
-        log.info(result.playlists.items);
-        String uri = result.playlists.items.get(0).uri;
-        String name = result.playlists.items.get(0).name;
-        return new GetLinkResult(uri, name);
+        return searchBest("playlist", target, q -> {
+            SpotifySearchPlaylist r = JsonUtils.jsonToPojo(spotifySearchJson(q, "playlist", 5), SpotifySearchPlaylist.class);
+            if (r == null || r.playlists == null || r.playlists.items == null) return List.of();
+            return r.playlists.items.stream()
+                    .filter(Objects::nonNull)
+                    .map(p -> new String[]{p.uri, p.name})
+                    .collect(Collectors.toList());
+        });
     }
 
     public static CurrentlyPlaying getCurrentlyPlaying() {
