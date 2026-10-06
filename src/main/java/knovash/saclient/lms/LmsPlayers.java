@@ -490,9 +490,13 @@ public class LmsPlayers {
 
     public void searchForLmsIp() {
         // IP задан плагином (--lms.ip): никогда не сканируем сеть и не подменяем — иначе при
-        // рестарте LMS клиент может «прилипнуть» к чужому LMS в сети (было: 192.168.1.111)
+        // рестарте LMS клиент может «прилипнуть» к чужому LMS в сети (было: 192.168.1.111).
+        // Но проверить сервер ОБЯЗАТЕЛЬНО: isLmsServer выставляет lmsServerOnline, без него
+        // updatePlayers падает NPE (Boolean null) и одноразовый 60s-ретрай не спасает.
         if (Config.lmsIpForced) {
-            log.info("LMS IP FORCED BY ARGS (" + config.lmsIp + ") - SKIP NETWORK SEARCH");
+            boolean ok = isLmsServer(config.lmsIp, Integer.parseInt(config.lmsPort));
+            log.info("LMS IP FORCED BY ARGS (" + config.lmsIp + ") - "
+                    + (ok ? "OK" : "NOT READY YET, NO NETWORK SEARCH"));
             return;
         }
         log.info("START");
