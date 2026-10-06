@@ -45,6 +45,16 @@ sub _clientStatus {
 	$st{'lms'} = ($d->{'lms'}->{'online'} ? $on : $off) . ' '
 		. ($d->{'lms'}->{'ip'} || '') . ':' . ($d->{'lms'}->{'port'} || '');
 
+	# селекты выбора комнаты для каждого плеера (только комната, без остальных настроек)
+	my @roomsel;
+	for my $p (@{$d->{'players'} || []}) {
+		my $room = defined $p->{'room'} ? $p->{'room'} : '';
+		my @rooms = @{$d->{'rooms'} || []};
+		unshift @rooms, $room if $room ne '' && !grep { $_ eq $room } @rooms;
+		push @roomsel, { 'name' => $p->{'name'} || '', 'room' => $room, 'options' => \@rooms };
+	}
+	$st{'roomselects'} = \@roomsel;
+
 	my $offshort = ' <span style="color:red">off</span>';
 	my @pl = map {
 		($_->{'name'} || '')
@@ -106,6 +116,26 @@ sub handler {
 	}
 
 	if ($paramRef->{'saveSettings'}) {
+		# комнаты плееров: селекты lybroom_<player> отправляем клиенту (только изменившиеся;
+		# пустое значение = не назначать). Применяем ДО возможного рестарта клиента из-за смены port/bind.
+		{
+			my $port = $prefs->get('port') || 8888;
+			my $ua = LWP::UserAgent->new(timeout => 4);
+			my $cur = eval { JSON::XS::decode_json($ua->get("http://127.0.0.1:$port/status.json")->decoded_content) } || {};
+			my %curroom = map { ($_->{'name'} || '') => ($_->{'room'} || '') } @{ $cur->{'players'} || [] };
+			for my $k (grep { /^lybroom_(.+)$/ } keys %$paramRef) {
+				my ($player, $room) = ($1, $paramRef->{$k} // '');
+				next if !defined $room || $room eq '' || ($curroom{$player} // "\x00") eq $room;
+				my $r = eval { $ua->post("http://127.0.0.1:$port/form", {
+					'action'                => 'player_room_set',
+					'player_name_value'     => $player,
+					'player_room_value'     => $room,
+				}) };
+				$log->info("player room from settings page: $player -> $room ("
+					. ($r && $r->is_success ? 'ok' : 'fail') . ")");
+			}
+		}
+
 		# radio/checkbox отсылаются только в состоянии "вкл"
 		$paramRef->{'pref_autorun'} ||= 0;
 

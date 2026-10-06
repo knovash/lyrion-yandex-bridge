@@ -18,6 +18,7 @@ public class PagePlayers {
     public static final String delay_expire_save = "delay_expire_save";
     public static final String delay_expire_value = "delay_expire_value";
     public static final String player_save = "player_save";
+    public static final String player_room_set = "player_room_set";
     public static final String player_remove = "player_remove";
     public static final String player_name_value = "player_name_value";
     public static final String player_room_value = "player_room_value";

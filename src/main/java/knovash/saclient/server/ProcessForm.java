@@ -52,6 +52,10 @@ public class ProcessForm {
                     lmsPlayers.delayExpireSave((HashMap<String, String>) bodyMap);
                     context.bodyResponse = PagePlayers.page();
                     break;
+                case player_room_set:
+                    lmsPlayers.playerRoomSet((HashMap<String, String>) bodyMap);
+                    context.setRedirect("/players");
+                    break;
                 case player_save:
                     lmsPlayers.playerSave((HashMap<String, String>) bodyMap);
                     context.setRedirect("/players");

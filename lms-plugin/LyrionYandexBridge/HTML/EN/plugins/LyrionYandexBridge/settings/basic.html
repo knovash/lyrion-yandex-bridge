@@ -22,6 +22,23 @@
 	[% END %]
 	[% END %]
 
+	[% IF status && status.roomselects %]
+	[% WRAPPER setting title="PLUGIN_LYRION_YANDEX_BRIDGE_ROOMS" desc="PLUGIN_LYRION_YANDEX_BRIDGE_ROOMS_DESC" %]
+		<table style="width:100%">
+		[% FOREACH rs IN status.roomselects %]
+			<tr><td style="width:28%; padding:2px 6px; vertical-align:top;"><b>[% rs.name %]</b></td><td style="padding:2px 6px;">
+			<select class="stdedit" name="lybroom_[% rs.name %]">
+				[% IF rs.room == '' %]<option value="" selected></option>[% END %]
+				[% FOREACH r IN rs.options %]
+					<option value="[% r %]"[% IF r == rs.room %] selected[% END %]>[% r %]</option>
+				[% END %]
+			</select>
+			</td></tr>
+		[% END %]
+		</table>
+	[% END %]
+	[% END %]
+
 	[% WRAPPER setting title="PLUGIN_LYRION_YANDEX_BRIDGE_AUTORUN" desc="PLUGIN_LYRION_YANDEX_BRIDGE_AUTORUN_DESC" %]
 		<input name="pref_autorun" id="pref_autorun" type="checkbox" [% IF prefs.pref_autorun %] checked [% END %]>
 		[% "PLUGIN_LYRION_YANDEX_BRIDGE_RUNNING_$running" | string %][% IF running %] (pid [% pid %]) [% END %]

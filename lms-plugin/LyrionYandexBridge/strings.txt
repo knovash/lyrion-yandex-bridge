@@ -92,3 +92,11 @@ PLUGIN_LYRION_YANDEX_BRIDGE_RESET_CONFIRM
 PLUGIN_LYRION_YANDEX_BRIDGE_LOGINSPOTIFY
 	EN	Login to Spotify
 	RU	Войти в Spotify
+
+PLUGIN_LYRION_YANDEX_BRIDGE_ROOMS
+	EN	Player rooms
+	RU	Комнаты плееров
+
+PLUGIN_LYRION_YANDEX_BRIDGE_ROOMS_DESC
+	EN	Assign a Yandex room to each LMS player. Saved with the settings page Save button; empty means no room.
+	RU	Привязка комнаты Яндекса к каждому плееру LMS. Сохраняется кнопкой «Сохранить» страницы настроек; пустое значение — комната не назначена.

@@ -278,6 +278,24 @@ public class LmsPlayers {
         return playingPlayers.stream().map(p -> p.name).collect(Collectors.toList());
     }
 
+    // установка ТОЛЬКО комнаты плеера (для страницы плагина LMS: action=player_room_set,
+    // без delay/volume_max/schedule — их меняет только веб-страница клиента /players)
+    public String playerRoomSet(HashMap<String, String> parameters) {
+        log.info(line);
+        String playerName = parameters.getOrDefault(player_name_value, "null");
+        String roomName = parameters.getOrDefault(player_room_value, "null");
+        if (playerName.equals("null") || roomName.equals("null") || roomName.isEmpty()) {
+            log.info("ERROR PARAMETER NULL");
+            return "NULL";
+        }
+        log.info("PLAYER ROOM SET: " + playerName + " -> " + roomName);
+        ActionsSync.selectNewPlayerInRoom(playerName, roomName, false);
+        write();
+        log.info("FINISH PLAYER ROOM SET");
+        log.info(line);
+        return "OK";
+    }
+
     public String playerSave(HashMap<String, String> parameters) {
         log.info(line);
 
