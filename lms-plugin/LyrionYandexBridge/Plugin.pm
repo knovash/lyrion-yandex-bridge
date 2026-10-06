@@ -17,7 +17,7 @@ $prefs->init({
 	autorun  => 1,
 	javapath => '',
 	port     => 8888,
-	bind     => 'localhost',
+	bind     => '0.0.0.0',
 	opts     => '',
 });
 

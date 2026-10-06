@@ -81,3 +81,10 @@ PLUGIN_LYRION_YANDEX_BRIDGE_OPTS
 PLUGIN_LYRION_YANDEX_BRIDGE_OPTS_DESC
 	EN	Extra command line arguments passed to the client (e.g. --lms.ip=192.168.1.131).
 	RU	Дополнительные аргументы командной строки клиента (например, --lms.ip=192.168.1.131).
+PLUGIN_LYRION_YANDEX_BRIDGE_RESET
+	EN	Reset
+	RU	Сброс
+
+PLUGIN_LYRION_YANDEX_BRIDGE_RESET_CONFIRM
+	EN	Reset client configuration? Tokens will be cleared, you will need to log in again.
+	RU	Сбросить конфигурацию клиента? Токены будут очищены, потребуется повторная авторизация.

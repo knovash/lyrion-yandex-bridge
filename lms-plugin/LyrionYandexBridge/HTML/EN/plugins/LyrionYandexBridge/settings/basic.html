@@ -21,6 +21,7 @@
 		<input name="pref_autorun" id="pref_autorun" type="checkbox" [% IF prefs.pref_autorun %] checked [% END %]>
 		[% "PLUGIN_LYRION_YANDEX_BRIDGE_RUNNING_$running" | string %][% IF running %] (pid [% pid %]) [% END %]
 		[% IF running %]&nbsp<input name="restart" type="submit" value=[% "PLUGIN_LYRION_YANDEX_BRIDGE_RESTART" | string %]>[% END %]
+		&nbsp<input name="resetclient" type="submit" value=[% "PLUGIN_LYRION_YANDEX_BRIDGE_RESET" | string %] onclick="return confirm('[% "PLUGIN_LYRION_YANDEX_BRIDGE_RESET_CONFIRM" | string %]')">
 		&nbsp&nbsp<b><a href="[% weburl %]" target="lyb">[% "PLUGIN_LYRION_YANDEX_BRIDGE_WEBUI" | string %]</a></b>
 		[% IF lasterror %]<br><pre style="color:red; white-space: pre-wrap;">[% lasterror %]</pre>[% END %]
 	[% END %]

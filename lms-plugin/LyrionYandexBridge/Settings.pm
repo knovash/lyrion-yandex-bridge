@@ -8,6 +8,7 @@ use base qw(Slim::Web::Settings);
 
 use JSON::XS;
 use LWP::UserAgent;
+use File::Spec::Functions qw(catfile);
 use Slim::Utils::Log;
 use Slim::Utils::Network;
 use Slim::Utils::Prefs;
@@ -82,6 +83,24 @@ sub handler {
 	if ($paramRef->{'restart'}) {
 		$log->info('restart requested from settings page');
 		Plugins::LyrionYandexBridge::ClientProcess->stop;
+		Plugins::LyrionYandexBridge::ClientProcess->start;
+	}
+
+	# Reset: сброс конфигурации клиента (config.json уходит в бэкак, клиент стартует
+	# со свежим конфигом; LMS/порт/подключение берёт из аргументов, авторизации сбрасываются)
+	if ($paramRef->{'resetclient'}) {
+		$log->warn('client config reset requested from settings page');
+		Plugins::LyrionYandexBridge::ClientProcess->stop;
+		my $cfg = catfile(Plugins::LyrionYandexBridge::ClientProcess::dataDir(), 'config.json');
+		if (-e $cfg) {
+			my $bak = $cfg . '.bak-reset-' . time();
+			if (rename($cfg, $bak)) {
+				$log->warn("client config backed up to $bak");
+			}
+			else {
+				$log->error("cannot backup client config: $!");
+			}
+		}
 		Plugins::LyrionYandexBridge::ClientProcess->start;
 	}
 
