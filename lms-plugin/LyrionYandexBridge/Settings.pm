@@ -9,6 +9,7 @@ use base qw(Slim::Web::Settings);
 use JSON::XS;
 use LWP::UserAgent;
 use File::Spec::Functions qw(catfile);
+use Encode qw(encode);
 use Slim::Utils::Log;
 use Slim::Utils::Network;
 use Slim::Utils::Prefs;
@@ -131,16 +132,22 @@ sub handler {
 			my $ua = LWP::UserAgent->new(timeout => 4);
 			my $cur = eval { JSON::XS::decode_json($ua->get("http://127.0.0.1:$port/status.json")->decoded_content) } || {};
 			my %curroom = map { ($_->{'name'} || '') => ($_->{'room'} || '') } @{ $cur->{'players'} || [] };
-			for my $k (grep { /^lybroom_(.+)$/ } keys %$paramRef) {
+			for my $k (sort keys %$paramRef) {
+				# матчить надо ВНУТРИ цикла: $1 из блока grep снаружи не живёт (динамический скоуп)
+				next unless $k =~ /^lybroom_(.+)$/;
 				my ($player, $room) = ($1, $paramRef->{$k} // '');
 				next if !defined $room || $room eq '' || ($curroom{$player} // "\x00") eq $room;
 				my $r = eval { $ua->post("http://127.0.0.1:$port/form", {
 					'action'                => 'player_room_set',
-					'player_name_value'     => $player,
-					'player_room_value'     => $room,
+					# JSON::XS отдаёт Unicode-строки: LWP теряет wide-char значения при
+					# кодировании формы — обязательно превращаем в байты UTF-8
+					'player_name_value'     => encode('UTF-8', $player),
+					'player_room_value'     => encode('UTF-8', $room),
 				}) };
+				# клиент на успех отвечает 302-редиректом — это норма, не «fail»
+				my $ok = $r && ($r->is_success || $r->is_redirect);
 				$log->info("player room from settings page: $player -> $room ("
-					. ($r && $r->is_success ? 'ok' : 'fail') . ")");
+					. ($ok ? 'ok' : 'fail') . ")");
 			}
 		}
 
