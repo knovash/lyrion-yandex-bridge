@@ -19,19 +19,19 @@
     <plugins>
         <plugin
             name="LyrionYandexBridge"
-            version="1.7"
+            version="1.8"
             target="unix|mac"
             minTarget="8.0"
             maxTarget="*"
-            sha="29b7de00af6f5f62440eb12d5cf061cb45ba2555"
-            url="https://github.com/knovash/lyrion-yandex-bridge/releases/download/v1.7/lyrion-yandex-bridge-v1.7.zip"
+            sha="96b7a902369d679bcdb2d2a341fe157067064d71"
+            url="https://github.com/knovash/lyrion-yandex-bridge/releases/download/v1.8/lyrion-yandex-bridge-v1.8.zip"
             creator="Konstantin"
             email="novash.ki@gmail.com"
         >
-            <title lang="EN">Lyrion Yandex Bridge</title>
-            <title lang="RU">Lyrion Yandex Bridge (Умный дом Яндекс)</title>
-            <desc lang="EN">Yandex Smart Home devices (music) for LMS players. Runs a java client: web setup on port 8888, Yandex OAuth, cloud relay. Java 11+ required.</desc>
-            <desc lang="RU">Устройства «музыка» в Умном доме Яндекса для плееров LMS. Запускает java-клиент: веб-настройки на порту 8888, авторизация Яндекс, облачный транспорт. Требуется Java 11+.</desc>
+            <title lang="EN">Lyrion Yandex Smart Home Bridge</title>
+            <title lang="RU">Lyrion Yandex Smart Home Bridge</title>
+            <desc lang="EN">Integrate LMS players into Yandex Smart Home. Runs a java client: web setup on port 8888, Yandex OAuth, cloud relay. Java 11+ required.</desc>
+            <desc lang="RU">Интеграция плееров в умный дом. Запускает java-клиент: веб-настройки на порту 8888, авторизация Яндекс, облачный транспорт. Требуется Java 11+.</desc>
         </plugin>
     </plugins>
 </extensions>
