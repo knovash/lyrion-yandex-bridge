@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import knovash.saclient.Config;
 import knovash.saclient.lms.RequestParameters;
 import knovash.saclient.lms.Requests;
 import knovash.saclient.lms.Response;
@@ -488,6 +489,12 @@ public class LmsPlayers {
     }
 
     public void searchForLmsIp() {
+        // IP задан плагином (--lms.ip): никогда не сканируем сеть и не подменяем — иначе при
+        // рестарте LMS клиент может «прилипнуть» к чужому LMS в сети (было: 192.168.1.111)
+        if (Config.lmsIpForced) {
+            log.info("LMS IP FORCED BY ARGS (" + config.lmsIp + ") - SKIP NETWORK SEARCH");
+            return;
+        }
         log.info("START");
 //        if (Utils.checkIpIsLms(config.lmsIp)) {
         if (isLmsServer(config.lmsIp, 9000)) {

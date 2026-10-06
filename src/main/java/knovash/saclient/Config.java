@@ -39,6 +39,9 @@ public class Config {
 
     // ---------- LMS (перенесено из squeeze-alice) ----------
     public String lmsIp = "";
+    // true, когда --lms.ip передан аргументом запуска (плагин LMS): автопоиск сервера в сети
+    // запрещён (static — в config.json не пишется)
+    public static boolean lmsIpForced = false;
     public String lmsPort = "9000";
     public String silence = "";
     public Integer delay = 3;
@@ -115,6 +118,8 @@ public class Config {
             try {
                 if (arg.startsWith("--lms.ip=")) {
                     lmsIp = arg.substring("--lms.ip=".length());
+                    // IP передан явно (плагин LMS): запретить автопоиск/подмену (см. LmsPlayers.searchForLmsIp)
+                    lmsIpForced = true;
                 } else if (arg.startsWith("--lms.port=")) {
                     lmsPort = arg.substring("--lms.port=".length());
                 } else if (arg.startsWith("--port=")) {
