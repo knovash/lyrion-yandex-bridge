@@ -11,6 +11,13 @@
 - README обновлён под v1.7 (новые команды навыка, TODO поизбранному убран).
 
 ## Что в работе
+- **Music devices in Yandex не обновлялся по Apply — ГРАБЛИ+фикс (06.10, 87c52fd)**:
+  yandexInfoDevices кэшировался с момента старта; Apply теперь шлёт клиенту POST /form
+  action=statusbar_refresh ПЕРЕД чтением /status.json → блок Client status свежий на той же
+  отрисовке (Apply может занять до ~8с — ждёт user/info). ГЛУБЖЕ: SmartHome не умел ЧИТАТЬ
+  devices.json — устройства жили в памяти и терялись при рестарте с недоступным Яндексом;
+  теперь smartHome.read() на старте + yandexInit НЕ затирает локальные при сбое user/info.
+  e2e: после фикса musicLocal=musicYandex=[Душ,Гостиная,Улица] и в status.json, и на странице.
 - **Комнаты Яндекса после авторизации — ГРАБЛИ+фикс (06.10, f679b27)**: user/info дёргался ТОЛЬКО
   при старте процесса → после веб-авторизации комнаты оставались пустыми до рестарта. Плюс в 11:17
   Яндекс дал разовую 500 → NPE в devicesGetFromYandexInfo (не было null-check). Фикс: Main.yandexInit()
