@@ -1,10 +1,13 @@
 # Active Context — что сейчас
 
-## Статус: v1.7 — релиз в процессе (03.10)
+## Статус: v1.8 — релиз подготовлен, ждём GitHub Release (06.10)
 
-- **v1.7 слита в master** (все фичи dev: «включи избранное…», «найди…», «найди файл…»,
-  фикс JsonUtils, пороги матчинга). Сборка чистая, тесты 15+21 зелёные, dist-lms/repo.xml готовы.
-  Порядок публикации: владелец создаёт GitHub Release v1.7 с zip → потом push master→main.
+- **v1.7 ОПУБЛИКОВАНА полностью** (Release 02.10 + repo.xml на main) — старая запись «в процессе»
+  была неактуальна.
+- **v1.8: master==dev==085db9c**, версия 1.8 в pom/install.xml/ClientProcess.pm, сборка чистая,
+  dist-lms/lyrion-yandex-bridge-v1.8.zip (sha 96b7a902369d679bcdb2d2a341fe157067064d71),
+  repo.xml → 1.8 (+новое имя/описание плагина). ЧТО ОСТАЛОСЬ: владелец создаёт GitHub Release
+  v1.8 с asset lyrion-yandex-bridge-v1.8.zip (имя не менять!) → потом push master:main и dev.
 - **sa_server задеплоен на Zeabur (владелец, 03.10)** и опубликован:
   https://github.com/knovash/lyrion-yandex-bridge-server (секреты вычищены, env-only).
   Мультипользовательская маршрутизация по access_token — в проде.

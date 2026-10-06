@@ -22,6 +22,7 @@
 | v1.5 | 30.09 | CloudClient: облачный транспорт WebSocket (вместо прямых вызовов) |
 | v1.6 | 01.10 | Фикс формата ответа навыка (`response` вместо `payload`); имя jar в assembly — из pom |
 | v1.7 | 03.10 | «включи избранное <название>» (fuzzy+транслит), «найди <название>» (медиатека), «найди файл <название>» (альбом→артист→файл), фикс JsonUtils (backslash), пороги матчинга |
+| v1.8 | 06.10 | Страница плагина: статус-блок (Cloud/LMS/Music devices×2/Spotify с именем), Player rooms (+бейджи in Yandex), Reset (полный вайп), Login-кнопки, bind=All interfaces, Help; «найди файл»→«включи файл»(+мн.ч.); комнаты Яндекса сразу после авторизации; SmartHome.read (устройства переживают рестарт); стабильность LMS-флага (timeout 3с, live-check, самолечение, запрет подмены --lms.ip); player_room_set; новое имя плагина |
 
 ## Открытые TODO (из кода)
 - `Tasker.forTaskerPlaylist`: для запроса из Tasker сделать запрос `playlist_cur_index`.
