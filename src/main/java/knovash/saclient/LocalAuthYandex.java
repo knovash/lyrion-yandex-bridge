@@ -47,5 +47,8 @@ public class LocalAuthYandex extends LocalAuthBase {
         log("YANDEX TOKEN RECEIVED uid=" + config.yandexUid + " name=" + config.yandexName);
         // переподключаем WebSocket с новым instanceToken
         if (Main.cloudClient != null) Main.cloudClient.restart();
+        // комнаты/устройства должны подтягиваться из аккаунта СРАЗУ после авторизации,
+        // а не ждать рестарта клиента
+        Main.yandexInit();
     }
 }

@@ -101,6 +101,11 @@ public class Yandex {
             return null;
         }
         yandexInfo = getYandexInfo();
+        if (yandexInfo == null || yandexInfo.rooms == null) {
+            // Яндекс недоступен/ошибка (например, разовая 500) — текущие комнаты не затираем
+            log.info("YANDEX INFO NOT AVAILABLE - KEEP CURRENT ROOMS: " + rooms);
+            return null;
+        }
         rooms = yandexInfo.rooms.stream().map(r -> r.name).collect(Collectors.toList());
         log.info("YANDEX ROOMS: " + rooms);
         List<YandexUtils.DeviceFromYandex> musicDevices = YandexUtils.extractMusicDevices(yandexInfo);

@@ -75,17 +75,9 @@ public class Main {
             log.error("LMS INIT ERROR (LMS not ready yet?) - will retry in 60s: " + e);
         }
 
-        // УДЯ: устройства "Музыка" и кнопки-устройства
-        try {
-            yandexInfoDevices = Yandex.devicesGetFromYandexInfo();
-            log.info("YANDEX get yandexInfoDevices: " + yandexInfoDevices);
-            Yandex.createMusicDevicesFromYandex(yandexInfoDevices);
-            Yandex.createOtherDevicesFromYandexDevices(Yandex.otherDevices);
-            log.info("YANDEX DEVICES saved local: " + smartHome.devices.stream().filter(Objects::nonNull).map(device -> device.room).collect(Collectors.toList()));
-            smartHome.write();
-        } catch (Exception e) {
-            log.error("YANDEX INIT ERROR - continue: " + e);
-        }
+        // УДЯ: устройства "Музыка" и кнопки-устройства. Отдельный метод: вызывается при старте,
+        // после авторизации в Яндекс (LocalAuthYandex) и может вызываться повторно.
+        yandexInit();
 
         // повтор инициализации через 60 с, если плееры не удалось получить при старте
         java.util.concurrent.ScheduledExecutorService retryExecutor =
@@ -125,5 +117,23 @@ public class Main {
 
         // Держим процесс живым
         Thread.currentThread().join();
+    }
+
+    /**
+     * Инициализация УДЯ: комнаты и устройства из аккаунта Яндекса (user/info).
+     * Вызывается при старте, после авторизации в Яндекс и повторно при необходимости.
+     * При неудаче (Яндекс вернул ошибку/нет сети) текущие комнаты не затираются.
+     */
+    public static void yandexInit() {
+        try {
+            yandexInfoDevices = Yandex.devicesGetFromYandexInfo();
+            log.info("YANDEX get yandexInfoDevices: " + yandexInfoDevices);
+            Yandex.createMusicDevicesFromYandex(yandexInfoDevices);
+            Yandex.createOtherDevicesFromYandexDevices(Yandex.otherDevices);
+            log.info("YANDEX DEVICES saved local: " + smartHome.devices.stream().filter(Objects::nonNull).map(device -> device.room).collect(Collectors.toList()));
+            smartHome.write();
+        } catch (Exception e) {
+            log.error("YANDEX INIT ERROR - continue: " + e);
+        }
     }
 }
