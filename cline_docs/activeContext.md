@@ -25,6 +25,9 @@
   Plugin.pm prefs->init bind='0.0.0.0' (для новых установок; сохранённое значение не трогается).
   Reset = ПОЛНЫЙ вайп (решение владельца 06.10): все *.json/*.properties из data/ уходят в
   *.bak-reset-<ts> (кроме логов, client.pid, старых бэкапов) — токены, комнаты плееров, привязки
+  ГРАБЛИ (исправлено f71c2fd, 06.10): состояние лежит в ДВУХ местах — config.json в корне
+  dataDir и *.json/*.properties в dataDir/data/; первый вариант вайпа обходил только корень
+  → комнаты выживали Reset. Теперь glob по обоим уровням (dry-run проверен на боксе: 7 файлов).
   навыка, devices, tasker-настройки. Кнопка с confirm; на боксе НЕ нажимали.
   Cloud при отключении показывает 'not authorized' + кнопка 'Login to Yandex' (единообразно со
   Spotify 'not authorized' + 'Login to Spotify').
