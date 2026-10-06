@@ -17,6 +17,10 @@
 - README обновлён под v1.7 (новые команды навыка, TODO поизбранному убран).
 
 ## Что в работе
+- **Иконка плагина (06.10, 7ab21d7, на боксе)**: icon.png 48x48 (из img/udy.webp, PIL) в
+  HTML/EN/plugins/LyrionYandexBridge/html/ — конвенция LMS; показана справа сверху блока
+  Client status (src=/plugins/LyrionYandexBridge/html/icon.png). В сборочный zip попадает
+  автоматически — у пользователей будет со след. релизом. Список плагинов LMS иконки не рендерит.
 - **v1.8 post-release: шторм запросов ломал страницу плагина (06.10, 7b7c18a, на боксе)**:
   live-чек в StatusJson + refresh на каждый saveSettings (вкладка настроек LMS шлёт форму
   повторно) грузили однопоточный HTTP LMS → флаг плясал, status.json >3с → блок Client status
