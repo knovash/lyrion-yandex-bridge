@@ -14,7 +14,10 @@
 - **LMS disconnected 192.168.1.111 — ГРАБЛИ+фикс (06.10, 4d7c988)**: при старте клиента во
   время рестарта LMS автопоиск находил ЧУЖОЙ LMS в сети (.111) и перезаписывал конфиг.
   Фикс: Config.lmsIpForced (static, ставится --lms.ip из applyArgs) → searchForLmsIp не
-  сканирует/не подменяет (LOG: FORCED BY ARGS - SKIP NETWORK SEARCH). На боксе вернул
+  сканирует/не подменяет, НО проверку isLmsServer делает обязательно (18c4358): она
+  выставляет lmsServerOnline — без неё updatePlayers NPE (Boolean null) и одноразовый
+  60s-ретрай не спасал (клиент навсегда offline после старта при неготовом LMS).
+  LOG теперь: FORCED BY ARGS (127.0.0.1) - OK / NOT READY YET. На боксе вернул
   lmsIp=127.0.0.1 (при ОСТАНОВЛЕННОМ клиенте). Также всплыл известный NPE lmsServerOnline
   при раннем старте — лечится штатным 60s-ретраем (подтверждено: players подхватились).
 - **Music devices in Yandex не обновлялся по Apply — ГРАБЛИ+фикс (06.10, 87c52fd)**:
