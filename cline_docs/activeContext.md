@@ -19,7 +19,7 @@
 - **Страница плагина LMS, блок Client status (06.10, деплой на .131, проверено рендером)**:
   Cloud — только connected/no connection (URL и дубль Connected убраны, кнопка Подключиться
   осталась при отключении); LMS — состояние ПЕРЕД адресом; строка Yandex rooms убрана;
-  Music devices — без префикса 'local: '; Spotify — connected + имя пользователя из
+  Music devices — двумя отдельными строками 'Music devices in plugin'/'Music devices in Yandex'; Spotify — connected + имя пользователя из
   api /v1/me (StatusJson: spotify.user, кэш 10 мин, fallback id). /status.json поле
   minutesLeft оставлено. Проверка рендера: /settings/plugins/LyrionYandexBridge/settings/basic.html.
 - **Шум при пробуждении плееров — ВОССТАНОВЛЕНО 05.10**: при миграции squeeze-alice(systemd,
