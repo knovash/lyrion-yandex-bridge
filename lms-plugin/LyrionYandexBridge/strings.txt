@@ -100,3 +100,11 @@ PLUGIN_LYRION_YANDEX_BRIDGE_ROOMS
 PLUGIN_LYRION_YANDEX_BRIDGE_ROOMS_DESC
 	EN	Assign a Yandex room to each LMS player. Saved with the settings page Save button; empty means no room.
 	RU	Привязка комнаты Яндекса к каждому плееру LMS. Сохраняется кнопкой «Сохранить» страницы настроек; пустое значение — комната не назначена.
+
+PLUGIN_LYRION_YANDEX_BRIDGE_HELP
+	EN	Help
+	RU	Справка
+
+PLUGIN_LYRION_YANDEX_BRIDGE_HELP_DESC
+	EN	Full documentation: README on GitHub
+	RU	Полное описание проекта: README на GitHub
