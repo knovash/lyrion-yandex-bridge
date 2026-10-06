@@ -80,7 +80,7 @@ sub _clientStatus {
 
 	$st{'cloud'} = $d->{'cloud'}->{'connected'}
 		? $on
-		: '<span style="color:red">no connection</span>';
+		: '<span style="color:red">not authorized</span>';
 	$st{'cloudconnected'} = $d->{'cloud'}->{'connected'} ? 1 : 0;
 
 	return \%st;
@@ -97,19 +97,25 @@ sub handler {
 		Plugins::LyrionYandexBridge::ClientProcess->start;
 	}
 
-	# Reset: сброс конфигурации клиента (config.json уходит в бэкак, клиент стартует
-	# со свежим конфигом; LMS/порт/подключение берёт из аргументов, авторизации сбрасываются)
+	# Reset: полный сброс состояния клиента. Все файлы состояния в data/ (config.json с токенами,
+	# lms_players.json с комнатами/настройками плееров, привязки навыка, devices, settings*.properties)
+	# уводятся в бэкап *.bak-reset-<ts>; логи, pid и старые бэкапы не трогаем. Клиент стартует с нуля.
 	if ($paramRef->{'resetclient'}) {
-		$log->warn('client config reset requested from settings page');
+		$log->warn('client reset (full wipe) requested from settings page');
 		Plugins::LyrionYandexBridge::ClientProcess->stop;
-		my $cfg = catfile(Plugins::LyrionYandexBridge::ClientProcess::dataDir(), 'config.json');
-		if (-e $cfg) {
-			my $bak = $cfg . '.bak-reset-' . time();
-			if (rename($cfg, $bak)) {
-				$log->warn("client config backed up to $bak");
+		my $dir = Plugins::LyrionYandexBridge::ClientProcess::dataDir();
+		my $suffix = '.bak-reset-' . time();
+		for my $f (glob(catfile($dir, '*'))) {
+			my ($name) = $f =~ m{([^/]+)$};
+			next if !-f $f;
+			next if $name eq 'log.txt' || $name eq 'client-stdout.log' || $name eq 'client.pid';
+			next if $name =~ /\.bak/;
+			next if $name !~ /\.(json|properties)$/;
+			if (rename($f, $f . $suffix)) {
+				$log->warn("reset: $name -> $name$suffix");
 			}
 			else {
-				$log->error("cannot backup client config: $!");
+				$log->error("reset: cannot backup $name: $!");
 			}
 		}
 		Plugins::LyrionYandexBridge::ClientProcess->start;

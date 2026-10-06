@@ -15,8 +15,8 @@ PLUGIN_LYRION_YANDEX_BRIDGE_STATUS_DESC
 	RU	Текущее состояние из самого клиента (обновляется при открытии страницы)
 
 PLUGIN_LYRION_YANDEX_BRIDGE_CONNECTYA
-	EN	Connect via Yandex
-	RU	Подключиться через Яндекс
+	EN	Login to Yandex
+	RU	Войти в Яндекс
 
 PLUGIN_LYRION_YANDEX_BRIDGE_AUTORUN
 	EN	Start the client
