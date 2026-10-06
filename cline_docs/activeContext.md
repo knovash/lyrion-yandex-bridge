@@ -47,7 +47,7 @@
   ГРАБЛИ ДЕПЛОЯ: рестарт LMS НЕ убивает detached java-клиент (systemd) — после scp jar проверять
   смену pid и при необходимости kill <pid> + рестарт. Проверено: 14 комнат загрузились.
 - **Плагин: секция Help внизу страницы настроек (06.10, деплой+проверено)** — ссылка на
-  README github.com/knovash/lyrion-yandex-bridge (strings HELP/HELP_DESC RU/EN).
+  README blob/main/README.md, текст 'Help README.md' (strings HELP/HELP_DESC RU/EN).
 - **strings плагина (06.10, деплой+проверено)**: имя 'Lyrion Yandex Smart Home Bridge'
   (было 'Lyrion Yandex Bridge (Yandex Smart Home)'), описание EN 'Integrate LMS players into
   Yandex Smart Home' / RU 'Интеграция плееров в умный дом'.
