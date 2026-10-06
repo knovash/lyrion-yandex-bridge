@@ -3,6 +3,7 @@ package knovash.saclient.yandex;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import knovash.saclient.yandex.provider.response.*;
+import knovash.saclient.lms.Player;
 import knovash.saclient.utils.JsonUtils;
 import knovash.saclient.web.SettingsButtons;
 import knovash.saclient.yandex.Yandex;
@@ -13,6 +14,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -337,6 +339,36 @@ public class SmartHome {
         }
         result.addAll(musicByRoom.values());
         devices = result;
+    }
+
+    /** Удалить устройство "музыка" комнаты (комната осталась без плееров). */
+    public void removeMusicDeviceByRoom(String roomName) {
+        int before = devices.size();
+        devices.removeIf(d -> d != null
+                && "музыка".equalsIgnoreCase(d.name)
+                && roomName != null && roomName.equals(d.room));
+        log.info("REMOVE MUSIC DEVICE room=" + roomName + " (removed " + (before - devices.size()) + ")");
+    }
+
+    /**
+     * Удалить устройства "музыка" комнат, в которых нет ни одного плеера
+     * (инвариант: устройство существует ⇔ в комнате есть плеер).
+     */
+    public void removeMusicDevicesWithoutPlayers(List<Player> players) {
+        Set<String> roomsWithPlayers = players == null ? Set.of()
+                : players.stream()
+                        .filter(Objects::nonNull)
+                        .map(p -> p.room)
+                        .filter(r -> r != null && !r.isEmpty())
+                        .collect(Collectors.toSet());
+        int before = devices.size();
+        devices.removeIf(d -> d != null
+                && "музыка".equalsIgnoreCase(d.name)
+                && !roomsWithPlayers.contains(d.room));
+        if (before != devices.size()) {
+            log.info("RECONCILE MUSIC DEVICES: removed " + (before - devices.size())
+                    + " (rooms with players: " + roomsWithPlayers + ")");
+        }
     }
 
     public void write() {

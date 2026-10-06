@@ -303,8 +303,15 @@ public class LmsPlayers {
             return "NULL";
         }
         if (roomName.isEmpty()) {
-            log.info("PLAYER ROOM CLEAR: " + playerName + " (was " + player.room + ")");
+            String oldRoom = player.room;
+            log.info("PLAYER ROOM CLEAR: " + playerName + " (was " + oldRoom + ")");
             player.room = null;
+            // если комнату больше не использует ни один плеер — удалить и устройство "музыка"
+            if (oldRoom != null && !oldRoom.isEmpty()
+                    && players.stream().noneMatch(p -> p != null && oldRoom.equals(p.room))) {
+                smartHome.removeMusicDeviceByRoom(oldRoom);
+                smartHome.write();
+            }
             write();
             log.info("FINISH PLAYER ROOM CLEAR");
             log.info(line);

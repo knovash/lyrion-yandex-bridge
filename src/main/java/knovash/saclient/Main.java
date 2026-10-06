@@ -144,6 +144,8 @@ public class Main {
                     .filter(Objects::nonNull)
                     .map(d -> d.id)
                     .collect(Collectors.toSet()));
+            // инвариант: устройство "музыка" есть только в комнатах с назначенным плеером
+            smartHome.removeMusicDevicesWithoutPlayers(lmsPlayers.players);
             Yandex.createOtherDevicesFromYandexDevices(Yandex.otherDevices);
             log.info("YANDEX DEVICES saved local: " + smartHome.devices.stream().filter(Objects::nonNull).map(device -> device.room).collect(Collectors.toList()));
             smartHome.write();
