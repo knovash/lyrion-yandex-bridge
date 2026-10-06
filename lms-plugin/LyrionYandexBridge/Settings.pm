@@ -41,8 +41,8 @@ sub _clientStatus {
 	my $off = '<span style="color:red">disconnected</span>';
 
 	my %st;
-	$st{'lms'} = ($d->{'lms'}->{'ip'} || '') . ':' . ($d->{'lms'}->{'port'} || '') . ' '
-		. ($d->{'lms'}->{'online'} ? $on : $off);
+	$st{'lms'} = ($d->{'lms'}->{'online'} ? $on : $off) . ' '
+		. ($d->{'lms'}->{'ip'} || '') . ':' . ($d->{'lms'}->{'port'} || '');
 
 	my $offshort = ' <span style="color:red">off</span>';
 	my @pl = map {
@@ -56,17 +56,19 @@ sub _clientStatus {
 		? $on . ' ' . ($d->{'yandex'}->{'name'} || '')
 		: '<span style="color:red">not authorized</span>';
 
-	$st{'rooms'} = join(', ', @{$d->{'rooms'} || []}) || '<span style="color:red">none</span>';
+# (комнаты Яндекса на странице плагина не показываем — список длинный, был убран по просьбе владельца)
 
-	$st{'music'} = 'local: ' . (join(', ', @{$d->{'musicLocal'} || []}) || '-')
+	$st{'music'} = (join(', ', @{$d->{'musicLocal'} || []}) || '-')
 		. '<br>&nbsp;&nbsp;&nbsp;in Yandex: ' . (join(', ', @{$d->{'musicYandex'} || []}) || '-');
 
+	my $spotifyUser = $d->{'spotify'}->{'user'} || '';
 	$st{'spotify'} = $d->{'spotify'}->{'loggedIn'}
-		? $on . ', ~' . ($d->{'spotify'}->{'minutesLeft'} || 0) . ' min'
+		? $on . ($spotifyUser ne '' ? ' ' . $spotifyUser : '')
 		: '<span style="color:red">not authorized</span>';
 
-	$st{'cloud'} = ($d->{'cloud'}->{'url'} || '') . ' '
-		. ($d->{'cloud'}->{'connected'} ? $on : '<span style="color:red">no connection</span>');
+	$st{'cloud'} = $d->{'cloud'}->{'connected'}
+		? $on
+		: '<span style="color:red">no connection</span>';
 	$st{'cloudconnected'} = $d->{'cloud'}->{'connected'} ? 1 : 0;
 
 	return \%st;

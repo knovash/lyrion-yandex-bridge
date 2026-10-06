@@ -6,13 +6,10 @@
 			<tr><td style="width:28%; padding:2px 6px; vertical-align:top;"><b>LMS</b></td><td style="padding:2px 6px;">[% status.lms %]</td></tr>
 			<tr><td style="padding:2px 6px; vertical-align:top;"><b>LMS players</b></td><td style="padding:2px 6px;">[% status.players %]</td></tr>
 			<tr><td style="padding:2px 6px; vertical-align:top;"><b>Yandex</b></td><td style="padding:2px 6px;">[% status.yandex %]</td></tr>
-			<tr><td style="padding:2px 6px; vertical-align:top;"><b>Yandex rooms</b></td><td style="padding:2px 6px;">[% status.rooms %]</td></tr>
 			<tr><td style="padding:2px 6px; vertical-align:top;"><b>Music devices</b></td><td style="padding:2px 6px;">[% status.music %]</td></tr>
 			<tr><td style="padding:2px 6px; vertical-align:top;"><b>Spotify</b></td><td style="padding:2px 6px;">[% status.spotify %]</td></tr>
 			<tr><td style="padding:2px 6px; vertical-align:top;"><b>Cloud</b></td><td style="padding:2px 6px;">[% status.cloud %]
-			[% IF status.cloudconnected %]
-				&nbsp;<span style="color:green; font-weight:bold;">Connected</span>
-			[% ELSE %]
+			[% IF !status.cloudconnected %]
 				&nbsp;<a href="[% status.authurl %]" target="lybauth"><button type="button">[% "PLUGIN_LYRION_YANDEX_BRIDGE_CONNECTYA" | string %]</button></a>
 			[% END %]
 			</td></tr>

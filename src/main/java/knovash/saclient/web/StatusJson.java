@@ -1,9 +1,11 @@
 package knovash.saclient.web;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import knovash.saclient.Main;
+import knovash.saclient.SpotifyApi;
 import knovash.saclient.lms.Player;
 import knovash.saclient.yandex.Yandex;
 
@@ -65,6 +67,7 @@ public class StatusJson {
         // Spotify
         ObjectNode spotify = root.putObject("spotify");
         spotify.put("loggedIn", Main.config.spotifyLoggedIn());
+        spotify.put("user", spotifyUserCached());
         spotify.put("minutesLeft", Math.max(0,
                 (int) ((Main.config.spotifyExpiresAt - System.currentTimeMillis()) / 60000L)));
 
@@ -74,5 +77,31 @@ public class StatusJson {
         cloud.put("connected", Main.cloudClient != null && Main.cloudClient.isConnected());
 
         return root.toString();
+    }
+
+    // имя пользователя Spotify: api /v1/me, кэш 10 минут (страницу плагина открывают редко,
+    // но дёргать Spotify при каждом /status.json не хотим)
+    private static volatile String spotifyUser = null;
+    private static volatile long spotifyUserFetchedAt = 0L;
+
+    private static String spotifyUserCached() {
+        long now = System.currentTimeMillis();
+        if (spotifyUser == null || now - spotifyUserFetchedAt > 600_000L) {
+            try {
+                String json = SpotifyApi.get(Main.config, "https://api.spotify.com/v1/me");
+                if (json != null) {
+                    JsonNode me = new ObjectMapper().readTree(json);
+                    String name = me.path("display_name").asText("");
+                    if (name.isEmpty()) name = me.path("id").asText("");
+                    if (!name.isEmpty()) {
+                        spotifyUser = name;
+                        spotifyUserFetchedAt = now;
+                    }
+                }
+            } catch (Exception ignored) {
+                // останется прежнее кэшированное значение или пустая строка
+            }
+        }
+        return spotifyUser == null ? "" : spotifyUser;
     }
 }
