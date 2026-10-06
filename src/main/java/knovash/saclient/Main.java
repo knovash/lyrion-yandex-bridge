@@ -9,6 +9,7 @@ import knovash.saclient.yandex.YandexUtils;
 
 import java.io.File;
 import java.time.LocalTime;
+import java.util.concurrent.CompletableFuture;
 import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
@@ -76,10 +77,10 @@ public class Main {
         }
 
         // УДЯ: восстановить локальные устройства из файла, затем устройства "Музыка"
-        // и кнопки-устройства из Яндекса. Отдельный метод yandexInit: вызывается при старте,
-        // после авторизации в Яндекс (LocalAuthYandex) и может вызываться повторно.
+        // и кнопки-устройства из Яндекса. В ФОНОВОМ потоке: user/info у Яндекса может
+        // занимать секунды — не задерживаем готовность веб-сервера (:8888) клиента
         smartHome.read();
-        yandexInit();
+        CompletableFuture.runAsync(Main::yandexInit);
 
         // повтор инициализации через 60 с, если плееры не удалось получить при старте
         java.util.concurrent.ScheduledExecutorService retryExecutor =

@@ -35,7 +35,7 @@ sub prefs {
 sub _clientStatus {
 	my $port = $prefs->get('port') || 8888;
 
-	my $ua = LWP::UserAgent->new(timeout => 6);
+	my $ua = LWP::UserAgent->new(timeout => 3);
 	my $resp = eval { $ua->get("http://127.0.0.1:$port/status.json") };
 	return unless $resp && $resp->is_success;
 
@@ -136,6 +136,9 @@ sub handler {
 	}
 
 	if ($paramRef->{'saveSettings'}) {
+		# после Restart/Reset клиент грузится — запросы к нему всё равно таймаутятся
+		# и лишь блокируют рендер страницы; комнаты и refresh применяем только при обычном Apply
+		unless ($paramRef->{'restart'} || $paramRef->{'resetclient'}) {
 		# комнаты плееров: селекты lybroom_<player> отправляем клиенту (только изменившиеся;
 		# пустое значение = не назначать). Применяем ДО возможного рестарта клиента из-за смены port/bind.
 		{
@@ -175,6 +178,7 @@ sub handler {
 				};
 			}
 		}
+		} # unless restart/reset
 
 		# radio/checkbox отсылаются только в состоянии "вкл"
 		$paramRef->{'pref_autorun'} ||= 0;

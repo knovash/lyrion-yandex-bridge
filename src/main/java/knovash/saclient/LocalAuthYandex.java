@@ -2,6 +2,8 @@ package knovash.saclient;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Страница авторизации в Яндексе: ссылка на облачный /authorize?state=...,
  * опрос /token?state=... (как LocalAuthServerYandex в squeeze-alice).
@@ -48,7 +50,7 @@ public class LocalAuthYandex extends LocalAuthBase {
         // переподключаем WebSocket с новым instanceToken
         if (Main.cloudClient != null) Main.cloudClient.restart();
         // комнаты/устройства должны подтягиваться из аккаунта СРАЗУ после авторизации,
-        // а не ждать рестарта клиента
-        Main.yandexInit();
+        // а не ждать рестарта клиента. Асинхронно: ответ страницы авторизации не ждёт Яндекс
+        CompletableFuture.runAsync(Main::yandexInit);
     }
 }

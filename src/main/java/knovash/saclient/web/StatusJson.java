@@ -81,28 +81,35 @@ public class StatusJson {
         return root.toString();
     }
 
-    // имя пользователя Spotify: api /v1/me, кэш 10 минут (страницу плагина открывают редко,
-    // но дёргать Spotify при каждом /status.json не хотим)
+    // имя пользователя Spotify: api /v1/me. Первый запрос идёт В ФОНЕ (Spotify может
+    // отвечать секунды — не блокируем /status.json), дальше кэш 10 минут
     private static volatile String spotifyUser = null;
     private static volatile long spotifyUserFetchedAt = 0L;
+    private static final java.util.concurrent.atomic.AtomicBoolean spotifyUserFetching =
+            new java.util.concurrent.atomic.AtomicBoolean(false);
 
     private static String spotifyUserCached() {
         long now = System.currentTimeMillis();
-        if (spotifyUser == null || now - spotifyUserFetchedAt > 600_000L) {
-            try {
-                String json = SpotifyApi.get(Main.config, "https://api.spotify.com/v1/me");
-                if (json != null) {
-                    JsonNode me = new ObjectMapper().readTree(json);
-                    String name = me.path("display_name").asText("");
-                    if (name.isEmpty()) name = me.path("id").asText("");
-                    if (!name.isEmpty()) {
-                        spotifyUser = name;
-                        spotifyUserFetchedAt = now;
+        if ((spotifyUser == null || now - spotifyUserFetchedAt > 600_000L)
+                && spotifyUserFetching.compareAndSet(false, true)) {
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    String json = SpotifyApi.get(Main.config, "https://api.spotify.com/v1/me");
+                    if (json != null) {
+                        JsonNode me = new ObjectMapper().readTree(json);
+                        String name = me.path("display_name").asText("");
+                        if (name.isEmpty()) name = me.path("id").asText("");
+                        if (!name.isEmpty()) {
+                            spotifyUser = name;
+                            spotifyUserFetchedAt = System.currentTimeMillis();
+                        }
                     }
+                } catch (Exception ignored) {
+                    // останется прежнее кэшированное значение или пустая строка
+                } finally {
+                    spotifyUserFetching.set(false);
                 }
-            } catch (Exception ignored) {
-                // останется прежнее кэшированное значение или пустая строка
-            }
+            });
         }
         return spotifyUser == null ? "" : spotifyUser;
     }

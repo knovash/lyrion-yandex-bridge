@@ -517,31 +517,14 @@ public class LmsPlayers {
     }
 
     public void searchForLmsIp() {
-        // IP задан плагином (--lms.ip): никогда не сканируем сеть и не подменяем — иначе при
-        // рестарте LMS клиент может «прилипнуть» к чужому LMS в сети (было: 192.168.1.111).
-        // Но проверить сервер ОБЯЗАТЕЛЬНО: isLmsServer выставляет lmsServerOnline, без него
-        // updatePlayers падает NPE (Boolean null) и одноразовый 60s-ретрай не спасает.
-        if (Config.lmsIpForced) {
-            boolean ok = isLmsServer(config.lmsIp, Integer.parseInt(config.lmsPort));
-            log.info("LMS IP FORCED BY ARGS (" + config.lmsIp + ") - "
-                    + (ok ? "OK" : "NOT READY YET, NO NETWORK SEARCH"));
-            return;
-        }
+        // клиент всегда запускается плагином на той же машине, что и LMS (--lms.ip форсирован):
+        // только проверяем готовность сервера (isLmsServer заодно выставляет lmsServerOnline —
+        // без него updatePlayers падает NPE на Boolean null). Сеть НЕ сканируем и IP НЕ подменяем
+        // (раньше автопоиск мог «прилипнуть» к чужому LMS в сети — было: 192.168.1.111).
         log.info("START");
-//        if (Utils.checkIpIsLms(config.lmsIp)) {
-        if (isLmsServer(config.lmsIp, 9000)) {
-            log.info("from config ok");
-            return;
-        }
-        log.info("SEARCH FOR LMS IP");
-        String lmsIp = LmsSearchForIp.findServerIp();
-        if (lmsIp != null) {
-            log.info("LMS IP: " + lmsIp);
-            config.lmsIp = lmsIp;
-            config.save();
-        } else {
-            log.info("ERROR LMS NOT FOUND");
-        }
+        lmsServerOnline = isLmsServer(config.lmsIp, Integer.parseInt(config.lmsPort));
+        log.info("LMS " + config.lmsIp + ":" + config.lmsPort
+                + (Boolean.TRUE.equals(lmsServerOnline) ? " OK" : " NOT READY"));
     }
 
     public void logPlayersNames() {
