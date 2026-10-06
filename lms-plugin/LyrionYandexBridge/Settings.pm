@@ -59,8 +59,8 @@ sub _clientStatus {
 
 # (комнаты Яндекса на странице плагина не показываем — список длинный, был убран по просьбе владельца)
 
-	$st{'music'} = (join(', ', @{$d->{'musicLocal'} || []}) || '-')
-		. '<br>&nbsp;&nbsp;&nbsp;in Yandex: ' . (join(', ', @{$d->{'musicYandex'} || []}) || '-');
+	$st{'music_plugin'} = (join(', ', @{$d->{'musicLocal'} || []}) || '-');
+	$st{'music_yandex'} = (join(', ', @{$d->{'musicYandex'} || []}) || '-');
 
 	my $spotifyUser = $d->{'spotify'}->{'user'} || '';
 	$st{'spotify'} = $d->{'spotify'}->{'loggedIn'}
