@@ -66,6 +66,7 @@ sub _clientStatus {
 	$st{'spotify'} = $d->{'spotify'}->{'loggedIn'}
 		? $on . ($spotifyUser ne '' ? ' ' . $spotifyUser : '')
 		: '<span style="color:red">not authorized</span>';
+	$st{'spotifyloggedin'} = $d->{'spotify'}->{'loggedIn'} ? 1 : 0;
 
 	$st{'cloud'} = $d->{'cloud'}->{'connected'}
 		? $on
@@ -140,8 +141,9 @@ sub handler {
 	# сводка состояния из самого клиента (обновляется при открытии страницы)
 	$paramRef->{'status'} = $paramRef->{'running'} ? _clientStatus() : undef;
 	if ($paramRef->{'status'}) {
-		# кнопка авторизации в облаке ведёт на /auth клиента
+		# кнопки авторизации в облаке/Spotify ведут на страницы клиента
 		$paramRef->{'status'}->{'authurl'} = $paramRef->{'weburl'} . 'auth';
+		$paramRef->{'status'}->{'authurlspotify'} = $paramRef->{'weburl'} . 'auth_spotify';
 	}
 
 	return $class->SUPER::handler($client, $paramRef);

@@ -88,3 +88,7 @@ PLUGIN_LYRION_YANDEX_BRIDGE_RESET
 PLUGIN_LYRION_YANDEX_BRIDGE_RESET_CONFIRM
 	EN	Reset client configuration? Tokens will be cleared, you will need to log in again.
 	RU	Сбросить конфигурацию клиента? Токены будут очищены, потребуется повторная авторизация.
+
+PLUGIN_LYRION_YANDEX_BRIDGE_LOGINSPOTIFY
+	EN	Login to Spotify
+	RU	Войти в Spotify
