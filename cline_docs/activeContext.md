@@ -11,6 +11,8 @@
 - README обновлён под v1.7 (новые команды навыка, TODO поизбранному убран).
 
 ## Что в работе
+- **Плагин: секция Help внизу страницы настроек (06.10, деплой+проверено)** — ссылка на
+  README github.com/knovash/lyrion-yandex-bridge (strings HELP/HELP_DESC RU/EN).
 - **strings плагина (06.10, деплой+проверено)**: имя 'Lyrion Yandex Smart Home Bridge'
   (было 'Lyrion Yandex Bridge (Yandex Smart Home)'), описание EN 'Integrate LMS players into
   Yandex Smart Home' / RU 'Интеграция плееров в умный дом'.
