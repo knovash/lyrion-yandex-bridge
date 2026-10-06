@@ -18,9 +18,11 @@
   БЕЗ delay/volume_max/schedule — их меняет только /players клиента). e2e: no-op POST и рендер ок.
 - **Плагин: bind по умолчанию All interfaces + кнопка Reset (06.10, деплой на .131)**:
   Plugin.pm prefs->init bind='0.0.0.0' (для новых установок; сохранённое значение не трогается).
-  Reset: stop клиента → config.json → config.json.bak-reset-<ts> → start (клиент берёт lms/port/bind
-  из аргументов, сбрасываются только токены/авторизации; данные data/*.json НЕ трогаются).
-  Кнопка с confirm (strings.txt RU/EN). На боксе кнопку НЕ нажимали (снесла бы токены владельца).
+  Reset = ПОЛНЫЙ вайп (решение владельца 06.10): все *.json/*.properties из data/ уходят в
+  *.bak-reset-<ts> (кроме логов, client.pid, старых бэкапов) — токены, комнаты плееров, привязки
+  навыка, devices, tasker-настройки. Кнопка с confirm; на боксе НЕ нажимали.
+  Cloud при отключении показывает 'not authorized' + кнопка 'Login to Yandex' (единообразно со
+  Spotify 'not authorized' + 'Login to Spotify').
 - **Страница плагина LMS, блок Client status (06.10, деплой на .131, проверено рендером)**:
   Cloud — только connected/no connection (URL и дубль Connected убраны, кнопка Подключиться
   осталась при отключении); LMS — состояние ПЕРЕД адресом; строка Yandex rooms убрана;
