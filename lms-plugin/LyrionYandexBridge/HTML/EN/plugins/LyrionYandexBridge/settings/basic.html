@@ -28,7 +28,7 @@
 		[% FOREACH rs IN status.roomselects %]
 			<tr><td style="width:28%; padding:2px 6px; vertical-align:top;"><b>[% rs.name %]</b></td><td style="padding:2px 6px;">
 			<select class="stdedit" name="lybroom_[% rs.name %]">
-				<option value=""[% IF rs.room == '' %] selected[% END %]>—</option>
+				<option value=""[% IF rs.room == '' %] selected[% END %]>no</option>
 				[% FOREACH r IN rs.options %]
 					<option value="[% r %]"[% IF r == rs.room %] selected[% END %]>[% r %]</option>
 				[% END %]
