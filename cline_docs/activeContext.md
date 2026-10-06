@@ -11,6 +11,11 @@
 - README обновлён под v1.7 (новые команды навыка, TODO поизбранному убран).
 
 ## Что в работе
+- **Плагин: секция Player rooms — выбор комнаты для каждого плеера (06.10, деплой+проверено)**:
+  селекты lybroom_<player> (текущая комната selected; пустая опция = не назначена, POST не шлётся).
+  При Save страницы плагин отправляет ТОЛЬКО изменившиеся комнаты клиенту: POST /form
+  action=player_room_set (новый лёгкий экшен клиента: ActionsSync.selectNewPlayerInRoom + write,
+  БЕЗ delay/volume_max/schedule — их меняет только /players клиента). e2e: no-op POST и рендер ок.
 - **Плагин: bind по умолчанию All interfaces + кнопка Reset (06.10, деплой на .131)**:
   Plugin.pm prefs->init bind='0.0.0.0' (для новых установок; сохранённое значение не трогается).
   Reset: stop клиента → config.json → config.json.bak-reset-<ts> → start (клиент берёт lms/port/bind
