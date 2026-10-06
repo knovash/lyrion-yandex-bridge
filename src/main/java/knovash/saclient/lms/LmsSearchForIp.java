@@ -105,7 +105,9 @@ public class LmsSearchForIp {
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("HEAD");
             conn.setConnectTimeout(1000);
-            conn.setReadTimeout(1000);
+            // read-таймаут 3с: LMS под нагрузкой (rescan, рефреши страниц) не укладывается
+            // в 1с и флаг lmsServerOnline ложно падал в false (плагин показывал disconnect)
+            conn.setReadTimeout(3000);
 
             int responseCode = conn.getResponseCode();
             if (responseCode == 200 || responseCode == 302) {
