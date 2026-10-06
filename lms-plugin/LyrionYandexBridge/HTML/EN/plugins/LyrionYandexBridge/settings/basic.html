@@ -36,7 +36,7 @@
 			[% IF rs.inyandex %]
 				&nbsp;<span style="color:green">in Yandex</span>
 			[% ELSIF rs.room != '' %]
-				&nbsp;<span style="color:red">not in Yandex</span>
+				&nbsp;<span style="color:red">not connected - update devices in Yandex Smart Home</span>
 			[% END %]
 			</td></tr>
 		[% END %]
@@ -73,7 +73,7 @@
 	[% END %]
 
 	[% WRAPPER setting title="PLUGIN_LYRION_YANDEX_BRIDGE_HELP" desc="PLUGIN_LYRION_YANDEX_BRIDGE_HELP_DESC" %]
-		<b><a href="https://github.com/knovash/lyrion-yandex-bridge/blob/main/README.md" target="lybhelp">Help README.md</a></b>
+		<b><a href="https://github.com/knovash/lyrion-yandex-bridge/blob/main/README.md" target="lybhelp">README.md</a></b>
 	[% END %]
 
 [% PROCESS settings/footer.html %]
