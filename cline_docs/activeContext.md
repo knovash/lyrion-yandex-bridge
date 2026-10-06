@@ -27,7 +27,11 @@
   селекты lybroom_<player> (текущая комната selected; пустая опция = не назначена, POST не шлётся).
   При Save страницы плагин отправляет ТОЛЬКО изменившиеся комнаты клиенту: POST /form
   action=player_room_set (новый лёгкий экшен клиента: ActionsSync.selectNewPlayerInRoom + write,
-  БЕЗ delay/volume_max/schedule — их меняет только /players клиента). e2e: no-op POST и рендер ок.
+  БЕЗ delay/volume_max/schedule — их меняет только /players клиента).
+  ГРАБЛИ (исправлено d9f272e, 06.10): (1) перл — \$1 из блока grep не живёт снаружи → игрок уходил
+  пустым; матчить надо в теле цикла. (2) JSON::XS даёт Unicode-строки, LWP->post(\%form) молча
+  теряет wide-char значения → Encode::encode('UTF-8') обязателен. (3) 302 от клиента = ok.
+  e2e: HomePod3→Кухня→Спальня через POST страницы плагина, оба (ok), status.json подтвердил.
 - **Плагин: bind по умолчанию All interfaces + кнопка Reset (06.10, деплой на .131)**:
   Plugin.pm prefs->init bind='0.0.0.0' (для новых установок; сохранённое значение не трогается).
   Reset = ПОЛНЫЙ вайп (решение владельца 06.10): все *.json/*.properties из data/ уходят в
