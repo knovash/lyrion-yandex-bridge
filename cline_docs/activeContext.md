@@ -11,6 +11,12 @@
 - README обновлён под v1.7 (новые команды навыка, TODO поизбранному убран).
 
 ## Что в работе
+- **LMS disconnected 192.168.1.111 — ГРАБЛИ+фикс (06.10, 4d7c988)**: при старте клиента во
+  время рестарта LMS автопоиск находил ЧУЖОЙ LMS в сети (.111) и перезаписывал конфиг.
+  Фикс: Config.lmsIpForced (static, ставится --lms.ip из applyArgs) → searchForLmsIp не
+  сканирует/не подменяет (LOG: FORCED BY ARGS - SKIP NETWORK SEARCH). На боксе вернул
+  lmsIp=127.0.0.1 (при ОСТАНОВЛЕННОМ клиенте). Также всплыл известный NPE lmsServerOnline
+  при раннем старте — лечится штатным 60s-ретраем (подтверждено: players подхватились).
 - **Music devices in Yandex не обновлялся по Apply — ГРАБЛИ+фикс (06.10, 87c52fd)**:
   yandexInfoDevices кэшировался с момента старта; Apply теперь шлёт клиенту POST /form
   action=statusbar_refresh ПЕРЕД чтением /status.json → блок Client status свежий на той же
