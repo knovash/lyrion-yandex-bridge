@@ -10,7 +10,10 @@ import knovash.saclient.yandex.YandexUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -64,13 +67,25 @@ public class SmartHome {
         if (deviceFromYandex != null)
         // Случай 1: синхронизация с Яндексом
         {
+            // ищем и по id, И по комнате: устройство могло быть создано локально с UUID-id
+            // до того, как Яндекс присвоил ему свой external_id — иначе плодились дубли
             Device deviceExists = smartHome.devices.stream()
-                    .filter(device -> device.id.equals(deviceFromYandex.id))
+                    .filter(device -> deviceFromYandex.id.equals(device.id)
+                            || ("музыка".equalsIgnoreCase(device.name)
+                                && deviceFromYandex.roomName != null
+                                && deviceFromYandex.roomName.equalsIgnoreCase(device.room)))
                     .findFirst().orElse(null);
-            if (deviceExists != null) return;
+            if (deviceExists != null) {
+                // ВАЖНО !!! external_id от Яндекс сохранять в id устройства Музыка !!!
+                if (!deviceFromYandex.id.equals(deviceExists.id)) {
+                    log.info("UPDATE LOCAL DEVICE ID BY YANDEX: room=" + deviceExists.room
+                            + " " + deviceExists.id + " -> " + deviceFromYandex.id);
+                    deviceExists.id = deviceFromYandex.id;
+                }
+                return;
+            }
             log.info("CREATE DEVICE FROM YANDEX " + deviceFromYandex.roomName + " id: " + deviceFromYandex.id);
             createNewDeviceMusic(deviceFromYandex.roomName, deviceFromYandex.externalId, deviceFromYandex.name);
-//    ВАЖНО !!! external_id от Яндекс сохранять в id устройства Музыка !!!
         } else
 //
         // создание 1. глосом 2. веб. используя имя комнаты. если девай еще небыл создан и его нет в локальных девайсах по имени комнаты тогда создавать ненадо
@@ -297,6 +312,31 @@ public class SmartHome {
         log.info("NEW TOGGLE DEVICE CREATED: {} in room {} with id {}", deviceFromYandex.name, room, deviceFromYandex.externalId);
         devices.add(device);
         return device;
+    }
+
+    /**
+     * Убрать дубликаты устройств "музыка" по комнате (историческая порча данных:
+     * локальный UUID-id не совпадал с яндексовским — каждый цикл синхронизации
+     * добавлял ещё одну копию). Приоритет — устройство, чей id есть в Яндексе.
+     */
+    public void dedupeMusicDevicesByRoom(Set<String> yandexIds) {
+        List<Device> result = new ArrayList<>();
+        Map<String, Device> musicByRoom = new LinkedHashMap<>();
+        for (Device d : devices) {
+            if (d == null || !"музыка".equalsIgnoreCase(d.name)) {
+                if (d != null) result.add(d);
+                continue;
+            }
+            Device cur = musicByRoom.get(d.room);
+            if (cur == null || (yandexIds.contains(d.id) && !yandexIds.contains(cur.id))) {
+                if (cur != null) log.info("DEDUPE MUSIC: drop duplicate room=" + cur.room + " id=" + cur.id);
+                musicByRoom.put(d.room, d);
+            } else {
+                log.info("DEDUPE MUSIC: drop duplicate room=" + d.room + " id=" + d.id);
+            }
+        }
+        result.addAll(musicByRoom.values());
+        devices = result;
     }
 
     public void write() {
