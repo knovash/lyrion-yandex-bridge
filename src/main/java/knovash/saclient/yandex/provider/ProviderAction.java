@@ -27,7 +27,7 @@ import static knovash.saclient.Main.*;
 public class ProviderAction {
 
     public static Context providerActionRun(Context context) {
-        if (config.lmsIp == null) errorContext("LMS NULL", null);
+        if (config.lmsIp == null) return errorContext("LMS NULL", null);
         String body = context.body;
         String xRequestId;
 // получить из хедеров запроса id запроса который надо вернуть в ответе яндексу
@@ -54,6 +54,23 @@ public class ProviderAction {
             log.info("DEVICE from yandex id: " + device.id);
             Device deviceLocal = smartHome.deviceById(device.id);
 
+            // неизвестный яндекс-id (устаревший кэш УДЯ после смены id устройств):
+            // раньше здесь был NPE (deviceLocal.room) и Яндекс не получал ответ вовсе -
+            // облако отдавало "client timeout", УДЯ показывала "не удалось выполнить"
+            // (наблюдалось 06.10 23:10 и 07.10 утром: все actions на старый id 3f4cd481).
+            // Теперь пропускаем устройство и отвечаем на него ERROR/DEVICE_UNREACHABLE.
+            if (deviceLocal == null) {
+                log.warn("UNKNOWN DEVICE ID from Yandex: " + device.id
+                        + " - нет в локальных устройствах (устаревший id в УДЯ?)");
+                device.room = null;
+                device.capabilities = new ArrayList<>();
+                device.action_result = new ActionResult();
+                device.action_result.status = "ERROR";
+                device.action_result.error_code = "DEVICE_UNREACHABLE";
+                device.action_result.error_message = "Устройство не найдено у провайдера (устаревший id)";
+                continue;
+            }
+
             //        что надо сделать с девайсом команда от яндекс
             boolean stateForRun = false;
             for (Capability cap : device.capabilities) {
@@ -76,7 +93,7 @@ public class ProviderAction {
 
 
             log.info("DEVICE LOCAL: " + deviceLocal.room + " " + deviceLocal.name);
-            if (deviceLocal != null && "devices.types.other".equals(deviceLocal.type))
+            if ("devices.types.other".equals(deviceLocal.type))
                 return RunOtherDevice(responseYandex, device, deviceLocal, stateForRun);
         }
 

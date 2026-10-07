@@ -131,6 +131,13 @@ public class Player {
     }
 
     public Player playSilence() {
+        // пустой URL тишины не отправляем: LMS отвечает "No path or URL was requested!"
+        // и playlist play "" чистит текущий плейлист (07.10: config.silence терялся при ресетах)
+        if (config.silence == null || config.silence.isEmpty()) {
+            log.warn("PLAYER: " + this.name + " PLAY SILENCE SKIPPED: config.silence пустой");
+            this.saveLastTime();
+            return this;
+        }
         log.info("PLAYER: " + this.name + " PLAY SILENCE");
         Requests.postToLmsForStatus(RequestParameters.play(this.name, config.silence).toString());
         this.saveLastTime();
