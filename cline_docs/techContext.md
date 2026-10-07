@@ -48,6 +48,15 @@ mvn package        # желательно после rm -rf target (см. «Гр
 - Перед запуском теста выставить `Main.lmsServerOnline = false` (иначе NPE в `updatePlayers`).
 
 ## Известные грабли
+- **root-scp на бокс ЛОМАЕТ автообновление плагина (грабля 07.10!)**: LMS-PluginDownloader
+  работает от `squeezeboxserver`; root-owned файлы/каталоги в InstalledPlugins он не может
+  заменить/удалить → автообновление падает на полпути и ВЫПАРАШИВАЕТ каталог плагина
+  (остаётся огрызок, клиент не стартует; 07.10 11:22 сломало v1.10 на боксе .131).
+  ПРАВИЛО: после ЛЮБОГО root-scp в InstalledPlugins (или cache/LyrionYandexBridge) сразу
+  `chown -R squeezeboxserver:nogroup <путь>`. Проверка: `find <путь> -user root` — пусто.
+  Лечение сломанного: rm -rf каталога плагина → распаковка zip от squeezeboxserver
+  (`su -s /bin/bash squeezeboxserver -c 'cd …/InstalledPlugins/Plugins && python3 -m zipfile -e zip .'`,
+  unzip на боксе НЕТ) → рестарт LMS (`restartserver` через jsonrpc).
 - **Assembly + старый target**: если в `target/` остался jar прошлой версии, assembly раньше хватал его
   (захардкоженное имя) — теперь имя из pom, но всё равно собирать после чистки `target/`.
 - **Main.lmsServerOnline** — `Boolean`, неинициализирован до старта → NPE при раннем вызове `updatePlayers()`.

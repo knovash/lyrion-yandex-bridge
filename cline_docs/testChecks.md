@@ -46,3 +46,10 @@
   и `…/data/log.txt` (мультидневный, НЕ хронологичен в начале — брать хронологичный хвост
   от времени старта текущего прогона; искать «LYRION YANDEX BRIDGE START»).
 - sa_server (Zeabur): логи недоступны с рабочей машины — только Runtime logs у владельца.
+
+## Ручные деплои на бокс (грабля 07.10 — обязательно!)
+- После ЛЮБОГО root-scp в `InstalledPlugins/Plugins/LyrionYandexBridge` или
+  `cache/LyrionYandexBridge`: `chown -R squeezeboxserver:nogroup <путь>`, затем
+  `find <путь> -user root` — должно быть ПУСТО. Иначе автообновление плагина LMS
+  упадёт и выпарошит каталог (см. techContext «грабли»).
+- Обновление LMS: юнита systemd нет — `restartserver` через jsonrpc (localhost).
