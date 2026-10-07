@@ -48,6 +48,12 @@
   (uri/name=null) теперь отвечает «не нашла, скажите точнее» и НЕ зовёт playPath(null)
   (раньше было «включаю null»). НАБЛЮДЕНИЕ из e2e: мусорный запрос «zzzqqqxxx тествый»
   заматчился в «V $ X V PRiNCE» — общий cap score для поиска по-прежнему кандидат на фикс.
+- **07.10 СТРАНИЦА ПЛАГИНА: строка «Voice requests history» (перед Help)**: basic.html +
+  strings.txt (PLUGIN_LYRION_YANDEX_BRIDGE_REQUESTS/…_DESC/…_OPEN, RU/EN) + Settings.pm
+  (`requestsurl` = weburl + /requests). Ссылка открывает /requests клиента в новом окне
+  (target=lybreq). На боксе: файлы scp-нуты в InstalledPlugins, LMS перезапущен штатной
+  CLI-командой `restartserver` через jsonrpc (юнита systemd у LMS нет), проверено рендером.
+  В релизный zip уйдёт при следующем выпуске.
 - **~~РАССЛЕДОВАНИЕ ЛОГОВ 06.10 21:16–23:18~~ — ЗАКРЫТО 07.10**: п.2 (NPE) и п.3 (пустой URL
   тишины) исправлены (см. выше), п.1 (бесшумные смерти) за ночь не воспроизвёлся. Детали были:
   пользователь ОДИН —

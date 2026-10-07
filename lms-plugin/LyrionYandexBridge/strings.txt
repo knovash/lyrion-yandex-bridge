@@ -108,3 +108,15 @@ PLUGIN_LYRION_YANDEX_BRIDGE_HELP
 PLUGIN_LYRION_YANDEX_BRIDGE_HELP_DESC
 	EN	Full documentation: README on GitHub
 	RU	Полное описание проекта: README на GitHub
+
+PLUGIN_LYRION_YANDEX_BRIDGE_REQUESTS
+	EN	Voice requests history
+	RU	История голосовых запросов
+
+PLUGIN_LYRION_YANDEX_BRIDGE_REQUESTS_DESC
+	EN	History of skill search requests ("turn on ..."): request text, search result and time. Opens the client page in a new window.
+	RU	История поисковых запросов навыка («включи ...»): текст запроса, результат поиска и время. Открывается страница клиента в новом окне.
+
+PLUGIN_LYRION_YANDEX_BRIDGE_REQUESTS_OPEN
+	EN	Open requests history
+	RU	Открыть историю запросов

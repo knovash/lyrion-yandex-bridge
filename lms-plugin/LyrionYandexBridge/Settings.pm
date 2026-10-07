@@ -208,6 +208,8 @@ sub handler {
 	$paramRef->{'pid'}     = Plugins::LyrionYandexBridge::ClientProcess->pid || '';
 	$paramRef->{'weburl'}  = 'http://' . (Slim::Utils::Network::serverAddr() || 'localhost')
 		. ':' . ($prefs->get('port') || 8888) . '/';
+	$paramRef->{'requestsurl'} = 'http://' . (Slim::Utils::Network::serverAddr() || 'localhost')
+		. ':' . ($prefs->get('port') || 8888) . '/requests';
 	$paramRef->{'lasterror'} = $prefs->get('lasterror') || '';
 
 	# сводка состояния из самого клиента (обновляется при открытии страницы)

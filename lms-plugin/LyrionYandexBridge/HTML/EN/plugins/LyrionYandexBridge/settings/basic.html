@@ -71,6 +71,10 @@
 		<input type="text" class="stdedit" name="pref_opts" id="pref_opts" value="[% prefs.pref_opts %]" size="100">
 	[% END %]
 
+	[% WRAPPER setting title="PLUGIN_LYRION_YANDEX_BRIDGE_REQUESTS" desc="PLUGIN_LYRION_YANDEX_BRIDGE_REQUESTS_DESC" %]
+		<b><a href="[% requestsurl %]" target="lybreq">[% "PLUGIN_LYRION_YANDEX_BRIDGE_REQUESTS_OPEN" | string %]</a></b>
+	[% END %]
+
 	[% WRAPPER setting title="PLUGIN_LYRION_YANDEX_BRIDGE_HELP" desc="PLUGIN_LYRION_YANDEX_BRIDGE_HELP_DESC" %]
 		<b><a href="https://github.com/knovash/lyrion-yandex-bridge/blob/main/README.md" target="lybhelp">README.md</a></b>
 	[% END %]
