@@ -1,7 +1,15 @@
 # Active Context — что сейчас
 
-## Статус: v1.9 — ОПУБЛИКОВАН (06.10)
+## Статус: v1.10 — ОПУБЛИКОВАН (07.10)
 
+- **v1.10 (07.10, поздним утром)**: Release+asset (zip sha 1a723df8), push e20a1d4..ce6e019 в main,
+  repo.xml → 1.10. Состав: фикс УДЯ-actions NPE (неизвестный id → DEVICE_UNREACHABLE), guard
+  пустого config.silence, история запросов «включи …» (data/search_requests.txt + страница
+  /requests + ссылка «Запросы» в вебе + строка Voice requests history на странице плагина),
+  умный поиск Spotify (склеенные слова + тай-брейк близости, раньше не был закоммичен),
+  «не нашла» вместо «включаю null». Бокс владельца обновлён вручную до 1.10 (jar+ClientProcess.pm
+  +install.xml scp, LMS restartserver 11:20, pid 317504) — всё зелёное, история запросов работает
+  («включи aphex twin» → Aphex Twin, 11:12).
 - **v1.7 ОПУБЛИКОВАНА полностью** (Release 02.10 + repo.xml на main) — старая запись «в процессе»
   была неактуальна.
 - **v1.8: master==dev==085db9c**, версия 1.8 в pom/install.xml/ClientProcess.pm, сборка чистая,

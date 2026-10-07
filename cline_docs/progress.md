@@ -27,6 +27,7 @@
 | v1.8 | 06.10 | Страница плагина: статус-блок (Cloud/LMS/Music devices×2/Spotify с именем), Player rooms (+бейджи in Yandex), Reset (полный вайп), Login-кнопки, bind=All interfaces, Help; «найди файл»→«включи файл»(+мн.ч.); комнаты Яндекса сразу после авторизации; SmartHome.read (устройства переживают рестарт); стабильность LMS-флага (timeout 3с, live-check, самолечение, запрет подмены --lms.ip); player_room_set; новое имя плагина |
 | v1.8.1 | 06.10 | Фикс пост-релиза: анти-шторм (refresh ≥10с, без live-чека в status.json, timeout 6с) — страница плагина не пропадала при повторных отправках формы настроек |
 | v1.9 | 06.10 | Инвариант «устройство⇔комната с плеером», дедуп устройств, пункт 'no' (снять комнату), иконка в списке плагинов, оптимизация задержек (страница ~0.5с, async yandexInit/Spotify, без скана сети), строка LMS убрана со страницы, фикс Parser (пустые значения) |
+| v1.10 | 07.10 | Фикс УДЯ-actions на неизвестный id (NPE → ERROR/DEVICE_UNREACHABLE, был «client timeout»), guard пустого config.silence (playlist play ""), история запросов навыка «включи …» (data/search_requests.txt + страница /requests + ссылки в вебе и на странице плагина), умный поиск Spotify (склеенные слова «electric nose»~«Electrypnose», тай-брейк близости длины), «не нашла» вместо «включаю null», Spotify-«не найдено» не запускает playPath(null) |
 
 ## Открытые TODO (из кода)
 - `Tasker.forTaskerPlaylist`: для запроса из Tasker сделать запрос `playlist_cur_index`.
