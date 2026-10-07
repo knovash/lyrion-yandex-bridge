@@ -9,6 +9,7 @@ import knovash.saclient.web.SettingsButtons;
 import knovash.saclient.yandex.Yandex;
 import knovash.saclient.yandex.YandexUtils;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -78,11 +79,18 @@ public class SmartHome {
                                 && deviceFromYandex.roomName.equalsIgnoreCase(device.room)))
                     .findFirst().orElse(null);
             if (deviceExists != null) {
-                // ВАЖНО !!! external_id от Яндекс сохранять в id устройства Музыка !!!
-                if (!deviceFromYandex.id.equals(deviceExists.id)) {
-                    log.info("UPDATE LOCAL DEVICE ID BY YANDEX: room=" + deviceExists.room
-                            + " " + deviceExists.id + " -> " + deviceFromYandex.id);
-                    deviceExists.id = deviceFromYandex.id;
+                // id устройства задаёт ПРОВАЙДЕР и меняться не должен: Яндекс сопоставляет
+                // устройства при опросе /v1.0/user/devices по НАШЕМУ id (в user/info он
+                // приходит как external_id). Раньше здесь перезаписывали локальный id
+                // ВНУТРЕННИМ id Яндекса (deviceFromYandex.id) и отдавали его как свой —
+                // Яндекс не находил совпадения по external_id и реимпортировал устройство
+                // как НОВОЕ → дубли в УДЯ при каждом обновлении списка (07.10).
+                // Дописываем id только если он пуст (устройство создано локально без id).
+                if ((deviceExists.id == null || deviceExists.id.isEmpty())
+                        && deviceFromYandex.externalId != null && !deviceFromYandex.externalId.isEmpty()) {
+                    log.info("FILL LOCAL DEVICE ID BY YANDEX EXTERNAL_ID: room=" + deviceExists.room
+                            + " -> " + deviceFromYandex.externalId);
+                    deviceExists.id = deviceFromYandex.externalId;
                 }
                 return;
             }
@@ -103,7 +111,12 @@ public class SmartHome {
     }
 
     private Device createNewDeviceMusic(String roomName, String deviceId, String deviceName) {
-        if (deviceId == null) deviceId = String.valueOf(UUID.randomUUID());
+        // Детерминированный id от имени комнаты: пересоздание устройств (Reset, переустановка,
+        // чистый старт) даёт ТОТ ЖЕ id — Яндекс не реимпортирует устройство как новое, id
+        // в УДЯ/виджетах не устаревают. Раньше randomUUID() при каждом пересоздании плодил
+        // новые id (4 поколения за 06-07.10 -> дубли и «команды не проходят»).
+        if (deviceId == null || deviceId.isEmpty())
+            deviceId = String.valueOf(UUID.nameUUIDFromBytes(("музыка|" + roomName).getBytes(StandardCharsets.UTF_8)));
         Device device = new Device();
         device.room = roomName;
         device.id = deviceId;
