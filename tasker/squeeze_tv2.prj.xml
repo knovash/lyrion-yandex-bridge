@@ -3,7 +3,7 @@
 		<cdate>1549695866511</cdate>
 		<name>squeeze tv2</name>
 		<psort>Alpha</psort>
-		<tids>209,228,238,240,239,227,217,201,198,189,202,193,214,229,220,194,237,219,206,218,191,232,212,213,200,216,210,207</tids>
+		<tids>209,228,238,240,239,227,217,201,198,189,202,193,214,229,220,194,237,219,218,191,232,212,213,200,216,210</tids>
 		<tsort>Alpha</tsort>
 		<Share sr="Share">
 			<b>true</b>
@@ -385,6 +385,29 @@ The size of the response in bytes&lt;/_array_net.dinglisch.android.tasker.RELEVA
 			<ConditionList sr="if">
 				<Condition sr="c0" ve="3">
 					<lhs>%DEF</lhs>
+					<op>13</op>
+					<rhs></rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+		<Action sr="act296" ve="7">
+			<code>130</code>
+			<Str sr="arg0" ve="3">Settings default</Str>
+			<Int sr="arg1">
+				<var>%priority</var>
+			</Int>
+			<Int sr="arg10" val="1"/>
+			<Str sr="arg2" ve="3"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+			<Int sr="arg5" val="0"/>
+			<Int sr="arg6" val="0"/>
+			<Str sr="arg7" ve="3"/>
+			<Int sr="arg8" val="0"/>
+			<Int sr="arg9" val="0"/>
+			<ConditionList sr="if">
+				<Condition sr="c0" ve="3">
+					<lhs>%DEFV</lhs>
 					<op>13</op>
 					<rhs></rhs>
 				</Condition>
@@ -1148,130 +1171,6 @@ The size of the response in bytes&lt;/_array_net.dinglisch.android.tasker.RELEVA
 		</Action>
 		<Img sr="icn" ve="2">
 			<nme>mw_action_http</nme>
-		</Img>
-	</Task>
-	<Task sr="task206">
-		<cdate>1781257944347</cdate>
-		<edate>1787169797283</edate>
-		<id>206</id>
-		<nme>SA restart</nme>
-		<pri>7</pri>
-		<Action sr="act0" ve="7">
-			<code>2124891949</code>
-			<Bundle sr="arg0">
-				<Vals sr="val">
-					<LocalFile>&lt;null&gt;</LocalFile>
-					<LocalFile-type>java.lang.String</LocalFile-type>
-					<RemoteFile>&lt;null&gt;</RemoteFile>
-					<RemoteFile-type>java.lang.String</RemoteFile-type>
-					<SSHCommand>systemctl restart squeeze-alice</SSHCommand>
-					<SSHCommand-type>java.lang.String</SSHCommand-type>
-					<SSHCommandVariable>atsshresult</SSHCommandVariable>
-					<SSHCommandVariable-type>java.lang.String</SSHCommandVariable-type>
-					<SSHKey>&lt;null&gt;</SSHKey>
-					<SSHKey-type>java.lang.String</SSHKey-type>
-					<SSHPassword>12345</SSHPassword>
-					<SSHPassword-type>java.lang.String</SSHPassword-type>
-					<SSHPort>22</SSHPort>
-					<SSHPort-type>java.lang.String</SSHPort-type>
-					<SSHServer>192.168.1.131</SSHServer>
-					<SSHServer-type>java.lang.String</SSHServer-type>
-					<SSHUsername>root</SSHUsername>
-					<SSHUsername-type>java.lang.String</SSHUsername-type>
-					<com.twofortyfouram.locale.intent.extra.BLURB>Server: 192.168.1.131
-Port: 22
-Username: root
-Password: *******
-Command: systemctl restart squeeze-alice
-Command Variable: atsshresult</com.twofortyfouram.locale.intent.extra.BLURB>
-					<com.twofortyfouram.locale.intent.extra.BLURB-type>java.lang.String</com.twofortyfouram.locale.intent.extra.BLURB-type>
-					<net.dinglisch.android.tasker.RELEVANT_VARIABLES>&lt;StringArray sr=""&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES0&gt;%atsshresult()
-SSH command result
-The result lines of executing the SSH command&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES0&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES1&gt;%err
-Error Code
-Only available if you select &amp;lt;b&amp;gt;Continue Task After Error&amp;lt;/b&amp;gt; and the action ends in error&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES1&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES2&gt;%errmsg
-Error Message
-Only available if you select &amp;lt;b&amp;gt;Continue Task After Error&amp;lt;/b&amp;gt; and the action ends in error&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES2&gt;&lt;/StringArray&gt;</net.dinglisch.android.tasker.RELEVANT_VARIABLES>
-					<net.dinglisch.android.tasker.RELEVANT_VARIABLES-type>[Ljava.lang.String;</net.dinglisch.android.tasker.RELEVANT_VARIABLES-type>
-					<net.dinglisch.android.tasker.extras.VARIABLE_REPLACE_KEYS>SSHServer SSHPort SSHUsername SSHPassword SSHCommand SSHCommandVariable plugininstanceid plugintypeid </net.dinglisch.android.tasker.extras.VARIABLE_REPLACE_KEYS>
-					<net.dinglisch.android.tasker.extras.VARIABLE_REPLACE_KEYS-type>java.lang.String</net.dinglisch.android.tasker.extras.VARIABLE_REPLACE_KEYS-type>
-					<net.dinglisch.android.tasker.subbundled>true</net.dinglisch.android.tasker.subbundled>
-					<net.dinglisch.android.tasker.subbundled-type>java.lang.Boolean</net.dinglisch.android.tasker.subbundled-type>
-					<plugininstanceid>a0ab117f-b555-425f-ae42-14d83301ad56</plugininstanceid>
-					<plugininstanceid-type>java.lang.String</plugininstanceid-type>
-					<plugintypeid>com.joaomgcd.autotools.intent.IntentSSH</plugintypeid>
-					<plugintypeid-type>java.lang.String</plugintypeid-type>
-				</Vals>
-			</Bundle>
-			<Str sr="arg1" ve="3">com.joaomgcd.autotools</Str>
-			<Str sr="arg2" ve="3">com.joaomgcd.autotools.activity.ActivityConfigSSH</Str>
-			<Int sr="arg3" val="60"/>
-			<Int sr="arg4" val="1"/>
-		</Action>
-		<Img sr="icn" ve="2">
-			<nme>mw_hardware_router</nme>
-		</Img>
-	</Task>
-	<Task sr="task207">
-		<cdate>1781257944347</cdate>
-		<edate>1787169804117</edate>
-		<id>207</id>
-		<nme>SA stop</nme>
-		<pri>7</pri>
-		<Action sr="act0" ve="7">
-			<code>2124891949</code>
-			<Bundle sr="arg0">
-				<Vals sr="val">
-					<LocalFile>&lt;null&gt;</LocalFile>
-					<LocalFile-type>java.lang.String</LocalFile-type>
-					<RemoteFile>&lt;null&gt;</RemoteFile>
-					<RemoteFile-type>java.lang.String</RemoteFile-type>
-					<SSHCommand>systemctl stop squeeze-alice</SSHCommand>
-					<SSHCommand-type>java.lang.String</SSHCommand-type>
-					<SSHCommandVariable>atsshresult</SSHCommandVariable>
-					<SSHCommandVariable-type>java.lang.String</SSHCommandVariable-type>
-					<SSHKey>&lt;null&gt;</SSHKey>
-					<SSHKey-type>java.lang.String</SSHKey-type>
-					<SSHPassword>12345</SSHPassword>
-					<SSHPassword-type>java.lang.String</SSHPassword-type>
-					<SSHPort>22</SSHPort>
-					<SSHPort-type>java.lang.String</SSHPort-type>
-					<SSHServer>192.168.1.131</SSHServer>
-					<SSHServer-type>java.lang.String</SSHServer-type>
-					<SSHUsername>root</SSHUsername>
-					<SSHUsername-type>java.lang.String</SSHUsername-type>
-					<com.twofortyfouram.locale.intent.extra.BLURB>Server: 192.168.1.131
-Port: 22
-Username: root
-Password: *******
-Command: systemctl stop squeeze-alice
-Command Variable: atsshresult</com.twofortyfouram.locale.intent.extra.BLURB>
-					<com.twofortyfouram.locale.intent.extra.BLURB-type>java.lang.String</com.twofortyfouram.locale.intent.extra.BLURB-type>
-					<net.dinglisch.android.tasker.RELEVANT_VARIABLES>&lt;StringArray sr=""&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES0&gt;%atsshresult()
-SSH command result
-The result lines of executing the SSH command&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES0&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES1&gt;%err
-Error Code
-Only available if you select &amp;lt;b&amp;gt;Continue Task After Error&amp;lt;/b&amp;gt; and the action ends in error&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES1&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES2&gt;%errmsg
-Error Message
-Only available if you select &amp;lt;b&amp;gt;Continue Task After Error&amp;lt;/b&amp;gt; and the action ends in error&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES2&gt;&lt;/StringArray&gt;</net.dinglisch.android.tasker.RELEVANT_VARIABLES>
-					<net.dinglisch.android.tasker.RELEVANT_VARIABLES-type>[Ljava.lang.String;</net.dinglisch.android.tasker.RELEVANT_VARIABLES-type>
-					<net.dinglisch.android.tasker.extras.VARIABLE_REPLACE_KEYS>SSHServer SSHPort SSHUsername SSHPassword SSHCommand SSHCommandVariable plugininstanceid plugintypeid </net.dinglisch.android.tasker.extras.VARIABLE_REPLACE_KEYS>
-					<net.dinglisch.android.tasker.extras.VARIABLE_REPLACE_KEYS-type>java.lang.String</net.dinglisch.android.tasker.extras.VARIABLE_REPLACE_KEYS-type>
-					<net.dinglisch.android.tasker.subbundled>true</net.dinglisch.android.tasker.subbundled>
-					<net.dinglisch.android.tasker.subbundled-type>java.lang.Boolean</net.dinglisch.android.tasker.subbundled-type>
-					<plugininstanceid>a0ab117f-b555-425f-ae42-14d83301ad56</plugininstanceid>
-					<plugininstanceid-type>java.lang.String</plugininstanceid-type>
-					<plugintypeid>com.joaomgcd.autotools.intent.IntentSSH</plugintypeid>
-					<plugintypeid-type>java.lang.String</plugintypeid-type>
-				</Vals>
-			</Bundle>
-			<Str sr="arg1" ve="3">com.joaomgcd.autotools</Str>
-			<Str sr="arg2" ve="3">com.joaomgcd.autotools.activity.ActivityConfigSSH</Str>
-			<Int sr="arg3" val="60"/>
-			<Int sr="arg4" val="1"/>
-		</Action>
-		<Img sr="icn" ve="2">
-			<nme>mw_hardware_router</nme>
 		</Img>
 	</Task>
 	<Task sr="task209">
@@ -2880,6 +2779,16 @@ The size of the response in bytes&lt;/_array_net.dinglisch.android.tasker.RELEVA
 			<code>547</code>
 			<Str sr="arg0" ve="3">%BREAK</Str>
 			<Str sr="arg1" ve="3">&#10;</Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+			<Int sr="arg4" val="0"/>
+			<Int sr="arg5" val="3"/>
+			<Int sr="arg6" val="1"/>
+		</Action>
+		<Action sr="act297" ve="7">
+			<code>547</code>
+			<Str sr="arg0" ve="3">%DEFV</Str>
+			<Str sr="arg1" ve="3">2</Str>
 			<Int sr="arg2" val="0"/>
 			<Int sr="arg3" val="0"/>
 			<Int sr="arg4" val="0"/>
