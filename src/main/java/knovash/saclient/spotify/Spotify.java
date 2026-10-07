@@ -69,6 +69,7 @@ public class Spotify {
         log.info("SPOTIFY SEARCH " + type + ": " + target);
         GetLinkResult best = null;
         int bestScore = -1;
+        int bestProximity = Integer.MAX_VALUE;
         for (String q : searchQueries(target)) {
             try {
                 List<String[]> items = search.apply(q);
@@ -76,8 +77,13 @@ public class Spotify {
                     for (String[] item : items) {
                         if (item == null || item.length < 2 || item[0] == null || item[1] == null) continue;
                         int sc = matchScore(q, item[1]);
-                        if (sc > bestScore) {
+                        // тай-брейк при равном счёте: имя, чья длина ближе к запросу
+                        // («Electrypnose» против «The Electric Nosehair Orchestra» для «electric nose»)
+                        int prox = Math.abs(q.replace(" ", "").length()
+                                - normalizeWords(item[1]).replace(" ", "").length());
+                        if (sc > bestScore || (sc == bestScore && prox < bestProximity)) {
                             bestScore = sc;
+                            bestProximity = prox;
                             best = new GetLinkResult(item[0], item[1]);
                         }
                     }
@@ -91,7 +97,8 @@ public class Spotify {
         return best != null ? best : new GetLinkResult(null, null);
     }
 
-    /** Варианты запроса: нормализованный (транслит) + те же слова в обратном порядке. */
+    /** Варианты запроса: нормализованный (транслит) + обратный порядок слов + склеенный
+     *  (Алиса часто разбивает одно слово на два: «electrypnose» → «electric nose»). */
     static List<String> searchQueries(String target) {
         String t = normalizeWords(target);
         if (t.isEmpty()) return List.of(target == null ? "" : target.trim());
@@ -100,6 +107,8 @@ public class Spotify {
         Collections.reverse(words);
         String reversed = String.join(" ", words);
         if (!reversed.equals(t)) queries.add(reversed);
+        String joined = t.replace(" ", "");
+        if (words.size() > 1 && !queries.contains(joined)) queries.add(joined);
         return queries;
     }
 
@@ -134,7 +143,15 @@ public class Spotify {
                 }
             }
         }
-        if (matched == qWords.size()) return contains ? 85 : 80; // все слова запроса нашлись
+        if (matched == qWords.size()) return 80;                  // все слова запроса нашлись
+        // склеенные слова: «electric nose» ~ «Electrypnose» (Алиса разбивает одно слово на два)
+        String qJoined = query.replace(" ", "");
+        String cJoined = c.replace(" ", "");
+        if (!qJoined.isEmpty()
+                && Levenstein.dist(qJoined.toCharArray(), cJoined.toCharArray())
+                   <= Math.max(1, qJoined.length() / 5)) {
+            return 80;
+        }
         if (matched * 2 >= qWords.size()) return 60;             // хотя бы половина
         return contains ? 40 : 0;
     }
@@ -150,7 +167,7 @@ public class Spotify {
 
     public static GetLinkResult getLinkArtist(String target) {
         return searchBest("artist", target, q -> {
-            SpotifyArtists r = JsonUtils.jsonToPojo(spotifySearchJson(q, "artist", 5), SpotifyArtists.class);
+            SpotifyArtists r = JsonUtils.jsonToPojo(spotifySearchJson(q, "artist", 10), SpotifyArtists.class);
             if (r == null || r.artists == null || r.artists.items == null) return List.of();
             return r.artists.items.stream()
                     .filter(Objects::nonNull)
@@ -161,7 +178,7 @@ public class Spotify {
 
     public static GetLinkResult getLinkTrack(String target) {
         return searchBest("track", target, q -> {
-            SpotifySearchTrack r = JsonUtils.jsonToPojo(spotifySearchJson(q, "track", 5), SpotifySearchTrack.class);
+            SpotifySearchTrack r = JsonUtils.jsonToPojo(spotifySearchJson(q, "track", 10), SpotifySearchTrack.class);
             if (r == null || r.tracks == null || r.tracks.items == null) return List.of();
             return r.tracks.items.stream()
                     .filter(Objects::nonNull)
@@ -173,7 +190,7 @@ public class Spotify {
 
     public static GetLinkResult getLinkAlbum(String target) {
         return searchBest("album", target, q -> {
-            SpotifySearchAlbum r = JsonUtils.jsonToPojo(spotifySearchJson(q, "album", 5), SpotifySearchAlbum.class);
+            SpotifySearchAlbum r = JsonUtils.jsonToPojo(spotifySearchJson(q, "album", 10), SpotifySearchAlbum.class);
             if (r == null || r.albums == null || r.albums.items == null) return List.of();
             return r.albums.items.stream()
                     .filter(Objects::nonNull)
@@ -185,7 +202,7 @@ public class Spotify {
 
     public static GetLinkResult getLinkPlaylist(String target) {
         return searchBest("playlist", target, q -> {
-            SpotifySearchPlaylist r = JsonUtils.jsonToPojo(spotifySearchJson(q, "playlist", 5), SpotifySearchPlaylist.class);
+            SpotifySearchPlaylist r = JsonUtils.jsonToPojo(spotifySearchJson(q, "playlist", 10), SpotifySearchPlaylist.class);
             if (r == null || r.playlists == null || r.playlists.items == null) return List.of();
             return r.playlists.items.stream()
                     .filter(Objects::nonNull)
