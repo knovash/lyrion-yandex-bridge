@@ -39,6 +39,28 @@
   **Мультирежим/другие пользователи**: sa_server и CloudClient сегодня НЕ менялись —
   маршрутизация токен→uid→свой клиент не затронута; в v1.10 id-механика не менялась
   (нет регрессии), фиксы id уходят в v1.11.
+- **07.10 TASKER-ПРОЕКТЫ ПЕРЕРАБОТАНЫ (tasker/*.prj.xml, ждут импорта владельцем в Tasker)**:
+  1) **порт 8010 → выбираемый %PORT (default 8888)** во ВСЕХ трёх (tv2, v40, телефон):
+     `Set IP SA` собирает `http://%SERVER2_IP:%PORT`; в tv2/v40 добавлены задача `Set PORT SA`
+     (клон с телефона, task241/242) + пункт меню `PORT %PORT` + ветка (goto .*PORT. *).
+  2) **единая инициализация глобалов в `Settings default`** (первый старт — guard
+     `If %DEF isn't set` в Settings/act0 уже был): в 389-пакет добавлены %PORT=8888 (tv2/v40),
+     %FAVCOUNT=30 (все), отдельными действиями %BREAK='\\n' и %SERVERS-дефолт (354, If unset);
+     убраны дубли-сеттеры: %break в 3 Minimalistic-задачах (→глобальный %BREAK), %FAVCOUNT в
+     Favorites, 354-дефолт из Set IP select from saved.
+  3) **tv2 (ТВ без виджетов)**: удалены 11 задач (Action Settings get — все тогглы виджетные,
+     Action post my IP, 2× Minimalistic update*, Server wdg/minimalistic, Widget menu, Refresh,
+     Settings tv mode, Say, Wats playing? — голосовые); Settings-меню = LMS/SA/PORT/Player/Defaults
+     (ветки tv и toggls вырезаны); `Settings select player` → `%WIDGET=%ld_selected` + toast;
+     `Refresh volume` переработан = Wait→HTTP→toast «%PLAYER volume %volume» (без Minimalistic);
+     `Action playlist jump to index` без ->Refresh; из дефолтов убраны %MY_PORT/%TVMODE.
+     Осталось 29 задач.
+  4) **v40 (планшет)**: из Settings убран пункт TV + ветка + задача `Settings tv mode`;
+     виджеты/профили/ресивер 1821 — не тронуты. 57 задач.
+  ГРАБЛИ Tasker-XML: (а) действия в файле идут в ЛЕКСИЧЕСКОМ порядке act-ид (act1,act10,act11,act2!),
+  «соседнее действие» искать по содержимому, не по индексу; (б) уникальность act-sr внутри задачи
+  обязательна (renum с общего счётчика); (в) новые <Task> вставлять ВНУТРЬ </TaskerData>.
+  Бэкапы: /tmp/tasker-backup/. Валидация: minidom + инвентарь + колл-граф + grep-контроли — ок.
 - **v1.7 ОПУБЛИКОВАНА полностью** (Release 02.10 + repo.xml на main) — старая запись «в процессе»
   была неактуальна.
 - **v1.8: master==dev==085db9c**, версия 1.8 в pom/install.xml/ClientProcess.pm, сборка чистая,
