@@ -110,13 +110,50 @@ public class SmartHome {
         }
     }
 
+    /**
+     * Сойтись с Яндексом по external_id (его ключ сопоставления устройств): если в комнате
+     * Яндекса ровно ОДНО муз.устройство и его externalId отличается от нашего локального id —
+     * принять externalId. Лечит исторический дрейф (до фикса 07.10 локальный id перезаписывался
+     * внутренним id Яндекса) и предотвращает реимпорт/дубли у обновляющихся пользователей.
+     * При дублях в комнате (неоднозначность) — НЕ трогаем (нужна ручная чистка в УДЯ).
+     * При полном совпадении — no-op.
+     */
+    public static void convergeMusicIdsByExternalId(List<YandexUtils.DeviceFromYandex> yandexMusicDevices) {
+        if (yandexMusicDevices == null || yandexMusicDevices.isEmpty()) return;
+        Map<String, List<YandexUtils.DeviceFromYandex>> byRoom = yandexMusicDevices.stream()
+                .collect(Collectors.groupingBy(d -> d.roomName == null ? "" : d.roomName));
+        byRoom.forEach((room, list) -> {
+            if (list.size() != 1) {
+                log.warn("CONVERGE SKIP: room=" + room + " has " + list.size()
+                        + " music devices in Yandex (duplicates?) - needed manual cleanup in Yandex");
+                return;
+            }
+            String externalId = list.get(0).externalId;
+            if (externalId == null || externalId.isEmpty()) return;
+            smartHome.devices.stream()
+                    .filter(d -> "музыка".equalsIgnoreCase(d.name) && room.equalsIgnoreCase(d.room))
+                    .findFirst()
+                    .ifPresent(d -> {
+                        if (!externalId.equals(d.id)) {
+                            log.info("CONVERGE LOCAL DEVICE ID TO YANDEX EXTERNAL_ID: room=" + room
+                                    + " " + d.id + " -> " + externalId);
+                            d.id = externalId;
+                        }
+                    });
+        });
+    }
+
     private Device createNewDeviceMusic(String roomName, String deviceId, String deviceName) {
-        // Детерминированный id от имени комнаты: пересоздание устройств (Reset, переустановка,
+        // Детерминированный id от uid+имени комнаты: пересоздание устройств (Reset, переустановка,
         // чистый старт) даёт ТОТ ЖЕ id — Яндекс не реимпортирует устройство как новое, id
         // в УДЯ/виджетах не устаревают. Раньше randomUUID() при каждом пересоздании плодил
         // новые id (4 поколения за 06-07.10 -> дубли и «команды не проходят»).
-        if (deviceId == null || deviceId.isEmpty())
-            deviceId = String.valueOf(UUID.nameUUIDFromBytes(("музыка|" + roomName).getBytes(StandardCharsets.UTF_8)));
+        // yandexUid в seed: id уникален и МЕЖДУ пользователями облака (мультипользовательский
+        // режим), и при этом стабилен для одного пользователя.
+        if (deviceId == null || deviceId.isEmpty()) {
+            String seed = "музыка|" + (config.yandexUid == null ? "" : config.yandexUid) + "|" + roomName;
+            deviceId = String.valueOf(UUID.nameUUIDFromBytes(seed.getBytes(StandardCharsets.UTF_8)));
+        }
         Device device = new Device();
         device.room = roomName;
         device.id = deviceId;

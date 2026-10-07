@@ -134,6 +134,7 @@ public class Yandex {
             return;
         }
         log.info("CREATE DEVICES FROM YANDEX");
+        SmartHome.convergeMusicIdsByExternalId(yandexMusicDevices);
         yandexMusicDevices.forEach(device -> smartHome.create("", device));
         lmsPlayers.write();
         //smartHome.write();
