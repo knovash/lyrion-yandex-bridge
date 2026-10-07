@@ -5,6 +5,7 @@ import knovash.saclient.lms.Player;
 import knovash.saclient.lms.Response;
 import knovash.saclient.yandex.SmartHome;
 import knovash.saclient.Tasker;
+import knovash.saclient.utils.SearchRequests;
 import knovash.saclient.utils.Utils;
 import knovash.saclient.utils.levenstein.FavoritesSearch;
 import knovash.saclient.utils.levenstein.LibrarySearch;
@@ -31,6 +32,7 @@ public class ActionsAsync {
         log.info("PLAY SPOTIFY " + type + " COMMAND: " + command);
         String target = extractTargetFromCommand(command);
         log.info("TARGET: " + target);
+        SearchRequests.logRequest(command);
         // Запускаем асинхронный поиск в зависимости от типа
         CompletableFuture<Spotify.GetLinkResult> future;
         switch (type) {
@@ -54,6 +56,11 @@ public class ActionsAsync {
             Spotify.GetLinkResult result = future.get(1, SECONDS);
             String link = result.uri;
             String name = result.name;
+            if (link == null || name == null) { // Spotify ничего не нашёл (searchBest вернул null,null)
+                SearchRequests.logResult("Spotify " + type + ": не нашла");
+                return "не нашла, скажите точнее";
+            }
+            SearchRequests.logResult("Spotify " + type + ": " + name);
             String answer = "включаю " + name;
             log.info("LINK: " + link);
             log.info("NAME: " + name);
@@ -75,6 +82,11 @@ public class ActionsAsync {
             String fallbackAnswer = "Включаю Spotify";
             // Подписываемся на завершение поиска (без таймаута)
             future.thenAcceptAsync(result -> {
+                if (result.uri == null || result.name == null) { // не нашёл после таймаута
+                    SearchRequests.logResult("Spotify " + type + ": не нашла");
+                    return;
+                }
+                SearchRequests.logResult("Spotify " + type + ": " + result.name);
                 String link = result.uri;
                 String name = result.name;
                 String fullAnswer = "включаю " + name;
@@ -88,12 +100,14 @@ public class ActionsAsync {
                 Yandex.sendDevicesStatesAsync();
             }).exceptionally(ex -> {
                 log.error("Failed to get Spotify link after timeout", ex);
+                SearchRequests.logResult("Spotify " + type + ": ошибка поиска");
                 // Здесь можно добавить дополнительную обработку ошибки воспроизведения
                 return null;
             });
             return fallbackAnswer;
         } catch (Exception e) {
             log.error("Error getting Spotify link", e);
+            SearchRequests.logResult("Spotify " + type + ": ошибка поиска");
             return "Ошибка Spotify";
         }
     }
@@ -394,12 +408,17 @@ public class ActionsAsync {
                 .trim();
         log.info("TARGET LMS CHANNEL: {}", target);
         if (target.isEmpty()) return "скажите название закладки";
+        SearchRequests.logRequest(command);
         List<String> favorites = player.favorites();
         String channel = FavoritesSearch.find(target, favorites);
         log.info("CHANNEL FOUND: {}", channel);
-        if (channel == null) return "не нашла такую закладку, скажите точнее";
+        if (channel == null) {
+            SearchRequests.logResult("избранное: не нашла");
+            return "не нашла такую закладку, скажите точнее";
+        }
         int index = favorites.indexOf(channel) + 1; // нумерация каналов LMS с 1
         String name = channel.replaceAll(":.*", "");
+        SearchRequests.logResult("избранное: " + name + " [канал " + index + "]");
         CompletableFuture.runAsync(() -> player
                 .ifExpiredAndNotPlayingUnsyncWakeSetVolume(null, false)
                 .playChannel(String.valueOf(index)));
@@ -418,12 +437,16 @@ public class ActionsAsync {
                 .trim();
         log.info("TARGET FILE: {}", target);
         if (target.isEmpty()) return "скажите название файла";
+        SearchRequests.logRequest(command);
         String terms = Utils.normalizeForSearch(target);
         log.info("TERMS (translit): {}", terms);
         List<LibrarySearch.Candidate> candidates = allLibraryCandidates(player);
         LibrarySearch.Candidate best = LibrarySearch.findBest(terms, candidates, true); // album > artist > track
         log.info("FILE FOUND: {}", best);
-        if (best == null) return "в файлах не нашла, скажите точнее";
+        if (best == null) {
+            SearchRequests.logResult("файлы: не нашла");
+            return "в файлах не нашла, скажите точнее";
+        }
         String what;
         if ("artist".equals(best.type)) {
             what = "всё от " + best.name;
@@ -433,6 +456,7 @@ public class ActionsAsync {
             String by = (best.info == null || best.info.isEmpty() || "No Artist".equals(best.info)) ? "" : " — " + best.info;
             what = "файл " + best.name + by;
         }
+        SearchRequests.logResult("файлы: " + what);
         CompletableFuture.runAsync(() -> player
                 .ifExpiredAndNotPlayingUnsyncWakeSetVolume(null, false)
                 .playLibraryItem(best.type, best.id));

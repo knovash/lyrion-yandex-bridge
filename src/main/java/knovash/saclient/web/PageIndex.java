@@ -57,6 +57,7 @@ public class PageIndex {
                 "<p><a href=/settings_buttons>Настройки устройств-действий в УДЯ</a></p>" +
                 "<p><a href=/settings_tasker>Настройки Tasker</a></p>" +
                 "<p><a href=/settings_voice>Настройки голосовых уведомлений</a></p>" +
+                "<p><a href=/requests target=\"_blank\" rel=\"noopener noreferrer\">Запросы</a></p>" +
                 "";
         String page = pageOuter(pageInner, "Lyrion Yandex Bridge", "Lyrion Yandex Bridge");
         return page;

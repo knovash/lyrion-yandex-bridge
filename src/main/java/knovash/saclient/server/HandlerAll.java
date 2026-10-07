@@ -15,6 +15,7 @@ import knovash.saclient.yandex.provider.ProviderUserUnlink;
 import knovash.saclient.web.PageIndex;
 import knovash.saclient.web.PageLms;
 import knovash.saclient.web.PagePlayers;
+import knovash.saclient.web.PageRequests;
 import knovash.saclient.web.StatusJson;
 
 import java.io.File;
@@ -108,6 +109,9 @@ public class HandlerAll implements HttpHandler {
                 return settingsVoice.action(context);
             case "/lms":
                 return PageLms.action(context);
+            // история поисковых запросов навыка (data/search_requests.txt)
+            case "/requests":
+                return PageRequests.action(context);
             // JSON-сводка состояния (используется страницей плагина LMS)
             case "/status.json":
                 context.bodyResponse = StatusJson.get();
