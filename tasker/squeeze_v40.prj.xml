@@ -104,7 +104,7 @@ Request ID
 		<name>squeeze v40</name>
 		<pids>242,243,241</pids>
 		<psort>Alpha</psort>
-		<tids>237,193,201,189,238,231,188,205,215,199,210,234,202,240,185,214,223,184,190,217,233,235,209,198,204,213,220,191,212,225,239,187,186,218,211,208,194,196,221,232,224,236,200,203,226,206,219,197,207,216,228,222,195,229,192,227</tids>
+		<tids>237,193,201,189,238,231,188,205,215,199,210,234,202,240,185,214,223,184,190,217,233,235,209,198,204,213,220,191,212,225,239,187,186,218,211,208,194,196,221,232,224,236,200,203,226,206,219,197,207,216,228,222,195,229,192,227,243</tids>
 		<tsort>Alpha</tsort>
 		<Share sr="Share">
 			<b>true</b>
@@ -7235,6 +7235,64 @@ server unreachable</Str>
 		<Img sr="icn" ve="2">
 			<nme>mw_action_http</nme>
 			<tint>-1</tint>
+		</Img>
+	</Task>
+	<Task sr="task243" ve="2">
+		<cdate>1791500000000</cdate>
+		<edate>1791500000000</edate>
+		<id>243</id>
+		<nme>Spotify share</nme>
+		<pri>100</pri>
+		<rty>1</rty>
+		<Action sr="act0" ve="7">
+			<code>547</code>
+			<Str sr="arg0" ve="3">%slink</Str>
+			<Str sr="arg1" ve="3">%CLIP</Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+			<Int sr="arg4" val="0"/>
+			<Int sr="arg5" val="3"/>
+			<Int sr="arg6" val="1"/>
+			<ConditionList sr="if">
+				<Condition sr="c0" ve="3">
+					<lhs>%CLIP</lhs>
+					<op>4</op>
+					<rhs>.*open\.spotify\.com/.*</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+		<Action sr="act1" ve="7">
+			<code>339</code>
+			<Str sr="arg2" ve="3">%SERVER2/cmd?action=spotify_link&amp;player=%WIDGET&amp;value=%slink</Str>
+			<Int sr="arg1" val="0"/>
+			<Int sr="arg8" val="10"/>
+			<Int sr="arg9" val="0"/>
+			<Int sr="arg10" val="0"/>
+			<Int sr="arg11" val="0"/>
+			<Int sr="arg12" val="1"/>
+			<ConditionList sr="if">
+				<Condition sr="c0" ve="3">
+					<lhs>%CLIP</lhs>
+					<op>4</op>
+					<rhs>.*open\.spotify\.com/.*</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+		<Action sr="act2" ve="7">
+			<code>548</code>
+			<Str sr="arg0" ve="3">%http_data</Str>
+			<Int sr="arg1" val="0"/>
+			<Int sr="arg9" val="1"/>
+			<ConditionList sr="if">
+				<Condition sr="c0" ve="3">
+					<lhs>%CLIP</lhs>
+					<op>4</op>
+					<rhs>.*open\.spotify\.com/.*</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+		<Img sr="icn" ve="2">
+			<nme>mw_action_search</nme>
 		</Img>
 	</Task>
 </TaskerData>

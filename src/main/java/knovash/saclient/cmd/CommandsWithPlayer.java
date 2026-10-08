@@ -44,6 +44,8 @@ public class CommandsWithPlayer {
             case "channel":
                 ActionsAsync.playChannelIndex(player, value);
                 break;
+            case "spotify_link": // ссылка из «Поделиться» Spotify (Tasker, буфер обмена)
+                return ActionsAsync.spotifyLink(player, value);
             case "play":
             case "turn_on_music":
                 ActionsAsync.turnOnMusic(player);

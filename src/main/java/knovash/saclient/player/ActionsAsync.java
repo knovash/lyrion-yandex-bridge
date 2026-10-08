@@ -17,6 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static knovash.saclient.Main.lmsPlayers;
@@ -28,6 +30,49 @@ public class ActionsAsync {
 
 
     // Spotify
+    // «Поделиться ссылкой Spotify» из Tasker (буфер обмена):
+    // https://open.spotify.com/track/xxx?si=... (хвост ?si отбрасывается) или spotify:track:xxx.
+    // Возвращает текст для тоста, воспроизведение — в фоне (как у «включи <артист>»)
+    public static String spotifyLink(Player player, String link) {
+        log.info("SPOTIFY LINK: " + link);
+        if (player == null) return "плеер не выбран";
+        if (link == null || link.isEmpty()) return "пустая ссылка";
+        String uri = null;
+        String type = null;
+        if (link.startsWith("spotify:")) {
+            uri = link.split("\\?")[0].trim();
+            String[] parts = uri.split(":");
+            if (parts.length >= 3) type = parts[1];
+        } else {
+            // open.spotify.com[/intl-XX]/<type>/<id>
+            Matcher m = Pattern.compile("open\\.spotify\\.com/(?:intl-[a-z]{2}/)?(track|album|playlist|artist|episode|show)/([A-Za-z0-9]+)")
+                    .matcher(link);
+            if (m.find()) {
+                type = m.group(1);
+                uri = "spotify:" + type + ":" + m.group(2);
+            }
+        }
+        if (uri == null || type == null) {
+            log.info("SPOTIFY LINK: не распознана");
+            return "не понял ссылку";
+        }
+        final String uriFinal = uri;
+        final String answer = "включаю " + ("track".equals(type) ? "трек"
+                : "album".equals(type) ? "альбом"
+                : "playlist".equals(type) ? "плейлист"
+                : "artist".equals(type) ? "артиста"
+                : type) + " на " + player.name;
+        log.info("SPOTIFY LINK URI: " + uriFinal);
+        CompletableFuture.runAsync(() -> {
+            player.ifExpiredAndNotPlayingUnsyncWakeSetVolume(null, false);
+            player.playPath(uriFinal);
+            // обновить Таскер и Яндекс
+            Tasker.sendRequestToTaskerRunRefreshAsync(player.name, player.room);
+            Yandex.sendDevicesStatesAsync();
+        });
+        return answer;
+    }
+
     public static String spotifyPlayCommand(Player player, String command, String type) {
         log.info("PLAY SPOTIFY " + type + " COMMAND: " + command);
         String target = extractTargetFromCommand(command);
