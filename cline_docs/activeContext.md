@@ -121,6 +121,16 @@
   ПОКА ТИКЕТ ОТКРЫТ: мост держать ЗАПУЩЕННЫМ (Start the Bridge) — иначе HomePod-плееры пропадают
   из LMS и комнаты Гостиная/Спальня/Душ в УДЯ/навыке становятся недоступны (структура важнее
   отсутствия звука). Когда выйдет фикс: обновить мост/бинарник и перезапустить.
+- **08.10 НОВОЕ: «Поделиться ссылкой Spotify» на планшете → колонка** (клиент + v40): в клиенте
+  новый `/cmd` action **`spotify_link`** (ActionsAsync.spotifyLink: парсит open.spotify.com/
+  track|album|playlist|artist|episode|show[/intl-XX]/ID, хвост ?si отбрасывается; или spotify:
+  URI; будит плеер, playPath, refresh Tasker/Яндекс; ответ «включаю трек/… на <плеер>»/«не понял
+  ссылку»; e2e проверено на боксе). В v40 задача **`Spotify share`** (task243, действия 0-2,
+  у каждого условие `%CLIP ~ .*open\.spotify\.com/.*`): %slink=%CLIP → HTTP GET
+  `%SERVER2/cmd?action=spotify_link&player=%WIDGET&value=%slink` → тост %http_data.
+  **ПРОФИЛЬ создаёт владелец руками в Tasker UI** (коды событий в XML офлайн не верифицируемы):
+  Profile+ → Event → UI → **Clipboard Changed** → задача `Spotify share`.
+  UX: Spotify ⋮ → Поделиться → Копировать ссылку → играет на текущем %WIDGET.
 - **ГЛАВНАЯ ГРАБЛЯ Tasker-XML (07.10, финальная разгадка): id действий — строго 0..N-1 БЕЗ
   пропусков; Tasker обрывает задачу на первом пропущенном id** (нет act0 → задача «пустая»;
   дырка в середине → хвост задачи отбрасывается). Из-за этого были: пустая Settings select
