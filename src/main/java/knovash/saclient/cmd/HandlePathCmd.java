@@ -29,7 +29,10 @@ public class HandlePathCmd {
         if (context.body != null) log.info("BODY: " + context.body);
 
         if (value != null) {
-            value = value.toLowerCase();
+            // ВАЖНО: НЕ приводить value к нижнему регистру здесь: Spotify-ID (base62)
+            // регистрозависимы — строчная буква ломала ссылку из «Поделиться» (Spotty API 404,
+            // тишина). Регистронезависимость у потребителей, которым она нужна, — внутри
+            // (voice сам делает toLowerCase; digits не зависят от регистра).
             value = value.replace("+", " ");
         }
 
