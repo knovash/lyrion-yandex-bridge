@@ -381,14 +381,30 @@ public class Spotify {
         String playingUri;
         int trackIndex;
 
-        if (playing.context == null) {
+        // context может быть null (Spotify API: Spotify Connect, очередь, «Любимые треки»),
+        // а URI "spotify:user:…:collection" (Любимые треки) Spotty не играет —
+        // в этих случаях fallback: артист текущего трека (в LMS = радио из популярных, весь список).
+        String contextUri = null;
+        if (playing.context != null && playing.context.uri != null
+                && !playing.context.uri.isEmpty()
+                && !playing.context.uri.endsWith(":collection")) {
+            contextUri = playing.context.uri;
+        }
+
+        if (contextUri != null) {
+            playingUri = contextUri;
+            trackIndex = playing.item.track_number - 1;
+            log.info("Context: {} ({})", playing.context.type, contextUri);
+        } else if (playing.item.artists != null && !playing.item.artists.isEmpty()
+                && playing.item.artists.get(0).id != null) {
+            playingUri = "spotify:artist:" + playing.item.artists.get(0).id;
+            trackIndex = 0;
+            log.info("Context NULL/collection -> artist fallback: {} (track was: {})",
+                    playingUri, playing.item.name);
+        } else {
             playingUri = playing.item.uri;
             trackIndex = 0;
             log.info("Single track: {}", playing.item.name);
-        } else {
-            playingUri = playing.context.uri;
-            trackIndex = playing.item.track_number - 1;
-            log.info("Context: {} ({})", playing.context.type, playing.context.uri);
         }
 
         player
@@ -397,18 +413,18 @@ public class Spotify {
                 .waitFor(500)
                 .pause();
 
-        if (playing.context != null && "playlist".equals(playing.context.type)) {
-            player.waitFor(500);
-            if (player.playerStatus != null && player.playerStatus.result != null
-                    && player.playerStatus.result.playlist_loop != null) {
-                String targetTitle = playing.item.name;
-                Optional<PlaylistLoop> match = player.playerStatus.result.playlist_loop.stream()
-                        .filter(pl -> targetTitle.equals(pl.title))
-                        .findFirst();
-                if (match.isPresent()) {
-                    trackIndex = match.get().playlist_index;
-                    log.info("Found track in playlist at index {}", trackIndex);
-                }
+        // прыжок на играющий трек: ищем по названию в загруженном плейлисте LMS
+        // (работает и для artist-радио, и для fallback — не только для context=playlist)
+        player.waitFor(500);
+        if (player.playerStatus != null && player.playerStatus.result != null
+                && player.playerStatus.result.playlist_loop != null) {
+            String targetTitle = playing.item.name;
+            Optional<PlaylistLoop> match = player.playerStatus.result.playlist_loop.stream()
+                    .filter(pl -> targetTitle.equals(pl.title))
+                    .findFirst();
+            if (match.isPresent()) {
+                trackIndex = match.get().playlist_index;
+                log.info("Found track in playlist at index {}", trackIndex);
             }
         }
 
