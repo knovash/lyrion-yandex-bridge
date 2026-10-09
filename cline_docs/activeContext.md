@@ -2,6 +2,18 @@
 
 ## Статус: HomePod-звук ВОССТАНОВЛЕН через AirPlay2Bridge (09.10) 🎉
 
+- **09.10 (вечер) AirPlay2Bridge: DISCOVERY-СКАН + ВЫБОР УСТРОЙСТВ В UI (как у RaopBridge,
+  коммит ba04ad1)**: `bridge.py --scan` (pyatv mDNS, TSV: id/name/ip/model/ov); Settings.pm:
+  кнопка scanSettings (скан ~10с → devices-преф: ip/name/model обновляются, MAC+enabled
+  хранятся, новые — выключенными, отсутствующие — серым «не найден»), Save перегенерирует
+  players и рестартит мосты; таблица: галочка/имя(редактируемое)/IP/ID/MAC/модель+ОС,
+  метка «!» при дубле имени с плеером LMS; миграция devices←players автоматом. E2E на
+  боксе: скан нашёл 4 устройства (3 HomePod + Radiotechnika), Save сохранил тех же 3,
+  мосты перезапустились, звук на месте. ГРАБЛИ: (а) footer настроек LMS всегда шлёт
+  hidden saveSettings=1 → scanSettings обрабатывать ПЕРВЫМ; (б) LMS needs-uninstall в
+  state.prefs — рестарт УДАЛИЛ файлы RaopBridge бесследно (вернуть = переустановка из
+  репо); (в) свой <form> внутри settings/header.html нельзя (форма уже открыта header'ом
+  и закрывается footer'ом с hidden saveSettings).
 - **09.10 РЕШЕНИЕ «HomePod без звука» (HomePodOS 27, issue #57): написан и развёрнут свой
   плагин `AirPlay2Bridge`** (вариант B: Perl-обёртка + python/pyatv-бэкенд). Архитектура:
   `LMS → squeezelite-ap2 (stdout PCM, патч skip-silence) → bridge.py (pyatv AirPlay 2,
@@ -9,7 +21,8 @@
   RaopBridge-плееров (aa:aa:3d:81:fc:00 / f0:7c:54:95 / 96:95:81:94)** → плейлисты,
   синкгруппы, имена, УДЯ (привязка комнат по ИМЕНИ плеера, см. rooms_and_players.json),
   Tasker %PLAYER — всё унаследовано без правок. **RaopBridge выключен** (state.prefs
-  `RaopBridge: disabled`, файлы в InstalledPlugins не тронуты — можно вернуть).
+  `RaopBridge: disabled`, файлы в InstalledPlugins при этом были удалены самим LMS —
+  needs-uninstall; вернуть = переустановка из репо).
   E2E подтверждён владельцем: звук на всех 3 HomePod; pause→30с→teardown→HomePod свободен;
   play→reconnect; громкость LMS→HomePod (dVC=0 + пересылка микшера).
   Коммит 1983793 в origin/main (lms-plugin/AirPlay2Bridge/: Plugin.pm, BridgeProcess.pm,
