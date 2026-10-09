@@ -19,7 +19,7 @@
 - Установка громкости при включении колонки в зависимости от времени суток
 - Ограничение максимальной громкости от случайного превышения
 - Быстрое включение из Spotify через Поделиться -> Скопировать
-- Управление с телефона через виджеты Tasker и отображение состояния плееров (проект виджетов — `tasker/lyrion-tasker.prj.xml`, пресеты Minimalistic Text — `tasker/MinimalisticTextPreferences/`)
+- Управление с телефона через виджеты Tasker и отображение состояния плееров (проект виджетов — `tasker/lyrion-tasker-widgets.xml`, пресеты Minimalistic Text — `tasker/MinimalisticTextPreferences/`)
 - Управление кнопками с пульта — **TODO**
 - Поиск в Spotify с голосового пульта (Yandex SST); поиск в Избранном с пульта — **TODO**
 - Передача голосовых и звуковых уведомлений на колонки LMS (Yandex TTS)
@@ -90,7 +90,7 @@
 ### Доступ к управлению всеми плеерами прямо с рабочего стола не заходя в приложение
 
 Клиент принимает команды Tasker по `/cmd` (виджеты управления, состояние всех плееров,
-плейлист, настройки). Проект Tasker — `tasker/lyrion-tasker.prj.xml`
+плейлист, настройки). Проект Tasker — `tasker/lyrion-tasker-widgets.xml`
 ([taskernet: Lyrion Music Server Widgets](https://taskernet.com/?user=AS35m8l41V5ZEnau2L8l%2Feyup%2F3dACIp9knWIQaItDG9k2AY77ZyUTy5Vq2Zvd0TdHMDzA%3D%3D)),
 пресеты виджетов Minimalistic Text — `tasker/MinimalisticTextPreferences/`.
 
@@ -164,7 +164,7 @@
 
 
 ## Управление с пульта телевизора
-Проект Tasker (`tasker/lyrion-tasker.prj.xml`) устанавливается на android tv или tv box,
+Проект Tasker (`tasker/lyrion-tasker-tv.xml`) устанавливается на android tv или tv box,
 для назначения действий на кнопки можно использовать tvQuickActions.
 Тут уже смотря какой пульт и сколько на нем бесполезных кнопок, например так:
 - mute - play/pause
@@ -286,7 +286,7 @@ sudo systemctl restart lyrionmusicserver
 ---
 
 Ещё можно добавить:  
-- Установить `tasker/lyrion-tasker.prj.xml` для виджетов управления и отображения плееров (в репо)
+- Установить `tasker/lyrion-tasker-widgets.xml` для виджетов управления и отображения плееров (в репо)
 - Голосовой навык Раз Два для голосового поиска и дополнительных команд
 - Авторизоваться в Spotify для поиска
 - Установить squeeze_remote/btremote.py для управления пультом — **TODO** (взять из [squeeze-alice](https://github.com/knovash/squeeze-alice))

@@ -66,8 +66,12 @@
   перезагрузке бокса (плагин стартует мосты сам), HomePod «занят» чужим AirPlay (мост
   переподключится с retry), версия pyatv при обновлениях pip (0.18.0 API-специфичен).
 - **v1.11 (не релизнуто, накоплено)**: УДЯ-дубли фиксы, deterministic ids,
-  convergeMusicIdsByExternalId, spotify_link, artist-fallback, share.xml; бокс уже
-  живёт на этих сборках (manual deploy). + теперь AirPlay2Bridge v1.0.
+  convergeMusicIdsByExternalId, spotify_link, artist-fallback, spoty-share.xml (бывш. share.xml);
+  бокс уже живёт на этих сборках (manual deploy). + теперь AirPlay2Bridge v1.0.
+- **09.10 (вечер) TASKER-ФАЙЛЫ ПЕРЕИМЕНОВАНЫ владельцем** (закоммичено): `lyrion-tasker-tv.xml`
+  (бывш. squeeze_tv2.prj.xml), `lyrion-tasker-widgets.xml` (бывш. squeeze_v40.prj.xml, версия
+  владельца-экспорта с планшета как эталон), `spoty-share.xml` (бывш. share.xml); старый
+  `lyrion-tasker.prj.xml` удалён. README-ссылки обновлены.
 
 ## Статус: v1.10 — ОПУБЛИКОВАН (07.10)
 
@@ -204,9 +208,10 @@
   Spotify-ID base62 РЕГИСТРОЗАВИСИМЫ → Spotty API 404 → тишина («действие есть, не играет»).
   Убран; e2e: плейлист играет, 404 в LMS-логе исчезли. Урок: проверять e2e не только подстановку
   пути, но и факт ВОСПРОИЗВЕДЕНИЯ (mode=play + отсутствие ошибок Spotty в LMS).** Владелец
-  обновил v40 с планшета (свой экспорт с профилем) — репо-файл теперь расходится с его версией
-  (tasker/squeeze_v40.prj.xml изменён локально — при следующей синхронизации взять версию
-  владельца как эталон).
+  обновил v40 с планшета (свой экспорт с профилем) — версия владельца ВЗЯТА КАК ЭТАЛОН и
+  закоммичена (09.10, tasker-файлы переименованы владельцем: squeeze_v40.prj.xml →
+  lyrion-tasker-widgets.xml, squeeze_tv2.prj.xml → lyrion-tasker-tv.xml, share.xml →
+  spoty-share.xml, старый lyrion-tasker.prj.xml удалён; README-ссылки обновлены).
 - **08.10 «Переключи сюда» из Spotify — fallback на артиста (утв. владельцем)**: проблема
   известна владельцу ЕЩЁ со старого проекта — Spotify API отдаёт `context=null` (Spotify Connect,
   очередь, «Любимые треки»), а `spotify:user:…:collection` Spotty не играет → раньше переносился
@@ -452,7 +457,7 @@
   score<=1 и длина >=5; короткий запрос (<=5 симв.) — допуск score<=1 (иначе «зюзя»~SZA).
 - **РЕШЕНИЕ: все три фичи живут только в dev, в релиз не идут**, пока владелец не решит иначе.
   При выпуске: merge dev→master + чек-лист релиза + убрать TODO из README.
-- **sa_server: мультипользовательская маршрутизация готова (локально, ждёт деплой на Zeabur)**:
+- **sa_server: мультипользовательская маршрутизация (ЗАДЕПЛОЕНА владельцем 03.10, в проде)**:
   `YandexUserResolver` (access_token → login.yandex.ru/info → числовой uid, кэш 6ч) +
   `YandexController`: приоритет `?uid=` → токен запроса (заголовок Authorization или
   session.user.access_token) → свой клиент; fallback anyUid только при одном клиенте.
