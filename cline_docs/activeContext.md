@@ -2,7 +2,7 @@
 
 ## Статус: HomePod-звук ВОССТАНОВЛЕН через AirPlay2Bridge (09.10) 🎉
 
-- **09.10 (вечер) ФИКС «dalgN»-спама в лог LMS (main, собран 1.11, ЖДЁТ ДЕПЛОЯ на бокс .131)**:
+- **09.10 (вечер) ФИКС «dalgN»-спама в лог LMS — ДЕПЛОЙ НА БОКС ВЫПОЛНЕН И ПОДТВЕРЖДЁН (18:30)**:
   каждые 2 мин Tasker-виджеты телефона (профиль «refresh every 2 min», lyrion-tasker-widgets.xml)
   дёргают /cmd get_refresh_json → Tasker.forTaskerWidgetsRefreshJson → p.title() ВСЕХ плееров →
   «playlist name ?» + «playlist album ?» на плеере с ПУСТЫМ плейлистом (JBL white, Гараж) → баг
@@ -12,7 +12,13 @@
   LMS-Community/slimserver). ФИКС в Player.title(): сначала statusFast(); при playlist_tracks==0
   НЕ слать playlist name/artist/album (имя трека — из remoteMeta того же status); trackName(Result)
   — перегрузка без повторного запроса. Для играющих плееров поведение не менялось. Сборка чистая
-  (rm -rf target, jar+zip 1.11). Проверка после деплоя: http://…:9000/log.txt без dalgN ≥ 3 мин.
+  (rm -rf target, jar+zip 1.11). **Деплой 09.10 18:30**: scp jar (6915489 б) поверх
+  Bin/lyrion-yandex-bridge-1.11.jar (бэкап .bak-preDalgNFix, chown squeezeboxserver, БЕЗ рестарта
+  LMS — kill -TERM клиента pid 386199, beat поднял нового pid 387982 через ~15с, инициализация ок,
+  6 плееров connected, облако/Яндекс/Spotify true). **Проверка**: e2e get_refresh_json руками —
+  счётчик dalgN 46→46; боевые слоты поллера 18:30:55 и 18:32:55 — чистые (последняя пара dalgN
+  18:30:01, до рестарта). ВНИМАНИЕ: релиз v1.11 вышел БЕЗ этого фикса — фикс в main поедет в
+  v1.12; на боксе jar = 1.11+fix (имя файла то же, автообновление до 1.12 пройдёт штатно).
 - **09.10 (вечер) AirPlay2Bridge ВЫДЕЛЕН В ОТДЕЛЬНЫЙ ПРОЕКТ** `/home/konstantin/IdeaProjects/airplay2`
   (=> **github.com/knovash/airplay** — имя репо на GitHub БЕЗ «2», локальный каталог при этом
   airplay2; ветка main, коммиты до e0b23a5, PUSH ВЫПОЛНЕН 09.10, raw-URL repo.xml проверен=200):
