@@ -1,5 +1,49 @@
 # Active Context — что сейчас
 
+## Статус: HomePod-звук ВОССТАНОВЛЕН через AirPlay2Bridge (09.10) 🎉
+
+- **09.10 РЕШЕНИЕ «HomePod без звука» (HomePodOS 27, issue #57): написан и развёрнут свой
+  плагин `AirPlay2Bridge`** (вариант B: Perl-обёртка + python/pyatv-бэкенд). Архитектура:
+  `LMS → squeezelite-ap2 (stdout PCM, патч skip-silence) → bridge.py (pyatv AirPlay 2,
+  HAP transient) → HomePod`. Плееры в LMS = обычные squeezelite; **MAC-и взяты от старых
+  RaopBridge-плееров (aa:aa:3d:81:fc:00 / f0:7c:54:95 / 96:95:81:94)** → плейлисты,
+  синкгруппы, имена, УДЯ (привязка комнат по ИМЕНИ плеера, см. rooms_and_players.json),
+  Tasker %PLAYER — всё унаследовано без правок. **RaopBridge выключен** (state.prefs
+  `RaopBridge: disabled`, файлы в InstalledPlugins не тронуты — можно вернуть).
+  E2E подтверждён владельцем: звук на всех 3 HomePod; pause→30с→teardown→HomePod свободен;
+  play→reconnect; громкость LMS→HomePod (dVC=0 + пересылка микшера).
+  Коммит 1983793 в origin/main (lms-plugin/AirPlay2Bridge/: Plugin.pm, BridgeProcess.pm,
+  Settings.pm+basic.html, Bin/bridge.py, patches/output_stdout.c + build_squeezelite.sh,
+  README с граблями).
+- **Обязательное окружение бокса для AirPlay2Bridge**: python3-pip + pyatv==0.18.0
+  (--break-system-packages; минус: miniaudio собирается из исходников ~5 мин),
+  squeezelite (apt), **/usr/local/bin/squeezelite-ap2** (собран на боксе патчем из
+  Debian-исходников 1.9.9-1414). Плагин: /var/lib/squeezeboxserver/Plugins/AirPlay2Bridge
+  (после scp в /usr/share/…/Plugins LMS сам установил в приватный dir). Логи:
+  /var/lib/squeezeboxserver/cache/AirPlay2Bridge/bridge-<MAC>.log + pid.
+  HomePod IP/ID: pyatv scan (HomePod1=.119/7E957DB99745, 2=.121/1E2CDBBA4F30,
+  3=.123/E2E2F50FBF09; ov=27.0, ft=0x4A7FCA00,0x3C354BD0 — AP2-флаги видны в mDNS).
+  HomePod1 = большой HomePod (AudioAccessory1,1), 2/3 = mini (AudioAccessory5,1).
+- **ГРАБЛИ pyatv 0.18 (важно для моста)**: scan(loop,…)/connect(conf,loop) — loop
+  обязательный позиционный; AudioSource требует sample_size+duration; atv.audio.volume —
+  СВОЙСТВО; wire-формат RAOP BE (squeezelite LE → array.byteswap); -a для stdout = "16"
+  (не «:16:44100:2»!); без патча output_stdout.c idle жжёт CPU (нули в stdout); SIGTERM:
+  volume_monitor блокирован в readline → в stop() закрывать CLI-сокет + os._exit через 5с.
+- **LMS-перезапуск на боксе (новое)**: убивается kill -TERM <pid squeezeboxserver>,
+  запуск `su -s /bin/bash squeezeboxserver -c 'setsid nohup /usr/bin/perl
+  /usr/sbin/squeezeboxserver --prefsdir /var/lib/squeezeboxserver/prefs --logdir
+  /opt/lms_logs --cachedir /var/lib/squeezeboxserver/cache --charset utf8 &'`;
+  restartserver-JSONRPC не перечитывает правки prefs-файлов с диска (память затирает).
+  Prefs плагинов: /var/lib/squeezeboxserver/prefs/plugin/<name>.prefs (YAML-подобный),
+  вкл/выкл плагинов: …/plugin/state.prefs. Качественные скачиваемые плагины живут в
+  /var/lib/squeezeboxserver/cache/InstalledPlugins/Plugins/.
+- **Что наблюдать дальше**: стабильность мостов (beat 30с autorestart), поведение при
+  перезагрузке бокса (плагин стартует мосты сам), HomePod «занят» чужим AirPlay (мост
+  переподключится с retry), версия pyatv при обновлениях pip (0.18.0 API-специфичен).
+- **v1.11 (не релизнуто, накоплено)**: УДЯ-дубли фиксы, deterministic ids,
+  convergeMusicIdsByExternalId, spotify_link, artist-fallback, share.xml; бокс уже
+  живёт на этих сборках (manual deploy). + теперь AirPlay2Bridge v1.0.
+
 ## Статус: v1.10 — ОПУБЛИКОВАН (07.10)
 
 - **v1.10 (07.10, поздним утром)**: Release+asset (zip sha 1a723df8), push e20a1d4..ce6e019 в main,
