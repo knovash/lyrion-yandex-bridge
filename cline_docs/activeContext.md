@@ -3,12 +3,16 @@
 ## Статус: HomePod-звук ВОССТАНОВЛЕН через AirPlay2Bridge (09.10) 🎉
 
 - **09.10 (вечер) AirPlay2Bridge ВЫДЕЛЕН В ОТДЕЛЬНЫЙ ПРОЕКТ** `/home/konstantin/IdeaProjects/airplay2`
-  (=> github.com/knovash/airplay2, ветка main, локальный коммит 2e116b4+): из sa_client/lms-plugin
+  (=> **github.com/knovash/airplay** — имя репо на GitHub БЕЗ «2», локальный каталог при этом
+  airplay2; ветка main, коммиты до e0b23a5, PUSH ВЫПОЛНЕН 09.10, raw-URL repo.xml проверен=200):
+  из sa_client/lms-plugin
   удалён (0577af7). Структура: `AirPlay2Bridge/` (плагин v1.1 — discovery-UI), `repo.xml`
-  (LMS Additional Repositories: raw URL …/knovash/airplay2/main/repo.xml, zip-asset GitHub
+  (LMS Additional Repositories: raw URL …/knovash/airplay/main/repo.xml, zip-asset GitHub
   release, sha1 c69c0e84…), `make_dist.sh` (zip + sha1), README с установкой и Credits.
-  **ОСТАЛОСЬ: владелец создаёт репо knovash/airplay2 на GitHub (пустое) → push origin main
-  → Release v1.1 с asset dist/AirPlay2Bridge-v1.1.zip.** Плагин на боксе .131 живёт как
+  **ОСТАЛОСЬ ТОЛЬКО: владелец создаёт Release v1.1 на GitHub
+  (github.com/knovash/airplay/releases/new, tag v1.1) и грузит asset
+  dist/AirPlay2Bridge-v1.1.zip** (gh CLI и токена на машине нет — только веб). Плагин на
+  боксе .131 живёт как
   есть (v1.0 из старого места, локальные правки не нужны — код идентичен v1.1).
 - **09.10 (вечер) AirPlay2Bridge: DISCOVERY-СКАН + ВЫБОР УСТРОЙСТВ В UI (как у RaopBridge,
   коммит ba04ad1)**: `bridge.py --scan` (pyatv mDNS, TSV: id/name/ip/model/ov); Settings.pm:
