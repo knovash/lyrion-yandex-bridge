@@ -9,10 +9,10 @@
   удалён (0577af7). Структура: `AirPlay2Bridge/` (плагин v1.1 — discovery-UI), `repo.xml`
   (LMS Additional Repositories: raw URL …/knovash/airplay/main/repo.xml, zip-asset GitHub
   release, sha1 c69c0e84…), `make_dist.sh` (zip + sha1), README с установкой и Credits.
-  **ОСТАЛОСЬ ТОЛЬКО: владелец создаёт Release v1.1 на GitHub
-  (github.com/knovash/airplay/releases/new, tag v1.1) и грузит asset
-  dist/AirPlay2Bridge-v1.1.zip** (gh CLI и токена на машине нет — только веб). Плагин на
-  боксе .131 живёт как
+  **Release v1.1 ОПУБЛИКОВАН и ПРОВЕРЕН (09.10, владелец залил asset через веб)**:
+  download URL 200, sha1 asset = sha в repo.xml (c69c0e84…), API state=uploaded, структура
+  zip корректна, icon-URL 200. **ПУБЛИКАЦИЯ ЗАВЕРШЕНА ПОЛНОСТЬЮ** — плагин ставится из
+  LMS Settings → Plugins → Additional Repositories. Плагин на боксе .131 живёт как
   есть (v1.0 из старого места, локальные правки не нужны — код идентичен v1.1).
 - **09.10 (вечер) AirPlay2Bridge: DISCOVERY-СКАН + ВЫБОР УСТРОЙСТВ В UI (как у RaopBridge,
   коммит ba04ad1)**: `bridge.py --scan` (pyatv mDNS, TSV: id/name/ip/model/ov); Settings.pm:
