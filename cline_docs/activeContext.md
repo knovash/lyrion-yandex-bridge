@@ -1,6 +1,6 @@
 # Active Context — что сейчас
 
-## Статус: HomePod-звук ВОССТАНОВЛЕН через AirPlay2Bridge (09.10) 🎉
+## Статус: v1.11 опубликован; dalgN-фикс в main (поедет в v1.12); мультирежим облака закрыт
 
 - **09.10 (вечер) ФИКС «dalgN»-спама в лог LMS — ДЕПЛОЙ НА БОКС ВЫПОЛНЕН И ПОДТВЕРЖДЁН (18:30)**:
   каждые 2 мин Tasker-виджеты телефона (профиль «refresh every 2 min», lyrion-tasker-widgets.xml)
@@ -19,58 +19,14 @@
   счётчик dalgN 46→46; боевые слоты поллера 18:30:55 и 18:32:55 — чистые (последняя пара dalgN
   18:30:01, до рестарта). ВНИМАНИЕ: релиз v1.11 вышел БЕЗ этого фикса — фикс в main поедет в
   v1.12; на боксе jar = 1.11+fix (имя файла то же, автообновление до 1.12 пройдёт штатно).
-- **09.10 (вечер) AirPlay2Bridge ВЫДЕЛЕН В ОТДЕЛЬНЫЙ ПРОЕКТ** `/home/konstantin/IdeaProjects/airplay2`
-  (=> **github.com/knovash/airplay** — имя репо на GitHub БЕЗ «2», локальный каталог при этом
-  airplay2; ветка main, коммиты до e0b23a5, PUSH ВЫПОЛНЕН 09.10, raw-URL repo.xml проверен=200):
-  из sa_client/lms-plugin
-  удалён (0577af7). Структура: `AirPlay2Bridge/` (плагин v1.1 — discovery-UI), `repo.xml`
-  (LMS Additional Repositories: raw URL …/knovash/airplay/main/repo.xml, zip-asset GitHub
-  release, sha1 c69c0e84…), `make_dist.sh` (zip + sha1), README с установкой и Credits.
-  **Release v1.1 ОПУБЛИКОВАН и ПРОВЕРЕН (09.10, владелец залил asset через веб)**:
-  download URL 200, sha1 asset = sha в repo.xml (c69c0e84…), API state=uploaded, структура
-  zip корректна, icon-URL 200. **ПУБЛИКАЦИЯ ЗАВЕРШЕНА ПОЛНОСТЬЮ** — плагин ставится из
-  LMS Settings → Plugins → Additional Repositories. Плагин на боксе .131 живёт как
-  есть (v1.0 из старого места, локальные правки не нужны — код идентичен v1.1).
-- **09.10 (вечер) AirPlay2Bridge: DISCOVERY-СКАН + ВЫБОР УСТРОЙСТВ В UI (как у RaopBridge,
-  коммит ba04ad1)**: `bridge.py --scan` (pyatv mDNS, TSV: id/name/ip/model/ov); Settings.pm:
-  кнопка scanSettings (скан ~10с → devices-преф: ip/name/model обновляются, MAC+enabled
-  хранятся, новые — выключенными, отсутствующие — серым «не найден»), Save перегенерирует
-  players и рестартит мосты; таблица: галочка/имя(редактируемое)/IP/ID/MAC/модель+ОС,
-  метка «!» при дубле имени с плеером LMS; миграция devices←players автоматом. E2E на
-  боксе: скан нашёл 4 устройства (3 HomePod + Radiotechnika), Save сохранил тех же 3,
-  мосты перезапустились, звук на месте. ГРАБЛИ: (а) footer настроек LMS всегда шлёт
-  hidden saveSettings=1 → scanSettings обрабатывать ПЕРВЫМ; (б) LMS needs-uninstall в
-  state.prefs — рестарт УДАЛИЛ файлы RaopBridge бесследно (вернуть = переустановка из
-  репо); (в) свой <form> внутри settings/header.html нельзя (форма уже открыта header'ом
-  и закрывается footer'ом с hidden saveSettings).
-- **09.10 РЕШЕНИЕ «HomePod без звука» (HomePodOS 27, issue #57): написан и развёрнут свой
-  плагин `AirPlay2Bridge`** (вариант B: Perl-обёртка + python/pyatv-бэкенд). Архитектура:
-  `LMS → squeezelite-ap2 (stdout PCM, патч skip-silence) → bridge.py (pyatv AirPlay 2,
-  HAP transient) → HomePod`. Плееры в LMS = обычные squeezelite; **MAC-и взяты от старых
-  RaopBridge-плееров (aa:aa:3d:81:fc:00 / f0:7c:54:95 / 96:95:81:94)** → плейлисты,
-  синкгруппы, имена, УДЯ (привязка комнат по ИМЕНИ плеера, см. rooms_and_players.json),
-  Tasker %PLAYER — всё унаследовано без правок. **RaopBridge выключен** (state.prefs
-  `RaopBridge: disabled`, файлы в InstalledPlugins при этом были удалены самим LMS —
-  needs-uninstall; вернуть = переустановка из репо).
-  E2E подтверждён владельцем: звук на всех 3 HomePod; pause→30с→teardown→HomePod свободен;
-  play→reconnect; громкость LMS→HomePod (dVC=0 + пересылка микшера).
-  Коммит 1983793 в origin/main (lms-plugin/AirPlay2Bridge/: Plugin.pm, BridgeProcess.pm,
-  Settings.pm+basic.html, Bin/bridge.py, patches/output_stdout.c + build_squeezelite.sh,
-  README с граблями).
-- **Обязательное окружение бокса для AirPlay2Bridge**: python3-pip + pyatv==0.18.0
-  (--break-system-packages; минус: miniaudio собирается из исходников ~5 мин),
-  squeezelite (apt), **/usr/local/bin/squeezelite-ap2** (собран на боксе патчем из
-  Debian-исходников 1.9.9-1414). Плагин: /var/lib/squeezeboxserver/Plugins/AirPlay2Bridge
-  (после scp в /usr/share/…/Plugins LMS сам установил в приватный dir). Логи:
-  /var/lib/squeezeboxserver/cache/AirPlay2Bridge/bridge-<MAC>.log + pid.
-  HomePod IP/ID: pyatv scan (HomePod1=.119/7E957DB99745, 2=.121/1E2CDBBA4F30,
-  3=.123/E2E2F50FBF09; ov=27.0, ft=0x4A7FCA00,0x3C354BD0 — AP2-флаги видны в mDNS).
-  HomePod1 = большой HomePod (AudioAccessory1,1), 2/3 = mini (AudioAccessory5,1).
-- **ГРАБЛИ pyatv 0.18 (важно для моста)**: scan(loop,…)/connect(conf,loop) — loop
-  обязательный позиционный; AudioSource требует sample_size+duration; atv.audio.volume —
-  СВОЙСТВО; wire-формат RAOP BE (squeezelite LE → array.byteswap); -a для stdout = "16"
-  (не «:16:44100:2»!); без патча output_stdout.c idle жжёт CPU (нули в stdout); SIGTERM:
-  volume_monitor блокирован в readline → в stop() закрывать CLI-сокет + os._exit через 5с.
+- **AirPlay2Bridge — ОТДЕЛЬНЫЙ ПРОЕКТ `/home/konstantin/IdeaProjects/airplay2` (GitHub
+  knovash/airplay, имя БЕЗ «2»)**: с 09.10 (вечер, решение владельца) в сессиях sa_client
+  его НЕ трогаем и НИЧЕГО в нём не делаем. Если владелец просит про AirPlay/HomePod/мост —
+  попросить его переключить Cline на тот проект. Банк того проекта: airplay2/cline_docs/
+  (локальный, в git не идёт). История: плагин родился тут (lms-plugin/, удалён 0577af7),
+  v1.1 опубликован 09.10 (Release+asset, raw-URL/icon/download=200); v1.2 (кривая громкости
+  — pyatv маппит % линейно в -30..0 dBFS) и далее — там; клиентские лимиты громкости
+  HomePod-плееров на боксе подняты 70→100 (сделано из sa_client-сессии 09.10).
 - **LMS-перезапуск на боксе (новое)**: убивается kill -TERM <pid squeezeboxserver>,
   запуск `su -s /bin/bash squeezeboxserver -c 'setsid nohup /usr/bin/perl
   /usr/sbin/squeezeboxserver --prefsdir /var/lib/squeezeboxserver/prefs --logdir
@@ -79,33 +35,12 @@
   Prefs плагинов: /var/lib/squeezeboxserver/prefs/plugin/<name>.prefs (YAML-подобный),
   вкл/выкл плагинов: …/plugin/state.prefs. Качественные скачиваемые плагины живут в
   /var/lib/squeezeboxserver/cache/InstalledPlugins/Plugins/.
-- **Что наблюдать дальше**: стабильность мостов (beat 30с autorestart), поведение при
-  перезагрузке бокса (плагин стартует мосты сам), HomePod «занят» чужим AirPlay (мост
-  переподключится с retry), версия pyatv при обновлениях pip (0.18.0 API-специфичен).
 - **v1.11 ОПУБЛИКОВАН (09.10)**: Release v1.11 + asset (sha1 10869243… совпадает побайтно),
   repo.xml → v1.11 запушен (5eeca28), raw-URL проверен (отдаёт 1.11). Состав: УДЯ-дубли фиксы,
   deterministic ids (+yandexUid в seed), convergeMusicIdsByExternalId, spotify_link,
   artist-fallback, spoty-share.xml; + мультирежим: переживание рестарта облака (WS close 1008 →
   переподключение Яндекс-токеном, /info 401 → ретрай); версия 1.11 в pom/install.xml/ClientProcess.pm.
   + AirPlay2Bridge v1.0. Бокс .131 ещё на старой сборке — обновить (см. Следующие шаги 3).
-- **09.10 (вечер) HomePod «ТИХО НА МАКСИМУМЕ LMS» — КОРЕНЬ И ФИКС (AirPlay2Bridge v1.2)**:
-  pyatv маппит громкость 0-100% ЛИНЕЙНО в -30..0 dBFS (`pct_to_dbfs`) → прямой пересыл
-  LMS-процентов мостом делал середину ползунка очень тихой (LMS 35% = -19.5 dB ≈ 1/10 макс;
-  70% = -9 dB ≈ половина). Сверху прижимали клиентские настройки: у всех 3 HomePod-плееров
-  «ограничение макс. громкости» = 70 и пресеты «время:громкость» 0:10,9:20,20:15,22:5,7:15
-  (рабочий днём 20 = -24 dB — вот почему «очень тихо»; кнопки HomePod поднимали физическую
-  громкость напрямую, мост о них не знает и затирал при следующем mixer-событии).
-  ФИКСЫ: (1) bridge.py — перцептивная кривая `pyatv_vol = 100*(lms/100)^0.6` (env VOLUME_CURVE;
-  100→100=0dB, 70→81, 50→66≈-10dB субъективная половина, 35→55); (2) у клиентов на боксе
-  лимит 70→100 (через web-форму /players, применено ко всем 3). Пресеты НЕ трогали — с кривой
-  они стали на +5..6 dB громче прежнего (10→25, 20→41, 15→33, 5→17 pyatv%); для СТАРОЙ
-  громкости were бы 0:2,9:7,20:4,22:1,7:4 — владелец подстройт на слух. airplay2 v1.2:
-  коммит 7a9839d (кривая + README-грабля №10 + make_dist без __pycache__), zip
-  dist/AirPlay2Bridge-v1.2.zip sha1 43803bf5…, repo.xml → 1.2 запушен.
-  ОСТАЛОСЬ: (а) владелец scp bridge.py на бокс + pkill '[b]ridge.py' (авторестарт ~30с) ИЛИ
-  LMS-обновление из репо (нужен GitHub Release v1.2 + asset); (б) проверка на слух: слайдер
-  100 ≈ кнопочный максимум (если 0 dBFS < кнопочного макса HomePodOS 27 — кривая не поможет,
-  тогда вариант «физ.100 всегда + dVC=1»); (в) владелец: Release v1.2 на GitHub.
 - **09.10 (вечер) TASKER-ФАЙЛЫ ПЕРЕИМЕНОВАНЫ владельцем** (закоммичено): `lyrion-tasker-tv.xml`
   (бывш. squeeze_tv2.prj.xml), `lyrion-tasker-widgets.xml` (бывш. squeeze_v40.prj.xml, версия
   владельца-экспорта с планшета как эталон), `spoty-share.xml` (бывш. share.xml); старый

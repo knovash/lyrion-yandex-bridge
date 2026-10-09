@@ -1,13 +1,11 @@
 # Progress — что работает, история, долги
 
 ## Работает (проверено в бою)
-- **HomePodOS 27: звук из LMS на HomePod1/2/3 через плагин AirPlay2Bridge (09.10)** —
-  squeezelite→pyatv(AP2), плееры с MAC-ами старого RaopBridge (наследуют плейлисты/
-  синкгруппы/имена/УДЯ), RaopBridge выключен; e2e подтверждён владельцем на всех 3.
-- **AirPlay2Bridge v1.1 ПОЛНОСТЬЮ ОПУБЛИКОВАН на GitHub: knovash/airplay (09.10; имя репо БЕЗ «2»,
-  локальный каталог airplay2)** — push main (до e0b23a5), Release v1.1 + zip-asset залиты
-  (sha1 asset = repo.xml, raw-URL/icon/download = 200). Плагин ставится из LMS Additional
-  Repositories: raw …/knovash/airplay/main/repo.xml.
+- **AirPlay2Bridge (звук на 3 HomePod, публикация v1.1+, фикс громкости v1.2 — кривая
+  pyatv dBFS) — ОТДЕЛЬНЫЙ проект `/home/konstantin/IdeaProjects/airplay2` (GitHub
+  knovash/airplay)**: здесь не ведём; статус/грабли/окружение — банк того проекта
+  (airplay2/cline_docs/, локальный). В сессиях sa_client по AirPlay не работать —
+  просить владельца переключить проект.
 - **Мультирежим: фикс переживаний рестарта облака (09.10)** — sa_server b59ec49 (WS и /info
   принимают Яндекс access_token как fallback instanceToken; запушен, ждёт деплой Zeabur) +
   клиент v1.11 ОПУБЛИКОВАН (Release+asset+repo.xml, 09.10).

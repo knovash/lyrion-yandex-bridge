@@ -16,3 +16,9 @@
   `squeeze-alice` и `squeeze-alice-cloud`. Сначала найти работающее, потом писать новое.
 - MQTT (Hive / HiveMQ) НИКОГДА не используется. Транспорт клиент↔облако — только `sa_server`
   (HTTP + WebSocket), доставка токенов авторизации — HTTP-поллинг (`LocalAuthBase`).
+
+## Разграничение проектов
+- `/home/konstantin/IdeaProjects/airplay2` (плагин AirPlay2Bridge, GitHub knovash/airplay) —
+  ОТДЕЛЬНЫЙ проект: в сессиях sa_client его НЕ трогать и НИЧЕГО в нём не делать.
+  Если владелец просит про AirPlay/HomePod/мост — попросить его переключить Cline на тот
+  проект. Знания по нему — в банке того проекта (airplay2/cline_docs/, локальный, не в git).
