@@ -2,6 +2,14 @@
 
 ## Статус: HomePod-звук ВОССТАНОВЛЕН через AirPlay2Bridge (09.10) 🎉
 
+- **09.10 (вечер) AirPlay2Bridge ВЫДЕЛЕН В ОТДЕЛЬНЫЙ ПРОЕКТ** `/home/konstantin/IdeaProjects/airplay2`
+  (=> github.com/knovash/airplay2, ветка main, локальный коммит 2e116b4+): из sa_client/lms-plugin
+  удалён (0577af7). Структура: `AirPlay2Bridge/` (плагин v1.1 — discovery-UI), `repo.xml`
+  (LMS Additional Repositories: raw URL …/knovash/airplay2/main/repo.xml, zip-asset GitHub
+  release, sha1 c69c0e84…), `make_dist.sh` (zip + sha1), README с установкой и Credits.
+  **ОСТАЛОСЬ: владелец создаёт репо knovash/airplay2 на GitHub (пустое) → push origin main
+  → Release v1.1 с asset dist/AirPlay2Bridge-v1.1.zip.** Плагин на боксе .131 живёт как
+  есть (v1.0 из старого места, локальные правки не нужны — код идентичен v1.1).
 - **09.10 (вечер) AirPlay2Bridge: DISCOVERY-СКАН + ВЫБОР УСТРОЙСТВ В UI (как у RaopBridge,
   коммит ba04ad1)**: `bridge.py --scan` (pyatv mDNS, TSV: id/name/ip/model/ov); Settings.pm:
   кнопка scanSettings (скан ~10с → devices-преф: ip/name/model обновляются, MAC+enabled
