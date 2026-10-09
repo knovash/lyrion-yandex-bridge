@@ -79,3 +79,15 @@
   playSilence слал `playlist play ""` → LMS Scanner-ошибка. Guard добавлен в код; на боксе
   значение восстановлено (loop://natural/rain_outside.mp3). После любого Reset проверять
   «шум при пробуждении».
+- **БАГ LMS 9.1.1 «dalgN» (09.10, диагностика закрыта; кандидат на репорт в LMS-Community/slimserver)**:
+  jsonrpc `["<ИМЯ плеера>", ["playlist","name","?"]]` или `["playlist","album","?"]]` на плеере
+  с ПУСТЫМ плейлистом → в server.log пара строк `Slim::Control::Queries::_songData ...
+  Called with invalid object or path: dalgN!` + `Can't make track from: dalgN!` (восклицательный
+  знак дописывает формат logError, сам путь = 'dalgN'). Причина: Queries.pm `playlistXQuery`
+  вызывает `_songData($request, Playlist::track($client,$index), 'dalgN')`; в Playlist.pm
+  `track()` при `count($client)==0` делает голый `return;` — в Perl это ПУСТОЙ СПИСОК в списке
+  аргументов → СДВИГ аргументов → строка тегов 'dalgN' уезжает в параметр pathOrObj.
+  Нюансы: по MAC (не по имени) НЕ воспроизводится; трясло каждые 120с ровно, т.к. триггер —
+  Tasker-виджеты (профиль refresh every 2 min) → /cmd get_refresh_json → p.title() всех плееров,
+  и JBL white был единственным с tracks=0. Клиентский фикс 09.10 в Player.title()
+  (при playlist_tracks==0 не слать playlist name/album) — спам исчезает после деплоя jar на бокс.

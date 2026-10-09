@@ -2,6 +2,17 @@
 
 ## Статус: HomePod-звук ВОССТАНОВЛЕН через AirPlay2Bridge (09.10) 🎉
 
+- **09.10 (вечер) ФИКС «dalgN»-спама в лог LMS (main, собран 1.11, ЖДЁТ ДЕПЛОЯ на бокс .131)**:
+  каждые 2 мин Tasker-виджеты телефона (профиль «refresh every 2 min», lyrion-tasker-widgets.xml)
+  дёргают /cmd get_refresh_json → Tasker.forTaskerWidgetsRefreshJson → p.title() ВСЕХ плееров →
+  «playlist name ?» + «playlist album ?» на плеере с ПУСТЫМ плейлистом (JBL white, Гараж) → баг
+  LMS 9.1.1 сыплет "_songData ... invalid object or path: dalgN!" (2 пары строк, каденс ровно 120с;
+  диагностика 09.10 — команды воспроизведены руками по ИМЕНИ плеера, по MAC не воспроизводится).
+  Корень бага LMS + репродьюс — progress.md «БАГ LMS 9.1.1 dalgN» (кандидат на репорт в
+  LMS-Community/slimserver). ФИКС в Player.title(): сначала statusFast(); при playlist_tracks==0
+  НЕ слать playlist name/artist/album (имя трека — из remoteMeta того же status); trackName(Result)
+  — перегрузка без повторного запроса. Для играющих плееров поведение не менялось. Сборка чистая
+  (rm -rf target, jar+zip 1.11). Проверка после деплоя: http://…:9000/log.txt без dalgN ≥ 3 мин.
 - **09.10 (вечер) AirPlay2Bridge ВЫДЕЛЕН В ОТДЕЛЬНЫЙ ПРОЕКТ** `/home/konstantin/IdeaProjects/airplay2`
   (=> **github.com/knovash/airplay** — имя репо на GitHub БЕЗ «2», локальный каталог при этом
   airplay2; ветка main, коммиты до e0b23a5, PUSH ВЫПОЛНЕН 09.10, raw-URL repo.xml проверен=200):

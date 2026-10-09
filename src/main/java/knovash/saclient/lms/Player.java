@@ -1039,8 +1039,12 @@ public class Player {
     }
 
     public String trackName() {
+        return trackName(null);
+    }
+
+    public String trackName(PlayerStatus.Result playerStatus) {
         this.trackName = null;
-        PlayerStatus.Result playerStatus = this.statusFast();
+        if (playerStatus == null) playerStatus = this.statusFast();
         if (playerStatus != null && playerStatus.remoteMeta != null && playerStatus.remoteMeta.title != null) {
             log.info("TRACK NAME: " + playerStatus.remoteMeta.title);
             this.trackName = playerStatus.remoteMeta.title;
@@ -1062,10 +1066,19 @@ public class Player {
             log.info("PLAYER OFFLINE");
             return this.title;
         }
-        String title = playlistName();
-        if (title == null) title = artistName();
-        if (title == null) title = albumName();
-        if (title == null) title = trackName();
+        // БАГ LMS 9.1.1 «dalgN» (подробно в memory bank): 'playlist name ?' и 'playlist album ?'
+        // на плеере с ПУСТЫМ плейлистом сыпят в лог LMS "_songData ... invalid object or path: dalgN"
+        // (сдвиг аргументов в playlistXQuery: Playlist::track() при count==0 делает bare return,
+        // теги 'dalgN' уезжают в параметр «путь»). Поэтому сначала status (даёт playlist_tracks
+        // и remoteMeta.title), а playlist name/artist/album спрашиваем только при непустом плейлисте.
+        PlayerStatus.Result status = this.statusFast();
+        String title = null;
+        if (status != null && status.playlist_tracks > 0) {
+            title = playlistName();
+            if (title == null) title = artistName();
+            if (title == null) title = albumName();
+        }
+        if (title == null) title = trackName(status);
         if (title != null) title = titleCrop(title);
         if (title != null && title.contains("music/sounds")) title = null;
         if (title != null && title.contains("_restore")) title = null;
