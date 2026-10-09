@@ -8,6 +8,9 @@
   локальный каталог airplay2)** — push main (до e0b23a5), Release v1.1 + zip-asset залиты
   (sha1 asset = repo.xml, raw-URL/icon/download = 200). Плагин ставится из LMS Additional
   Repositories: raw …/knovash/airplay/main/repo.xml.
+- **Мультирежим: фикс переживаний рестарта облака (09.10)** — sa_server b59ec49 (WS и /info
+  принимают Яндекс access_token как fallback instanceToken; запушен, ждёт деплой Zeabur) +
+  клиент v1.11 4fc04c1 (WS 1008 → Яндекс-токен, /info 401 → ретрай; zip готов, ждёт Release).
 - УДЯ: список устройств, query/action (громкость, каналы-плейлисты, play/pause…) через облако.
 - Навык «Раз Два» через облако (после фикса v1.6): привязка комнаты, «что играет», громкость,
   лимит, Spotify («включи альбом/трек/плейлист/артиста»), «где пульт».

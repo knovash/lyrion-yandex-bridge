@@ -65,9 +65,12 @@
 - **Что наблюдать дальше**: стабильность мостов (beat 30с autorestart), поведение при
   перезагрузке бокса (плагин стартует мосты сам), HomePod «занят» чужим AirPlay (мост
   переподключится с retry), версия pyatv при обновлениях pip (0.18.0 API-специфичен).
-- **v1.11 (не релизнуто, накоплено)**: УДЯ-дубли фиксы, deterministic ids,
-  convergeMusicIdsByExternalId, spotify_link, artist-fallback, spoty-share.xml (бывш. share.xml);
-  бокс уже живёт на этих сборках (manual deploy). + теперь AirPlay2Bridge v1.0.
+- **v1.11 (код в main 4fc04c1, ГОТОВА К РЕЛИЗУ: zip собран dist-lms/lyrion-yandex-bridge-v1.11.zip,
+  sha1 10869243efbd48acae5fbc97d015792ae0291c47; ждёт Release+asset от владельца, потом repo.xml)**:
+  УДЯ-дубли фиксы, deterministic ids (+yandexUid в seed), convergeMusicIdsByExternalId,
+  spotify_link, artist-fallback, spoty-share.xml; + мультирежим: переживание рестарта облака
+  (WS close 1008 → переподключение Яндекс-токеном, /info 401 → ретрай); версия 1.11 в
+  pom/install.xml/ClientProcess.pm. + AirPlay2Bridge v1.0.
 - **09.10 (вечер) TASKER-ФАЙЛЫ ПЕРЕИМЕНОВАНЫ владельцем** (закоммичено): `lyrion-tasker-tv.xml`
   (бывш. squeeze_tv2.prj.xml), `lyrion-tasker-widgets.xml` (бывш. squeeze_v40.prj.xml, версия
   владельца-экспорта с планшета как эталон), `spoty-share.xml` (бывш. share.xml); старый
@@ -463,6 +466,11 @@
   session.user.access_token) → свой клиент; fallback anyUid только при одном клиенте.
   Сборка: `JAVA_HOME=~/.jdks/corretto-18.0.2 mvn package` → target/cloud-server-1.0.jar
   (app.jar — старая ручная копия, игнорировать). Деплой на Zeabur — вручную владельцем.
+  **09.10 ФИКС РЕСТАРТОВ (b59ec49, запушен, ЖДЁТ ДЕПЛОЙ)**: TokenRegistry in-memory — рестарт
+  сервера терял все instanceToken → клиенты навсегда 1008 до ручной переавторизации. Теперь
+  WS (/ws) и /info принимают также Яндекс access_token (fallback через YandexUserResolver,
+  uid тот же); клиент v1.11 после close 1008 сам переподключается Яндекс-токеном, /info 401 →
+  ретрай. Smoke-тест: старт 3.4с, GET / 200, /info без токена 401.
 - Рабочий инстанс владельца и тестовый стенд: LMS 192.168.1.131 (root/ssh). Пароль в банк
   НЕ пишем (секреты запрещены) — если потерян, СПРОСИТЬ У ВЛАДЕЛЬЦА. Плагин в
   cache/InstalledPlugins, НЕТ unzip — jar обновлять scp-ом прямо в Bin/ + рестарт LMS
@@ -471,10 +479,16 @@
   cache/LyrionYandexBridge/data/log.txt (+ client-stdout.log). CLI LMS открыт через HTTP
   http://192.168.1.131:9000/jsonrpc.js (без авторизации), лог сервера — http://…:9000/log.txt.
 
-## Следующие шаги (кандидаты)
-1. Обновить СВОЙ рабочий инстанс плагина до v1.6 и проверить навык вживую:
-   сказать навыку «это комната <название>», затем «что играет».
-2. Разобрать открытые TODO (список в progress.md).
+## Следующие шаги (мультирежим — финал)
+1. ВЛАДЕЛЕЦ: задеплоить sa_server b59ec49 на Zeabur (docker push + redeploy; env уже стоят).
+2. ВЛАДЕЛЕЦ: GitHub Release v1.11 (knovash/lyrion-yandex-bridge) + asset
+   dist-lms/lyrion-yandex-bridge-v1.11.zip (sha1 10869243…) → затем repo.xml → v1.11 + push.
+3. Обновить бокс .131 до релизной v1.11 (scp jar в Bin/ + рестарт LMS) и проверить, что
+   WS поднялся (лог клиента), УДЯ/навык работают.
+4. Второй пользователь: плагин из репо (README-инструкция), «Подключиться через Яндекс»,
+   провайдер УДЯ; в Runtime logs Zeabur ждать два `WS CONNECTED: uid=…` и
+   `ROUTE: by access_token -> uid=…`.
+5. Разобрать открытые TODO (список в progress.md).
 
 ## Окружение
 - Рабочая машина: linux, JDK 14 (target 11), Maven; LMS в локальной сети.
