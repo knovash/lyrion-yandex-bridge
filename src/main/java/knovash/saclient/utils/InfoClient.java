@@ -23,19 +23,19 @@ public class InfoClient {
     public static Info fetchInfo(String baseUrl) {
         try {
             String url = baseUrl + "/info";
-            HttpRequest.Builder builder = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .timeout(Duration.ofSeconds(10))
-                    .header("Accept", "application/json")
-                    .GET();
-            // endpoint защищён instanceToken (выдаётся облаком при авторизации)
-            if (config.instanceToken != null && !config.instanceToken.isEmpty()) {
-                builder.header("Authorization", "Bearer " + config.instanceToken);
-            }
-            HttpRequest request = builder.build();
-
+            HttpRequest request = buildInfoRequest(url, preferredInfoToken());
             HttpResponse<String> response = httpClient.send(request,
                     HttpResponse.BodyHandlers.ofString());
+
+            // instanceToken отвергнут (облако перезапускалось и потеряло реестр) —
+            // повторяем с Яндекс access_token
+            if (response.statusCode() == 401
+                    && preferredInfoToken() != null && preferredInfoToken().equals(config.instanceToken)
+                    && config.yandexToken != null && !config.yandexToken.isEmpty()) {
+                log.warn("/info: instanceToken отвергнут (рестарт облака?), повтор Яндекс-токеном");
+                request = buildInfoRequest(url, config.yandexToken);
+                response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            }
 
             if (response.statusCode() == 200) {
                 return objectMapper.readValue(response.body(), Info.class);
@@ -47,6 +47,25 @@ public class InfoClient {
             log.error("Не удалось получить Info: ", e);
             return null;
         }
+    }
+
+    private static String preferredInfoToken() {
+        if (config.instanceToken != null && !config.instanceToken.isEmpty()) return config.instanceToken;
+        if (config.yandexToken != null && !config.yandexToken.isEmpty()) return config.yandexToken;
+        return null;
+    }
+
+    private static HttpRequest buildInfoRequest(String url, String token) {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .timeout(Duration.ofSeconds(10))
+                .header("Accept", "application/json")
+                .GET();
+        // endpoint защищён instanceToken (выдаётся облаком при авторизации)
+        if (token != null && !token.isEmpty()) {
+            builder.header("Authorization", "Bearer " + token);
+        }
+        return builder.build();
     }
 
     /**

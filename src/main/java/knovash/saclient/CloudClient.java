@@ -28,6 +28,7 @@ public class CloudClient {
     private final Config config;
     private volatile WebSocket ws;
     private volatile boolean running = true;
+    private volatile boolean instanceTokenRejected;
     private volatile Thread thread;
     private final Object lock = new Object();
 
@@ -45,6 +46,7 @@ public class CloudClient {
 
     /** Переподключение с актуальным instanceToken (после авторизации в Яндексе). */
     public void restart() {
+        instanceTokenRejected = false; // новый instanceToken после переавторизации — снова пробуем им
         stop();
         Thread t = thread;
         if (t != null) {
@@ -71,12 +73,13 @@ public class CloudClient {
     }
 
     private void connectAndServe() throws Exception {
-        if (config.instanceToken == null || config.instanceToken.isEmpty()) {
-            log("NO INSTANCE TOKEN: откройте http://localhost:" + config.localPort + "/auth");
+        String token = wsToken();
+        if (token == null) {
+            log("NO TOKEN: откройте http://localhost:" + config.localPort + "/auth");
             return;
         }
         CompletableFuture<WebSocket> future = http.newWebSocketBuilder()
-                .header("Authorization", "Bearer " + config.instanceToken)
+                .header("Authorization", "Bearer " + token)
                 .buildAsync(URI.create(config.serverWsUrl), new Listener());
 
         ws = future.get();
@@ -88,6 +91,23 @@ public class CloudClient {
                 lock.wait(1000);
             }
         }
+    }
+
+    /**
+     * Токен для WS-канала: instanceToken (выдан облаком при авторизации), но если сервер
+     * его отверг (close 1008 — например, облако перезапустилось и потеряло in-memory
+     * реестр instanceToken) — ходим с Яндекс access_token (uid резолвится тот же).
+     */
+    private String wsToken() {
+        String ins = config.instanceToken;
+        String yx = config.yandexToken;
+        if (instanceTokenRejected && notEmpty(yx)) return yx;
+        if (notEmpty(ins)) return ins;
+        return notEmpty(yx) ? yx : null;
+    }
+
+    private static boolean notEmpty(String s) {
+        return s != null && !s.isEmpty();
     }
 
     private void handleMessage(String json) {
@@ -263,6 +283,11 @@ public class CloudClient {
         @Override
         public CompletionStage<?> onClose(WebSocket webSocket, int statusCode, String reason) {
             System.out.println("WS closed: " + statusCode + " " + reason);
+            if (statusCode == 1008) {
+                // сервер не узнал instanceToken (рестарт облака теряет реестр) —
+                // дальше подключаемся с Яндекс access_token (см. wsToken())
+                instanceTokenRejected = true;
+            }
             synchronized (lock) { lock.notifyAll(); }
             return null;
         }
