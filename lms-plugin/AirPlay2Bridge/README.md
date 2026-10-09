@@ -13,6 +13,23 @@ LMS → squeezelite (stdout PCM) → bridge.py (pyatv, AirPlay 2 / HAP transient
 
 В LMS появляются обычные squeezelite-плееры — синкгруппы, УДЯ, Tasker работают как раньше.
 
+## Credits (исходники)
+
+- **[cayco/cayco-squeezelite-airplay2-bridge](https://github.com/cayco/cayco-squeezelite-airplay2-bridge)** —
+  основной источник: архитектура squeezelite→pyatv, патч output_stdout.c, AP2-флаги,
+  RingBuffer/бэкпрессура/idle-teardown/пересылка громкости (опубликовано в
+  [LMS-Raop#57](https://github.com/philippe44/LMS-Raop/issues/57), октябрь 2026).
+- **[postlund/pyatv](https://github.com/postlund/pyatv)** (MIT) — реализация AirPlay 2
+  (HAP-transient pairing, ChaCha20, RAOP), на которой всё работает.
+- **[philippe44/LMS-Raop](https://github.com/philippe44/LMS-Raop)** — RaopBridge: образец
+  UI discovery-настроек и контекст проблемы (issue #57).
+- **toralt** — исходный рецепт «squeezelite | pyatv» из треда #57.
+- **squeezelite** (Adrian Smith, Ralph Irving) — база патча output_stdout.c (**GPLv3**).
+
+Лицензии: `patches/output_stdout.c` — GPLv3 (наследует squeezelite); `bridge.py` —
+наш код по рецепту cayco (у его репозитория лицензия не указана); сам плагин —
+в рамках лицензии проекта lyrion-yandex-bridge.
+
 ## Настройки плагина (как у RaopBridge)
 
 Кнопка **«Найти устройства» / Start Discovery Scan** запускает `bridge.py --scan`
