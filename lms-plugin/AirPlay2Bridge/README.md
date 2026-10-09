@@ -13,14 +13,29 @@ LMS → squeezelite (stdout PCM) → bridge.py (pyatv, AirPlay 2 / HAP transient
 
 В LMS появляются обычные squeezelite-плееры — синкгруппы, УДЯ, Tasker работают как раньше.
 
+## Настройки плагина (как у RaopBridge)
+
+Кнопка **«Найти устройства» / Start Discovery Scan** запускает `bridge.py --scan`
+(pyatv mDNS, ~10 сек) и показывает таблицу найденных AirPlay-устройств:
+галочка «использовать», редактируемое имя плеера, IP, AirPlay ID, MAC, модель+ОС.
+Новые устройства добавляются выключенными; отсутствующие при последнем скане
+помечаются серым «не найден»; совпадение имени с существующим плеером LMS — метка «!».
+
+Данные: преф `devices` = TSV-строки `id\tname\tip\tmac\tenabled\tmodel\tov`.
+**MAC известных устройств никогда не перегенерируется** (наследование плейлистов/
+синкгрупп от старых RaopBridge-плееров; новым — `aa:aa:` + начало airplay-id).
+Преф `players` (формат BridgeProcess: `name,mac,id,host` на строку) генерируется
+из отмеченных устройств при Save — мосты перезапускаются автоматически.
+Миграция: при первом открытии страницы `devices` сеется из старого `players` (все включены).
+
 ## Состав
 
 | Файл | Назначение |
 |---|---|
 | `Plugin.pm` | init/shutdown, дефолты (3 HomePod) |
 | `BridgeProcess.pm` | запуск/стоп/автоперезапуск python-мостов (pid-файлы, beat 30с) |
-| `Settings.pm` + `HTML/…/basic.html` | страница настроек (плееры `name,mac,airplay_id,ip`, пути) |
-| `Bin/bridge.py` | сам мост: RingBufferAudioSource → pyatv `stream_file()`, idle 30с → teardown, громкость LMS→HomePod |
+| `Settings.pm` + `HTML/…/basic.html` | discovery-скан + таблица устройств (галочки/имена), пути |
+| `Bin/bridge.py` | мост: RingBufferAudioSource → pyatv `stream_file()`, idle 30с → teardown, громкость LMS→HomePod; `--scan` — discovery (TSV: `id\tname\tip\tmodel\tov`) |
 | `patches/output_stdout.c` | патч squeezelite: не писать тишину в stdout + usleep при пустом буфере (иначе idle = 100% CPU) |
 | `patches/build_squeezelite.sh` | сборка патченого squeezelite из Debian-исходников |
 
@@ -37,9 +52,9 @@ chown -R squeezeboxserver:nogroup /usr/share/squeezeboxserver/Plugins/AirPlay2Br
 # рестарт LMS, плагин включается сам (defaultState enabled)
 ```
 
-## Настройка плееров
+## Настройка плееров (ручной формат)
 
-Строка = `имя,MAC плеера,AirPlay ID,IP HomePod`. **MAC-и намеренно взяты от старых
+Выбирается галочками в таблице после скана (см. выше). Ручной формат (преф `players`,
 RaopBridge-плееров** (`aa:aa:…`), чтобы сохранить плейлисты/синкгруппы/имена;
 RaopBridge при этом должен быть выключен (state.prefs → `RaopBridge: disabled`),
 иначе будут дубли плееров.
@@ -67,3 +82,7 @@ ManualService с AP2-флагами — fallback).
 6. SIGTERM: volume_monitor блокирован в readline() CLI — в stop() закрываем сокет
    + страховочный `os._exit(0)` через 5с.
 7. `pgrep -f "bridge.py HomePod"` в SSH убивает свою же сессию — использовать `[b]ridge.py`.
+8. LMS settings footer всегда шлёт hidden `saveSettings=1` — Scan-клик (submit
+   `scanSettings`) обрабатывать ПЕРВЫМ, иначе скан будет сопровождаться сохранением.
+9. LMS «needs-uninstall» в state.prefs: рестарт с таким флагом УДАЛЯЕТ файлы плагина
+   (так бесследно исчез RaopBridge; восстановление — только переустановка из репо).
