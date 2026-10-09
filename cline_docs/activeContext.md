@@ -65,12 +65,12 @@
 - **Что наблюдать дальше**: стабильность мостов (beat 30с autorestart), поведение при
   перезагрузке бокса (плагин стартует мосты сам), HomePod «занят» чужим AirPlay (мост
   переподключится с retry), версия pyatv при обновлениях pip (0.18.0 API-специфичен).
-- **v1.11 (код в main 4fc04c1, ГОТОВА К РЕЛИЗУ: zip собран dist-lms/lyrion-yandex-bridge-v1.11.zip,
-  sha1 10869243efbd48acae5fbc97d015792ae0291c47; ждёт Release+asset от владельца, потом repo.xml)**:
-  УДЯ-дубли фиксы, deterministic ids (+yandexUid в seed), convergeMusicIdsByExternalId,
-  spotify_link, artist-fallback, spoty-share.xml; + мультирежим: переживание рестарта облака
-  (WS close 1008 → переподключение Яндекс-токеном, /info 401 → ретрай); версия 1.11 в
-  pom/install.xml/ClientProcess.pm. + AirPlay2Bridge v1.0.
+- **v1.11 ОПУБЛИКОВАН (09.10)**: Release v1.11 + asset (sha1 10869243… совпадает побайтно),
+  repo.xml → v1.11 запушен (5eeca28), raw-URL проверен (отдаёт 1.11). Состав: УДЯ-дубли фиксы,
+  deterministic ids (+yandexUid в seed), convergeMusicIdsByExternalId, spotify_link,
+  artist-fallback, spoty-share.xml; + мультирежим: переживание рестарта облака (WS close 1008 →
+  переподключение Яндекс-токеном, /info 401 → ретрай); версия 1.11 в pom/install.xml/ClientProcess.pm.
+  + AirPlay2Bridge v1.0. Бокс .131 ещё на старой сборке — обновить (см. Следующие шаги 3).
 - **09.10 (вечер) TASKER-ФАЙЛЫ ПЕРЕИМЕНОВАНЫ владельцем** (закоммичено): `lyrion-tasker-tv.xml`
   (бывш. squeeze_tv2.prj.xml), `lyrion-tasker-widgets.xml` (бывш. squeeze_v40.prj.xml, версия
   владельца-экспорта с планшета как эталон), `spoty-share.xml` (бывш. share.xml); старый
@@ -483,8 +483,8 @@
 
 ## Следующие шаги (мультирежим — финал)
 1. ~~ВЛАДЕЛЕЦ: задеплоить sa_server b59ec49 на Zeabur~~ — СДЕЛАНО 09.10, подтверждено WS-пробой.
-2. ВЛАДЕЛЕЦ: GitHub Release v1.11 (knovash/lyrion-yandex-bridge) + asset
-   dist-lms/lyrion-yandex-bridge-v1.11.zip (sha1 10869243…) → затем repo.xml → v1.11 + push.
+2. ~~ВЛАДЕЛЕЦ: GitHub Release v1.11 + asset~~ — СДЕЛАНО 09.10: asset sha совпадает, repo.xml
+   запушен (5eeca28), raw-URL отдаёт 1.11.
 3. Обновить бокс .131 до релизной v1.11 (scp jar+ClientProcess.pm+install.xml, chown!, rm старый
    jar, рестарт LMS по процедуре банка) и проверить, что WS поднялся (лог клиента), УДЯ/навык.
    **ПЕРЕД вторым пользователем: проверить в Runtime logs Zeabur свой `WS CONNECTED: uid=` —

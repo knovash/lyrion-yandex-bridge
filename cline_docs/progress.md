@@ -10,7 +10,7 @@
   Repositories: raw …/knovash/airplay/main/repo.xml.
 - **Мультирежим: фикс переживаний рестарта облака (09.10)** — sa_server b59ec49 (WS и /info
   принимают Яндекс access_token как fallback instanceToken; запушен, ждёт деплой Zeabur) +
-  клиент v1.11 4fc04c1 (WS 1008 → Яндекс-токен, /info 401 → ретрай; zip готов, ждёт Release).
+  клиент v1.11 ОПУБЛИКОВАН (Release+asset+repo.xml, 09.10).
 - УДЯ: список устройств, query/action (громкость, каналы-плейлисты, play/pause…) через облако.
 - Навык «Раз Два» через облако (после фикса v1.6): привязка комнаты, «что играет», громкость,
   лимит, Spotify («включи альбом/трек/плейлист/артиста»), «где пульт».
@@ -38,6 +38,7 @@
 | v1.8.1 | 06.10 | Фикс пост-релиза: анти-шторм (refresh ≥10с, без live-чека в status.json, timeout 6с) — страница плагина не пропадала при повторных отправках формы настроек |
 | v1.9 | 06.10 | Инвариант «устройство⇔комната с плеером», дедуп устройств, пункт 'no' (снять комнату), иконка в списке плагинов, оптимизация задержек (страница ~0.5с, async yandexInit/Spotify, без скана сети), строка LMS убрана со страницы, фикс Parser (пустые значения) |
 | v1.10 | 07.10 | Фикс УДЯ-actions на неизвестный id (NPE → ERROR/DEVICE_UNREACHABLE, был «client timeout»), guard пустого config.silence (playlist play ""), история запросов навыка «включи …» (data/search_requests.txt + страница /requests + ссылки в вебе и на странице плагина), умный поиск Spotify (склеенные слова «electric nose»~«Electrypnose», тай-брейк близости длины), «не нашла» вместо «включаю null», Spotify-«не найдено» не запускает playPath(null) |
+| v1.11 | 09.10 | Мультирежим: переживание рестарта облака — сервер принимает Яндекс access_token на WS//info (fallback instanceToken), клиент при WS 1008 переподключается Яндекс-токеном, /info 401 → ретрай; +накопленное: УДЯ-дубли (convergeMusicIdsByExternalId, детерминированные id c yandexUid), spotify_link, artist-fallback, tasker-переименования |
 
 ## Открытые TODO (из кода)
 - `Tasker.forTaskerPlaylist`: для запроса из Tasker сделать запрос `playlist_cur_index`.
