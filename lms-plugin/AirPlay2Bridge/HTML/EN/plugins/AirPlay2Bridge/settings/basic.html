@@ -1,0 +1,35 @@
+[% PROCESS settings/header.html %]
+
+	[% IF validated %]
+		<div class="prefIntro">[% "AIRPLAY2BRIDGE_SAVED" | string %]</div>
+	[% END %]
+
+	<form method="post" action="[% path %]">
+		<input type="hidden" name="action" value="saveSettings" />
+
+		<dl class="settingsList">
+			<dt>[% "AIRPLAY2BRIDGE_ENABLED" | string %]</dt>
+			<dd><input type="checkbox" name="pref_enabled" id="pref_enabled" [% IF pref_enabled %]checked[% END %] value="1" /></dd>
+
+			<dt>[% "AIRPLAY2BRIDGE_PLAYERS" | string %]</dt>
+			<dd>
+				<textarea name="pref_players" id="pref_players" rows="5" cols="60">[% pref_players | html %]</textarea>
+			</dd>
+
+			<dt>[% "AIRPLAY2BRIDGE_PYTHONPATH" | string %]</dt>
+			<dd><input type="text" name="pref_pythonpath" id="pref_pythonpath" size="50" value="[% pref_pythonpath | html %]" /></dd>
+
+			<dt>[% "AIRPLAY2BRIDGE_BRIDGEBIN" | string %]</dt>
+			<dd><input type="text" name="pref_bridgebin" id="pref_bridgebin" size="50" value="[% pref_bridgebin | html %]" /></dd>
+
+			<dt>[% "AIRPLAY2BRIDGE_SQUEEZELITE" | string %]</dt>
+			<dd><input type="text" name="pref_squeezelite" id="pref_squeezelite" size="50" value="[% pref_squeezelite | html %]" /></dd>
+
+			<dt>[% "AIRPLAY2BRIDGE_LMSIP" | string %]</dt>
+			<dd><input type="text" name="pref_lmsip" id="pref_lmsip" size="20" value="[% pref_lmsip | html %]" /></dd>
+		</dl>
+
+		<input type="submit" name="saveSettings" value="[% "SAVE" | string %]" class="stdclick" />
+	</form>
+
+[% PROCESS settings/footer.html %]

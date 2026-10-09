@@ -1,0 +1,41 @@
+# AirPlay2Bridge plugin strings
+
+PLUGIN_AIRPLAY2_BRIDGE
+	ru	AirPlay 2 Bridge (HomePodOS 27+)
+	en	AirPlay 2 Bridge (HomePodOS 27+)
+
+PLUGIN_AIRPLAY2_BRIDGE_DESC
+	ru	Мост squeezelite -> pyatv (AirPlay 2) для HomePod на HomePodOS 27+, где легаси-RAOP больше не воспроизводится (LMS-Raop issue #57). Создаёт в LMS обычные squeezelite-плееры и пересылает PCM по AirPlay 2.
+	en	Squeezelite -> pyatv (AirPlay 2) bridge for HomePods on HomePodOS 27+, where legacy RAOP no longer renders audio (LMS-Raop issue #57). Exposes squeezelite players in LMS and forwards PCM over AirPlay 2.
+
+AIRPLAY2BRIDGE_SETTINGS
+	ru	AirPlay 2 Bridge
+	en	AirPlay 2 Bridge
+
+AIRPLAY2BRIDGE_ENABLED
+	ru	Запускать мосты автоматически
+	en	Start bridges automatically
+
+AIRPLAY2BRIDGE_PLAYERS
+	ru	Плееры (по одному в строке: имя,MAC плеера,AirPlay ID,IP HomePod)
+	en	Players (one per line: name,player MAC,AirPlay ID,HomePod IP)
+
+AIRPLAY2BRIDGE_PYTHONPATH
+	ru	Путь к python3
+	en	Path to python3
+
+AIRPLAY2BRIDGE_BRIDGEBIN
+	ru	Путь к bridge.py (пусто = Bin/bridge.py из плагина)
+	en	Path to bridge.py (empty = plugin's Bin/bridge.py)
+
+AIRPLAY2BRIDGE_SQUEEZELITE
+	ru	Путь к патченому squeezelite (stdout, silence-skip)
+	en	Path to patched squeezelite (stdout, silence-skip)
+
+AIRPLAY2BRIDGE_LMSIP
+	ru	IP LMS для squeezelite/CLI
+	en	LMS IP for squeezelite/CLI
+
+AIRPLAY2BRIDGE_SAVED
+	ru	Настройки сохранены, мосты перезапущены.
+	en	Settings saved, bridges restarted.
