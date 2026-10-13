@@ -112,6 +112,22 @@ public class Tasker {
         if (player.playerStatus != null && player.playerStatus.result != null && player.playerStatus.result.playlist_loop != null) {
             tracks = player.playerStatus.result.playlist_loop.size();
         }
+        // ФИКС регрессии dalgN-фикса: перед этим refresh обновляет титулы ВСЕХ плееров
+        // (Player.title() -> statusFast() = "status 0 0"), и statusFast ЗАТИРАЕТ кэш
+        // playerStatus ответом без playlist_loop -> виджет плейлиста получал "empty"
+        // у играющего плеера. Если в кэше нет списка треков, но playlist_tracks > 0 —
+        // дозапросить окно статуса с треками (status 0 50, обновляет playerStatus).
+        if (tracks == 0
+                && player.playerStatus != null && player.playerStatus.result != null
+                && player.playerStatus.result.playlist_tracks > 0) {
+            log.info("PLAYLIST LOOP MISSING IN CACHE, RELOADING (playlist_tracks="
+                    + player.playerStatus.result.playlist_tracks + ")");
+            player.playlistTracksCurrent(0, 50);
+            if (player.playerStatus != null && player.playerStatus.result != null
+                    && player.playerStatus.result.playlist_loop != null) {
+                tracks = player.playerStatus.result.playlist_loop.size();
+            }
+        }
         log.info("TRACKS: " + tracks);
         if (tracks == 0) {
             log.info("TASKER PLAYLIST EMPTY");
