@@ -6,6 +6,9 @@
   knovash/airplay)**: здесь не ведём; статус/грабли/окружение — банк того проекта
   (airplay2/cline_docs/, локальный). В сессиях sa_client по AirPlay не работать —
   просить владельца переключить проект.
+- **Удалённые плееры не воскрешаются (19.10)** — фикс updatePlayers: добавлять новых только при
+  connected==1 (LMS держит offline-записи в players_loop); воскресшие на боксе вычищены (Smart,
+  Behringer, Radiotechnika, Vimu on Smart TV Pro). В main, поедет в v1.12.
 - **Мультирежим: фикс переживаний рестарта облака (09.10)** — sa_server b59ec49 (WS и /info
   принимают Яндекс access_token как fallback instanceToken; запушен, ждёт деплой Zeabur) +
   клиент v1.11 ОПУБЛИКОВАН (Release+asset+repo.xml, 09.10).

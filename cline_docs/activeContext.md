@@ -1,7 +1,34 @@
 # Active Context — что сейчас
 
-## Статус: v1.11 опубликован; dalgN-фикс в main (поедет в v1.12); мультирежим облака закрыт
+## Статус: v1.11 опубликован; dalgN-фикс + фикс Tasker-виджета плейлиста + фикс воскрешения удалённых плееров в main (поедут в v1.12); мультирежим облака закрыт
 
+- **19.10 (23:40) ФИКС ВОСКРЕШЕНИЯ УДАЛЁННЫХ ПЛЕЕРОВ (ffbc95b, ДЕПЛОЙ НА БОКСЕ, чистка выполнена)**:
+  симптом — плееры, удалённые кнопкой «Удалить» (страница /players), возвращались сами через минуты.
+  Причина: LMS держит отключённые плееры в `serverstatus`→`players_loop`, а ветка добавления в
+  `LmsPlayers.updatePlayers()` не проверяла `connected` → плановый updatePlayers пере-добавлял
+  (лог бокса: PLAYER REMOVE Smart/Behringer 23:21:13–20 → ADD NEW PLAYER 23:21:42). Правило владельца:
+  оффлайн-плееры в клиенте ОСТАЮТСЯ (могут вернуться), кнопкой удаляются и тогда не возвращаются.
+  ФИКС: добавлять новых только при `pl.connected == 1`, иначе лог `SKIP OFFLINE PLAYER <name>`.
+  Чистка воскресших (все ранее удалялись кнопкой — подтверждено логом PLAYER REMOVE): Smart, Behringer,
+  Radiotechnika (комната Веранда), Vimu on Smart TV Pro. ГРАБЛЯ: форма удаления живёт на **/form**
+  (POST action=player_remove&player_name_value=…), POST на /form → 302; POST на /players просто
+  рендерит страницу (200) и НИЧЕГО не делает. Деплой: чистая сборка, jar 1.11+ поверх (бэкап
+  .bak-preSkipOffline, chown squeezeboxserver, kill → beat поднял pid 46595). Поедет в v1.12.
+
+- **13.10 (17:00) ФИКС ВИДЖЕТА ПЛЕЙЛИСТА TASKER (планшет/телефон) — регрессия dalgN-фикса,
+  ДЕПЛОЙ НА БОКС ВЫПОЛНЕН И ПРОВЕРЕН (коммит 02c0e1f)**: симптом — виджет плейлиста пустой
+  («PLAYLIST»: «empty») у ИГРАЮЩЕГО плеера, остальные поля (NOWPLAYING и пр.) приходят.
+  Причина: forTaskerWidgetsRefreshJson делает p.status() (status 0 50 → кэш playerStatus
+  С playlist_loop), затем p.title() ВСЕХ плееров → statusFast() = «status 0 0» ЗАТИРАЕТ
+  playerStatus ответом БЕЗ playlist_loop → forTaskerPlaylist(…, false) читает пустой кэш →
+  TRACKS: 0 → «empty». Проявилось с момента активации dalgN-фикса (рестарт LMS 13.10 00:33;
+  сам dalgN-деплой 09.10 18:30 был без рестарта — старый jar не содержал statusFast в title()).
+  ФИКС в Tasker.forTaskerPlaylist: при tracks==0 и playerStatus.result.playlist_tracks>0 →
+  дозапрос player.playlistTracksCurrent(0, 50) (обновляет кэш и playlist_loop). e2e на боксе:
+  до — «empty» при играющем Summer Jazz; после — 45 треков с «>» на текущем. Деплой: jar
+  поверх Bin/…-1.11.jar (бэкап .bak-preTaskerFix), kill клиента → beat поднял pid 449476.
+  Задача считается закрытой после подтверждения владельцем виджета на планшете (обновление
+  придёт само — профиль refresh every 2 min).
 - **09.10 (вечер) ФИКС «dalgN»-спама в лог LMS — ДЕПЛОЙ НА БОКС ВЫПОЛНЕН И ПОДТВЕРЖДЁН (18:30)**:
   каждые 2 мин Tasker-виджеты телефона (профиль «refresh every 2 min», lyrion-tasker-widgets.xml)
   дёргают /cmd get_refresh_json → Tasker.forTaskerWidgetsRefreshJson → p.title() ВСЕХ плееров →
