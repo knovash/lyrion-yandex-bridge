@@ -100,6 +100,13 @@ public class LmsPlayers {
         serverStatus.result.players_loop.stream()
                 .filter(pl -> lmsPlayers.playerByName(pl.name) == null)
                 .forEach(pl -> {
+                    // LMS держит отключённые плееры в players_loop: добавлять только реально
+                    // подключённых, иначе вручную удалённые (кнопка «Удалить») возвращаются
+                    // на каждом цикле updatePlayers, пока LMS не забудет свою запись о плеере
+                    if (pl.connected != 1) {
+                        log.info("SKIP OFFLINE PLAYER " + pl.name);
+                        return;
+                    }
                     log.info("ADD NEW PLAYER " + pl.name);
                     lmsPlayers.players.add(new Player(pl.name));
                 });
