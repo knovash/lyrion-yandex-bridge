@@ -93,6 +93,14 @@ sub _clientStatus {
 		: '<span style="color:red">not authorized</span>';
 	$st{'cloudconnected'} = $d->{'cloud'}->{'connected'} ? 1 : 0;
 
+	# лог клиента: размер и период обнуления (приходят из /status.json клиента)
+	my $logsize = $d->{'log'}->{'size'} || 0;
+	my @units = ('B', 'KB', 'MB', 'GB');
+	my $ui = 0;
+	while ($logsize >= 1024 && $ui < 3) { $logsize /= 1024; $ui++; }
+	$st{'logsize'} = sprintf('%.1f %s', $logsize, $units[$ui]);
+	$st{'logdays'} = defined $d->{'log'}->{'rotateDays'} ? int($d->{'log'}->{'rotateDays'}) : 5;
+
 	return \%st;
 }
 
@@ -164,6 +172,19 @@ sub handler {
 					. ($ok ? 'ok' : 'fail') . ")");
 			}
 
+			# период обнуления лога клиента (поле clientlogdays в блоке Client status)
+			if (defined $paramRef->{'clientlogdays'} && $paramRef->{'clientlogdays'} =~ /^\d+$/) {
+				my $v = int($paramRef->{'clientlogdays'});
+				$v = 0 if $v < 0;
+				$v = 365 if $v > 365;
+				my $r = eval { $ua->post("http://127.0.0.1:$port/form", {
+					'action'         => 'log_days_set',
+					'log_days_value' => $v,
+				}) };
+				my $ok = $r && ($r->is_success || $r->is_redirect);
+				$log->info("client log reset days from settings page: $v (" . ($ok ? 'ok' : 'fail') . ")");
+			}
+
 			# попросить клиент перечитать плееров и user/info — тогда блок Client status
 			# (Music devices in Yandex и пр.) на ЭТОЙ же отрисовке будет свежим:
 			# _clientStatus вызывается ниже по ходу обработчика и читает обновлённый /status.json.
@@ -218,6 +239,7 @@ sub handler {
 		# кнопки авторизации в облаке/Spotify ведут на страницы клиента
 		$paramRef->{'status'}->{'authurl'} = $paramRef->{'weburl'} . 'auth';
 		$paramRef->{'status'}->{'authurlspotify'} = $paramRef->{'weburl'} . 'auth_spotify';
+		$paramRef->{'status'}->{'logurl'} = $paramRef->{'weburl'} . 'log';
 	}
 
 	return $class->SUPER::handler($client, $paramRef);

@@ -42,6 +42,11 @@ public class HandlerAll implements HttpHandler {
             return;
         }
 
+        if (path.equals("/log")) {
+            serveLogTail(httpExchange); // хвост data/log.txt (ссылка «Открыть лог» со страницы плагина)
+            return;
+        }
+
         Context context = Context.contextCreate(httpExchange);
         if (context == null) { // /favicon.ico и пр.
             httpExchange.sendResponseHeaders(404, -1);
@@ -120,6 +125,33 @@ public class HandlerAll implements HttpHandler {
             default:
                 log.info("WARNING! NOT FOUND PATH: " + path);
                 return PageIndex.action(context);
+        }
+    }
+
+    /** Отдать последние 512 КБ лога data/log.txt как text/plain (полный лог может быть десятки МБ). */
+    private static final int LOG_TAIL_BYTES = 512 * 1024;
+
+    private static void serveLogTail(HttpExchange exchange) throws IOException {
+        File f = new File("data/log.txt");
+        long total = f.exists() ? f.length() : 0L;
+        byte[] data = new byte[0];
+        if (total > 0) {
+            int len = (int) Math.min(total, (long) LOG_TAIL_BYTES);
+            data = new byte[len];
+            try (java.io.RandomAccessFile raf = new java.io.RandomAccessFile(f, "r")) {
+                raf.seek(total - len);
+                raf.readFully(data);
+            }
+        }
+        byte[] head = ("--- data/log.txt: last " + (LOG_TAIL_BYTES / 1024) + " KB of " + total + " bytes ---\n")
+                .getBytes(StandardCharsets.UTF_8);
+        byte[] body = new byte[head.length + data.length];
+        System.arraycopy(head, 0, body, 0, head.length);
+        System.arraycopy(data, 0, body, head.length, data.length);
+        exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=UTF-8");
+        exchange.sendResponseHeaders(200, body.length);
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(body);
         }
     }
 

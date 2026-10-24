@@ -17,6 +17,11 @@
 				&nbsp;<a href="[% status.authurl %]" target="lybauth"><button type="button">[% "PLUGIN_LYRION_YANDEX_BRIDGE_CONNECTYA" | string %]</button></a>
 			[% END %]
 			</td></tr>
+			<tr><td style="padding:2px 6px; vertical-align:top;"><b>Client log</b></td><td style="padding:2px 6px;">
+				[% status.logsize %]
+				&nbsp;<a href="[% status.logurl %]" target="lyblog"><button type="button">[% "PLUGIN_LYRION_YANDEX_BRIDGE_LOGOPEN" | string %]</button></a>
+				&nbsp;&nbsp;reset every <input type="text" class="stdedit" name="clientlogdays" value="[% status.logdays %]" size="3" autocomplete="off"> days (0 = never)
+			</td></tr>
 		</table>
 	[% END %]
 	[% END %]

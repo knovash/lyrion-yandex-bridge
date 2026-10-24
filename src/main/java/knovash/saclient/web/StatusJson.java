@@ -78,6 +78,12 @@ public class StatusJson {
         cloud.put("url", Main.config.serverHttpUrl);
         cloud.put("connected", Main.cloudClient != null && Main.cloudClient.isConnected());
 
+        // Лог клиента: размер и период обнуления (для страницы плагина LMS)
+        ObjectNode logNode = root.putObject("log");
+        java.io.File logFile = new java.io.File("data/log.txt");
+        logNode.put("size", logFile.exists() ? logFile.length() : 0L);
+        logNode.put("rotateDays", Settings.KeyValue.VALUE_LOG_RESET_DAYS.value);
+
         return root.toString();
     }
 

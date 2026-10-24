@@ -56,6 +56,10 @@ public class Main {
         knovash.saclient.web.SettingsTasker.settingsTasker.loadFromFile();
         knovash.saclient.web.SettingsVoice.settingsVoice.loadFromFile();
 
+        // лог клиента: обнуление data/log.txt раз в N дней (по умолчанию 5, VALUE_LOG_RESET_DAYS)
+        knovash.saclient.utils.LogReset.check();
+        knovash.saclient.utils.LogReset.startPeriodicCheck(1, 60);
+
         // общие ключи/ID (skillId, токен навыка, TTS) - выдаёт облако через GET /info
         if (config.instanceToken != null && !config.instanceToken.isEmpty()) {
             knovash.saclient.utils.InfoClient.setInfo(config.serverHttpUrl);

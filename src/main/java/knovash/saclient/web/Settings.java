@@ -47,7 +47,8 @@ public class Settings extends SettingsBase {
 
     // ---------- Числовые настройки ----------
     public enum KeyValue implements ValueKey {
-        VALUE_PERIOD_UPDATE_DEVICES_TO_YANDEX(5, "Период отправки состояний устройств в Яндекс, 5 мин");
+        VALUE_PERIOD_UPDATE_DEVICES_TO_YANDEX(5, "Период отправки состояний устройств в Яндекс, 5 мин"),
+        VALUE_LOG_RESET_DAYS(5, "Обнулять лог клиента (data/log.txt) раз в N дней, 0 — не обнулять");
 
         public final String description;
         public volatile Integer value;

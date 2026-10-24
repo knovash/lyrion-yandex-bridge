@@ -64,6 +64,10 @@ public class ProcessForm {
                     lmsPlayers.playerRemove((HashMap<String, String>) bodyMap);
                     context.setRedirect("/players");
                     break;
+                case "log_days_set":
+                    setLogResetDays(bodyMap.get("log_days_value"));
+                    context.setRedirect("/");
+                    break;
                 case lms_save:
                     lmsPlayers.lmsSave((HashMap<String, String>) bodyMap);
                     context.setRedirect("/lms");
@@ -72,6 +76,20 @@ public class ProcessForm {
                     log.info("ACTION ERROR " + action);
                     break;
             }
+        }
+    }
+
+    /** Период обнуления лога (дни) со страницы плагина: 0..365, 0 = не обнулять. */
+    private static void setLogResetDays(String value) {
+        try {
+            int days = Integer.parseInt(value == null ? "" : value.trim());
+            if (days < 0) days = 0;
+            if (days > 365) days = 365;
+            knovash.saclient.web.Settings.KeyValue.VALUE_LOG_RESET_DAYS.setValue(days);
+            settings.saveToFile();
+            log.info("LOG RESET DAYS SET: " + days);
+        } catch (NumberFormatException e) {
+            log.warn("LOG RESET DAYS INVALID: " + value);
         }
     }
 }
