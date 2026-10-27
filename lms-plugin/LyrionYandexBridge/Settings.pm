@@ -145,6 +145,32 @@ sub handler {
 		# после Restart/Reset клиент грузится — запросы к нему всё равно таймаутятся
 		# и лишь блокируют рендер страницы; комнаты и refresh применяем только при обычном Apply
 		unless ($paramRef->{'restart'} || $paramRef->{'resetclient'}) {
+		# удаление плеера кнопкой Remove в блоке Player rooms: submit-кнопки lybdel_<player>
+		# передают имя плеера в ИМЕНИ параметра. Шлём клиенту action=player_remove — то же,
+		# что кнопка «Удалить» на странице /players клиента (плеер вернётся сам, только когда
+		# реально появится в LMS: offline-записи скипаются фиксом от 19.10).
+		my %deleted;
+		{
+			my $port = $prefs->get('port') || 8888;
+			my $ua   = LWP::UserAgent->new(timeout => 8);
+			for my $k (sort keys %$paramRef) {
+				next unless $k =~ /^lybdel_(.+)$/;
+				my $player = $1;
+				next if $player eq '';
+				# имя из HTML-формы приходит байтами UTF-8 (LMS), из JSON — wide-строкой:
+				# LWP для кодирования формы нужны байты
+				my $playerBytes = Encode::is_utf8($player) ? encode('UTF-8', $player) : $player;
+				my $r = eval { $ua->post("http://127.0.0.1:$port/form", {
+					'action'            => 'player_remove',
+					'player_name_value' => $playerBytes,
+				}) };
+				# клиент на успех отвечает 302-редиректом — это норма, не «fail»
+				my $ok = $r && ($r->is_success || $r->is_redirect);
+				$log->info("player remove from settings page: $player (" . ($ok ? 'ok' : 'fail') . ")");
+				$deleted{$player} = 1;
+			}
+		}
+
 		# комнаты плееров: селекты lybroom_<player> отправляем клиенту (только изменившиеся;
 		# пустое значение = не назначать). Применяем ДО возможного рестарта клиента из-за смены port/bind.
 		{
@@ -156,6 +182,7 @@ sub handler {
 				# матчить надо ВНУТРИ цикла: $1 из блока grep снаружи не живёт (динамический скоуп)
 				next unless $k =~ /^lybroom_(.+)$/;
 				my ($player, $room) = ($1, $paramRef->{$k} // '');
+				next if $deleted{$player}; # плеер удалён кнопкой Remove в этом же запросе
 				# пустое значение = снять комнату с плеера (пункт «—» в селекте) — отправляем и его;
 				# пропускаем только если значение не изменилось
 				next if !defined $room || ($curroom{$player} // "\x00") eq $room;

@@ -124,3 +124,11 @@ PLUGIN_LYRION_YANDEX_BRIDGE_REQUESTS_OPEN
 PLUGIN_LYRION_YANDEX_BRIDGE_LOGOPEN
 	EN	Open log
 	RU	Открыть лог
+
+PLUGIN_LYRION_YANDEX_BRIDGE_PLAYERREMOVE
+	EN	Remove
+	RU	Удалить
+
+PLUGIN_LYRION_YANDEX_BRIDGE_PLAYERREMOVE_CONFIRM
+	EN	Remove this player from the bridge? It will be re-added automatically if it appears in LMS again.
+	RU	Удалить этого плеера из моста? Если он снова появится в LMS, будет добавлен автоматически.

@@ -42,6 +42,7 @@
 			[% ELSIF rs.room != '' %]
 				&nbsp;<span style="color:red">not connected - update devices in Yandex Smart Home</span>
 			[% END %]
+			&nbsp;&nbsp;<input type="submit" name="lybdel_[% rs.name %]" value="[% "PLUGIN_LYRION_YANDEX_BRIDGE_PLAYERREMOVE" | string %]" onclick="return confirm('[% "PLUGIN_LYRION_YANDEX_BRIDGE_PLAYERREMOVE_CONFIRM" | string %]')">
 			</td></tr>
 		[% END %]
 		</table>
