@@ -18,16 +18,20 @@ import java.util.concurrent.TimeUnit;
 import static knovash.saclient.web.Settings.KeyValue.VALUE_LOG_RESET_DAYS;
 
 /**
- * Обнуление лога клиента data/log.txt раз в N дней (по умолчанию 5, настройка
- * VALUE_LOG_RESET_DAYS; 0 = не обнулять). Дата последнего обнуления хранится в
- * data/log_reset.properties (lastResetAt). При первом запуске без маркера маркер
- * создаётся от текущего момента, существующий лог НЕ трогается.
- * Обнуление: stop appender "File" (log4j2.xml) -> truncate файла -> start appender.
+ * Обнуление логов клиента раз в N дней (по умолчанию 5, настройка
+ * VALUE_LOG_RESET_DAYS; 0 = не обнулять): data/log.txt (log4j2) и client-stdout.log
+ * (stdout-redirect плагина LMS — растёт без ограничений). Дата последнего обнуления
+ * хранится в data/log_reset.properties (lastResetAt). При первом запуске без маркера
+ * маркер создаётся от текущего момента, существующие логи НЕ трогаются.
+ * Обнуление: stop appender "File" (log4j2.xml) -> truncate -> LoggerContext.reconfigure()
+ * (пересоздаёт аппендеры из log4j2.xml; ручной appender.start() после stop() поток НЕ
+ * переоткрывает — грабля 03.11: «Stream Closed» каждые 5 минут, лог мёртв).
  */
 @Log4j2
 public class LogReset {
 
     private static final String LOG_FILE = "data/log.txt";
+    private static final String STDOUT_FILE = "client-stdout.log"; // stdout-redirect плагина LMS (cwd = dataDir)
     private static final String MARKER_FILE = "data/log_reset.properties";
     private static final String KEY_LAST_RESET = "lastResetAt";
     private static final String APPENDER_NAME = "File"; // имя File-appender в log4j2.xml
@@ -78,25 +82,41 @@ public class LogReset {
 
     private static void reset(int days, long elapsed) {
         try {
-            Appender appender = null;
             LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+            Appender appender = null;
             if (ctx != null && ctx.getConfiguration() != null) {
                 appender = ctx.getConfiguration().getAppender(APPENDER_NAME);
             }
             if (appender != null) {
                 appender.stop(); // закрывает файл лога
             }
-            try (RandomAccessFile raf = new RandomAccessFile(LOG_FILE, "rw")) {
-                raf.setLength(0); // обнуление
-            }
+            truncate(LOG_FILE);
+            truncate(STDOUT_FILE);
             writeLastReset(System.currentTimeMillis());
-            if (appender != null) {
-                appender.start(); // переоткрывает файл лога
+            if (ctx != null) {
+                // пересоздаёт аппендеры из log4j2.xml — единственный надёжный способ
+                // переоткрыть поток после stop() (appender.start() поток не переоткрывает)
+                ctx.reconfigure();
+            } else if (appender != null) {
+                appender.start();
             }
-            log.info("LOG RESET: data/log.txt обнулён (прошло {} дн, период {} дн)",
+            log.info("LOG RESET: data/log.txt и client-stdout.log обнулены (прошло {} дн, период {} дн)",
                     elapsed / TimeUnit.DAYS.toMillis(1), days);
         } catch (Exception e) {
             log.error("LOG RESET ERROR", e);
+        }
+    }
+
+    /** Обнуление файла (безопасно при живых fd: последующая запись пойдёт с нуля). */
+    private static void truncate(String path) {
+        try {
+            File f = new File(path);
+            if (!f.exists()) return;
+            try (RandomAccessFile raf = new RandomAccessFile(f, "rw")) {
+                raf.setLength(0);
+            }
+        } catch (Exception e) {
+            log.error("LOG RESET TRUNCATE ERROR: {}", path, e);
         }
     }
 

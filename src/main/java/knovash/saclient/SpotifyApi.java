@@ -24,9 +24,9 @@ public class SpotifyApi {
         if (!ensureToken(config)) return null;
         HttpResult result = doGet(config, uri);
         if (result.status == 401) { // токен отозван/протух раньше срока — обновляем и повторяем
-            refresh(config);
-            if (!ensureToken(config)) return null;
-            result = doGet(config, uri);
+            if (refresh(config)) {
+                result = doGet(config, uri);
+            }
         }
         return result.status == 200 ? result.body : null;
     }
@@ -54,16 +54,18 @@ public class SpotifyApi {
             return false;
         }
         if (config.spotifyExpiresAt > 0 && System.currentTimeMillis() > config.spotifyExpiresAt - 60_000) {
-            refresh(config);
+            // запрос с заведомо истёкшим токеном уйдёт в 401 — не делаем его
+            return refresh(config);
         }
-        return config.spotifyAccessToken != null && !config.spotifyAccessToken.isEmpty();
+        return true;
     }
 
-    /** POST <server>/refresh_spotify {"refresh_token": ...} — секрет остаётся на сервере. */
-    public static synchronized void refresh(Config config) {
+    /** POST <server>/refresh_spotify {"refresh_token": ...} — секрет остаётся на сервере.
+     *  @return true — токен обновлён и сохранён; false — не удалось (причина в config.spotifyRefreshError). */
+    public static synchronized boolean refresh(Config config) {
         if (config.spotifyRefreshToken == null || config.spotifyRefreshToken.isEmpty()) {
             log("NO REFRESH TOKEN");
-            return;
+            return setRefreshError(config, "no refresh token");
         }
         try {
             String body = "{\"refresh_token\":\"" + config.spotifyRefreshToken + "\"}";
@@ -80,15 +82,26 @@ public class SpotifyApi {
                 if (!accessToken.isEmpty()) {
                     config.spotifyAccessToken = accessToken;
                     config.spotifyExpiresAt = System.currentTimeMillis() + expiresIn * 1000L;
+                    config.spotifyRefreshError = "";
                     config.save();
                     log("TOKEN REFRESHED, expires in " + expiresIn + " sec");
-                    return;
+                    return true;
                 }
             }
-            log("REFRESH FAILED: " + response.statusCode() + " " + response.body());
+            String error = response.statusCode() + " " + response.body();
+            log("REFRESH FAILED: " + error);
+            return setRefreshError(config, error);
         } catch (Exception e) {
             log("REFRESH ERROR: " + e);
+            return setRefreshError(config, String.valueOf(e));
         }
+    }
+
+    /** Запоминает последнюю ошибку refresh-токена (видна в /status.json); обрезаем до 200 символов. */
+    private static boolean setRefreshError(Config config, String message) {
+        config.spotifyRefreshError = message == null ? "" : message.substring(0, Math.min(message.length(), 200));
+        config.save();
+        return false;
     }
 
     private static class HttpResult {

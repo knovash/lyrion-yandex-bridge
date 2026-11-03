@@ -15,28 +15,38 @@ public class SpotifyRequests {
 
     private static final HttpClientWrapper httpClient = new HttpClientWrapper();
 
-    private static synchronized void refreshTokenIfExpired() {
+    /** @return true — токен актуален (был валиден или успешно обновлён). */
+    private static synchronized boolean refreshTokenIfExpired() {
         log.info(start);
         if (config.spotifyAccessToken == null || config.spotifyAccessToken.isEmpty()) {
             log.debug("No access token, cannot refresh");
-            return;
+            return false;
         }
         if (config.spotifyRefreshToken == null || config.spotifyRefreshToken.isEmpty()) {
             log.debug("No refresh token, cannot refresh");
-            return;
+            return false;
         }
         long now = System.currentTimeMillis();
         if (now > config.spotifyExpiresAt) {
             log.info("Spotify token expired. Requesting refresh...");
             // обновление через облако (POST <server>/refresh_spotify), секрет остаётся на сервере
-            knovash.saclient.SpotifyApi.refresh(config);
-            log.info("Token refreshed. New expiry: {}", config.spotifyExpiresAt);
+            if (knovash.saclient.SpotifyApi.refresh(config)) {
+                log.info("Token refreshed. New expiry: {}", config.spotifyExpiresAt);
+            } else {
+                log.error("Spotify token REFRESH FAILED: {}", config.spotifyRefreshError);
+                log.info(finish);
+                return false;
+            }
         }
         log.info(finish);
+        return true;
     }
 
     private static HttpResponseResult executeRequest(String method, String uri, String body) {
-        refreshTokenIfExpired();
+        if (!refreshTokenIfExpired()) {
+            log.error("No valid Spotify token, aborting request to {}", uri);
+            return HttpResponseResult.error("No valid Spotify token");
+        }
         if (config.spotifyAccessToken == null || config.spotifyAccessToken.isEmpty()) {
             log.error("No access token, aborting request to {}", uri);
             return HttpResponseResult.error("No access token");
@@ -65,8 +75,7 @@ public class SpotifyRequests {
 
         if (result.getStatusCode() == 401) {
             log.warn("Received 401, forcing token refresh and retry...");
-            refreshTokenIfExpired();
-            if (config.spotifyAccessToken != null && !config.spotifyAccessToken.isEmpty()) {
+            if (refreshTokenIfExpired()) {
                 headers.put("Authorization", "Bearer " + config.spotifyAccessToken);
                 switch (method.toUpperCase()) {
                     case "GET":

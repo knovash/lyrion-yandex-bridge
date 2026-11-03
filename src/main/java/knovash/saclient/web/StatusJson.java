@@ -66,12 +66,15 @@ public class StatusJson {
                     .forEach(musicYandex::add);
         }
 
-        // Spotify
+        // Spotify (если refresh-токен сломан — loggedIn=false + причина, а не вечное «залогинен»)
         ObjectNode spotify = root.putObject("spotify");
-        spotify.put("loggedIn", Main.config.spotifyLoggedIn());
+        boolean spotifyBroken = Main.config.spotifyRefreshError != null
+                && !Main.config.spotifyRefreshError.isEmpty();
+        spotify.put("loggedIn", Main.config.spotifyLoggedIn() && !spotifyBroken);
         spotify.put("user", spotifyUserCached());
         spotify.put("minutesLeft", Math.max(0,
                 (int) ((Main.config.spotifyExpiresAt - System.currentTimeMillis()) / 60000L)));
+        if (spotifyBroken) spotify.put("error", Main.config.spotifyRefreshError);
 
         // Облако
         ObjectNode cloud = root.putObject("cloud");

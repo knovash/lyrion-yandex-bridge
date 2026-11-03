@@ -43,6 +43,7 @@ public class LocalAuthSpotify extends LocalAuthBase {
         String refresh = root.path("refresh_token").asText("");
         if (!refresh.isEmpty()) config.spotifyRefreshToken = refresh; // Spotify может не вернуть новый refresh
         config.spotifyExpiresAt = root.path("expires_at").asLong(0);
+        config.spotifyRefreshError = ""; // новый логин снимает признак сломанного refresh
         config.save();
         log("SPOTIFY TOKEN RECEIVED expires_at=" + config.spotifyExpiresAt);
     }

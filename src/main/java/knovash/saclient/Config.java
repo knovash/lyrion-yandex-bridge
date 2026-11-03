@@ -36,6 +36,9 @@ public class Config {
     public String spotifyAccessToken = "";
     public String spotifyRefreshToken = "";
     public long spotifyExpiresAt = 0;
+    /** Последняя ошибка обновления Spotify-токена ("" = ок): видна в /status.json
+     *  (loggedIn=false + причина); чистится при успешном refresh/логине. */
+    public String spotifyRefreshError = "";
 
     // ---------- LMS (перенесено из squeeze-alice) ----------
     public String lmsIp = "";

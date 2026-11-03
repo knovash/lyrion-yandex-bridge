@@ -83,9 +83,10 @@ sub _clientStatus {
 	$st{'music_yandex'} = (join(', ', @{$d->{'musicYandex'} || []}) || '-');
 
 	my $spotifyUser = $d->{'spotify'}->{'user'} || '';
+	my $spotifyError = $d->{'spotify'}->{'error'} || '';
 	$st{'spotify'} = $d->{'spotify'}->{'loggedIn'}
 		? $on . ($spotifyUser ne '' ? ' ' . $spotifyUser : '')
-		: '<span style="color:red">not authorized</span>';
+		: '<span style="color:red">not authorized' . ($spotifyError ne '' ? ' (' . $spotifyError . ')' : '') . '</span>';
 	$st{'spotifyloggedin'} = $d->{'spotify'}->{'loggedIn'} ? 1 : 0;
 
 	$st{'cloud'} = $d->{'cloud'}->{'connected'}

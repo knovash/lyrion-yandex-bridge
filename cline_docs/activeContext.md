@@ -1,5 +1,51 @@
 # Active Context — что сейчас
 
+## 03.11 (17:30) ФИКСЫ ПО ИТОГАМ HEALTH-CHECK — ГОТОВО, ДЕПЛОЙ НА .131, E2E ПРОЙДЕН
+- (1) LogReset: обнуляет data/log.txt И client-stdout.log; переоткрытие через LoggerContext.
+  reconfigure() (appender.start() после stop() поток НЕ переоткрывает — грабля 03.11 15:45).
+- (2) Spotify честный статус: SpotifyApi.refresh → boolean; config.spotifyRefreshError (обрезка
+  200 симв.); /status.json loggedIn=false + «error» при сломанном refresh; LocalAuthSpotify
+  сбрасывает ошибку при новом логине; Scheduler/SpotifyRequests пишут FAILED честно; запрос с
+  заведомо истёкшим токеном не отправляется (ensureToken/executeRequest).
+- (3) HttpClientFactory: retryHandler NoHttpResponseException ×3 (вкл. POST — наши jsonrpc
+  идемпотентны) + PoolingHttpClientConnectionManager.setValidateAfterInactivity(2000).
+- (4) Settings.pm: в строке Spotify при not authorized выводится причина из /status.json.
+- ДЕПЛОЙ 17:25: бэкапы Settings.pm.bak-0311 + lyrion…jar.bak-0311; scp jar+Settings.pm; chown -R
+  (1 root-файл долечили, find -user root = 0); truncate client-stdout.log 161МБ→0;
+  systemctl restart lyrionmusicserver (jar+perl одним рестартом; systemctl блокирует >30с —
+  таймаут команды НЕ означает провал рестарта).
+- E2E 17:27: клиент pid 2021059, все 6 плееров connected (HomePod1/2 вернулись сами; GGMM×2 и
+  JBL black исчезли после рестарта LMS), облако connected, log.txt 0→23КБ растёт,
+  «Stream Closed» 0, spotify: loggedIn=false + error «502 refresh failed», страница плагина
+  рендерится (perl ок), новых ошибок в server.log нет.
+- ВЛАДЕЛЬЦУ: перелогин Spotify — кнопка Login to Spotify на странице плагина или :8888/auth_spotify.
+- Коммит в локальный main; пуш/релиз v1.12 — по решению владельца (поедет вместе с dalgN-фиксом,
+  воскрешением плееров, log-rotate, кнопками Remove).
+
+## 03.11 health-check .131 (ГОТОВО, диагностика без правок кода) — найдено 4 реальные проблемы:
+- 1) **ЖИВОЙ БАГ log-rotate**: после обнуления 03.11 15:45 appender File не переоткрылся →
+  data/log.txt МЁРТВ (0 байт), ERROR «Unable to write to stream … Stream Closed» каждые 5 мин
+  (триггер SchedulerPlayersUpdate). Причина: LogReset.stop→truncate→start — нелегальный для
+  log4j2 способ рестарта appender (29.10 прокатило, 03.11 нет). Фикс-кандидат: ctx.reconfigure()
+  или новый appender; временно — рестарт клиента (не делал, жду решения владельца).
+- 2) **Spotify сломан с 29.10 ~19:45 МСК**: все refresh через облако → 502 «refresh failed»
+  (696 попыток к 03.11), токен истёк, поиск Spotify → 401 → «BEST: none». Вероятно refresh_token
+  отозван/протух (dev-режим Spotify 7 дней?) → владельцу перелогин :8888/auth_spotify.
+  Клиентский баг: SpotifyApi.refresh при 502 молчит (return), вызывающие логи «Token refreshed
+  successfully» врут, status.json вечно loggedIn=true. Кандидат: проверять исход refresh.
+- 3) **client-stdout.log БЕЗ ротации**: 161МБ с 28.09 (весь INFO + JSON-дампы состояний в Яндекс
+  каждые 5 мин + 30-строчные стектрейсы). LogReset чистит только data/log.txt.
+- 4) **NoHttpResponseException:9000 ×8391 с 28.09**: гонка keep-alive пула (LMS закрывает
+  соединение при переиспользовании, POST не ретраится). Кандидат: retryHandler в HttpClientWrapper.
+- LMS-лог (/opt/lms_logs/server.log, НЕ /var/log!): 31.10 8× «currentTrackForUrl on undefined»
+  HTTP.pm:1096 при playlistsTracksQuery (баг LMS 9.1.1, сосед dalgN, триггер Tasker-плейлист);
+  01.11 17:31–21:49 11× «Unable to get players: Timed out»; 03.11 «File missing /mnt/dietpi_usb2/
+  music/Breath*.mp3» — мёртвые пути из БД (usb2 удалён 25.10) реально стреляют.
+- ЗДОРОВОЕ: клиент pid 470315 с 27.10 14:44 (7 дней, 0 падений — «бесшумные смерти» не
+  воспроизводятся), облако connected, Я.Музыка/УДЯ ок (202 на callback), RAM java 204МБ, диск 47%,
+  dalgN-спама нет. 4 offline-плеера (GGMM×2, JBL black) + SoundSystem_A3FC-2 (без комнаты) —
+  ждут удаления кнопками Remove (владелец).
+
 ## Статус: v1.11 опубликован; dalgN-фикс + фикс Tasker-виджета + фикс воскрешения плееров + log-rotate + кнопки удаления плееров на странице плагина в main (поедут в v1.12); мультирежим облака закрыт
 
 - **27.10 ПРАВИЛО СЕССИЙ (владелец, действует всегда)**: перед ЛЮБОЙ задачей фиксировать план

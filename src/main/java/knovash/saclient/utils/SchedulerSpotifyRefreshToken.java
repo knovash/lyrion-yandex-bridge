@@ -86,8 +86,11 @@ public class SchedulerSpotifyRefreshToken {
 
         try {
             // обновление через облако (POST <server>/refresh_spotify), секрет остаётся на сервере
-            knovash.saclient.SpotifyApi.refresh(Main.config);
-            log.info("Spotify token refreshed successfully by scheduler");
+            if (knovash.saclient.SpotifyApi.refresh(Main.config)) {
+                log.info("Spotify token refreshed successfully by scheduler");
+            } else {
+                log.error("Spotify token refresh FAILED in scheduler: {}", Main.config.spotifyRefreshError);
+            }
         } catch (Exception e) {
             log.error("Failed to refresh Spotify token in scheduler", e);
         } finally {

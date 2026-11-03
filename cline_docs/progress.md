@@ -1,6 +1,11 @@
 # Progress — что работает, история, долги
 
 ## Работает (проверено в бою)
+- **Фиксы 03.11 (деплой на .131 17:25, в main для v1.12)**: LogReset через reconfigure +
+  обнуление client-stdout.log (161МБ→0); честный Spotify-статус (loggedIn=false + причина при
+  сломанном refresh, сброс ошибки при логине, отказ от запросов с мёртвым токеном); retry
+  NoHttpResponseException ×3 + validateAfterInactivity(2с); причина Spotify-ошибки на странице
+  плагина. E2E: лог жив, «Stream Closed» 0, все 6 плееров connected, облако ок.
 - **Кнопки «Удалить плеер» на странице плагина (27.10)** — в блоке Player rooms кнопка Remove
   (с confirm) напротив каждого плеера → perl шлёт клиенту action=player_remove. E2E на боксе:
   Vimu on Smart TV Pro удалён. Java-клиент не менялся; в боксе задеплоено, в релиз поедет с v1.12.
@@ -33,6 +38,16 @@
 - **24.10 health-check 19–24.10**: система здорова (клиент/LMS/AirPlay/облако), ошибок ~15 за 5 дней,
   все транзиентные; фикс воскрешения плееров подтверждён в проде (Radiotechnika сам вернулся
   20.10, удалённые не воскресали). Долг: ротация+даты в log.txt клиента (116МБ).
+- **03.11 health-check 27.10–03.11**: клиент 7 дней без падений (pid 470315), облако/УДЯ/Я.Музыка ок,
+  dalgN-спама нет, RAM/диск ок. НАЙДЕНЫ проблемы: (1) живой баг log-rotate — после обнуления
+  03.11 15:45 data/log.txt мёртв («Stream Closed» каждые 5 мин), appender.stop→start нелегален,
+  фикс-кандидат ctx.reconfigure(); (2) Spotify мёртв с 29.10 19:45 МСК — refresh через облако
+  502 «refresh failed» ×696, нужен перелогин /auth_spotify + фикс вранья «refreshed successfully»;
+  (3) client-stdout.log 161МБ без ротации (чистит только data/log.txt); (4) NoHttpResponseException
+  127.0.0.1:9000 ×8391 с 28.09 — гонка keep-alive, POST не ретраится; (5) LMS 9.1.1: 31.10 8×
+  «currentTrackForUrl on undefined» (playlistsTracksQuery, HTTP.pm:1096), 01.11 вечер 11×
+  «Unable to get players: Timed out», мёртвые пути /mnt/dietpi_usb2/music/* реально стреляют
+  (03.11 Breath*.mp3). Детали — activeContext.md 03.11.
 
 ## История версий
 | Версия | Дата | Изменения |
@@ -63,6 +78,27 @@
 - Страницы `PagePlayers`: закомментированные запросы статуса (DEBUG).
 
 ## Известные проблемы/наблюдения
+- **LogReset ломает лог после обнуления (03.11) — ИСПРАВЛЕНО 03.11**: было appender.stop→start
+  не переоткрывал поток («Stream Closed» каждые 5 мин). Теперь truncate обоих логов +
+  LoggerContext.reconfigure(). Задеплоено на .131, поедет в v1.12. Следующее обнуление 08.11
+  ~15:45 — проверить, что лог жив после него.
+- **Spotify: refresh 502 «refresh failed» через облако (с 29.10 19:45 МСК)** — refresh_token
+  отозван/истёк (dev-режим Spotify?), лечится ТОЛЬКО перелогином /auth_spotify (владелец).
+  Маскировка «refreshed successfully»/вечного loggedIn=true — ИСПРАВЛЕНА 03.11:
+  config.spotifyRefreshError + /status.json loggedIn=false с причиной + честные логи.
+- **client-stdout.log не ротировался (161МБ с 28.09) — ИСПРАВЛЕНО 03.11**: обнуляется вместе
+  с data/log.txt тем же LogReset-таймером; на боксе обнулён вручную при деплое.
+- **NoHttpResponseException: 127.0.0.1:9000 (×8391 с 28.09) — СМЯГЧЕНО 03.11**: retry ×3 на
+  NoHttpResponseException (вкл. POST) + validateAfterInactivity(2с). Проверить эффект на
+  следующем health-check (ошибок и стектрейсов в логах должно стать ~0).
+- **LMS 9.1.1 «currentTrackForUrl on undefined» (31.10 23:52–00:00, 8×)**: playlistsTracksQuery
+  на HTTP-треке с undefined-клиентом (HTTP.pm:1096) — сосед бага dalgN; триггер — запросы
+  треков плейлиста (Tasker-виджет). Кандидат в репорт LMS.
+- **LMS «Unable to get players: Timed out» (01.11 17:31–21:49, 11×)** — Discovery не отвечал
+  весь вечер 01.11; причины неясны (наблюдение).
+- **Мёртвые пути /mnt/dietpi_usb2/music/* в БД LMS стреляют** (03.11 Breath*.mp3 — File missing/
+  stream failed): ждут решения владельца — wipecache или монтаж //124/usb1 Music в
+  /mnt/dietpi_usb2/music (кандидат с 25.10).
 - Навык в новой сессии без привязанной комнаты отвечает инструкцией — это НЕ баг (UX задуман):
   «это комната X» привязывает станцию (`application_id`) к комнате.
 - **«найди файл»/«найди» могли включить Spotify-контент** (05.10): LMS Online Music Library
