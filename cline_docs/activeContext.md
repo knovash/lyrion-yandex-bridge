@@ -1,5 +1,20 @@
 # Active Context — что сейчас
 
+## 03.11 (18:07) sa_server ПОДГОТОВЛЕН К ПУШУ (владелец пушит и редеплоит Zeabur сам)
+- Ревью 2 незапушенных коммитов sa_server: `03e6829` SECURITY (обязательная авторизация
+  /alice и /v1.0: без токена 401, чужой валидный аккаунт без клиента 403; удалены дыры ?uid=
+  и fallback anyUid — ЭКСПЛУАТИРОВАЛОСЬ 29.10 чужими командами!) и `4941e36` (deploy-скрипт →
+  боевой docker.io/knovash/sa_ws_server). Оба обязательны к деплою.
+- Добавлен мой коммит: главная облака показывает статус 8 env (OK/MISSING, без значений) +
+  ERROR «MISSING ENV VARIABLES» в логе при старте (генерит именно тот случай, что был 29.10);
+  + MIGRATION.md в репо (переезд с Zeabur, дедлайн ~1.12.2026, кандидаты Amvera 290₽ / Fly.io).
+- Сборка mvn package (JDK ~/.jdks/corretto-18.0.2 из deploy-скрипта) ОК; smoke локально без env:
+  страница отдаёт MISSING×7 + DOMAIN OK, в логе ERROR со списком.
+- ВЛАДЕЛЬЦУ: (1) `cd ~/IdeaProjects/sa_server && git push origin master`; (2) если Zeabur тянет
+  Docker — `./mvn_package_app_docker_hub_build_push.sh`; (3) Variables восстановить (8 шт,
+  значения: Spotify из дашборда, Яндекс из oauth.yandex.ru, SKILL_*/TTS из config.json бокса)
+  → Redeploy. Потом мне сказать — проверю пробы и Spotify-статус на .131 (зазеленеет сам, ≤10 мин).
+
 ## 03.11 (вечер) ЛОГИН SPOTIFY — ПРИЧИНА НАЙДЕНА: облако Zeabur потеряло ВСЕ секретные env
 - Пробы: GET /authorize_spotify → 302 на accounts.spotify.com с **client_id= (ПУСТО)**; то же
   для /authorize (Яндекс, client_id= пусто). DOMAIN на месте (redirect_uri корректный), сервис жив.
