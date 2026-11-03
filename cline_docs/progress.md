@@ -82,8 +82,12 @@
   не переоткрывал поток («Stream Closed» каждые 5 мин). Теперь truncate обоих логов +
   LoggerContext.reconfigure(). Задеплоено на .131, поедет в v1.12. Следующее обнуление 08.11
   ~15:45 — проверить, что лог жив после него.
-- **Spotify: refresh 502 «refresh failed» через облако (с 29.10 19:45 МСК)** — refresh_token
-  отозван/истёк (dev-режим Spotify?), лечится ТОЛЬКО перелогином /auth_spotify (владелец).
+- **Spotify: refresh 502 «refresh failed» через облако (с 29.10 19:45 МСК) — ПРИЧИНА НАЙДЕНА 03.11
+  (вечер)**: облако Zeabur потеряло ВСЕ секретные env (проба /authorize_spotify и /authorize →
+  client_id= ПУСТОЙ в редиректах; редеплой облака 29.10 вечером). Refresh_token на боксе жив
+  (180 дней). ЛЕЧЕНИЕ: восстановить Variables в Zeabur (SPOTIFY/YANDEX CLIENT_ID/SECRET +
+  SKILL_ID/SKILL_DEV_TOKEN/TTS_API_KEY) + Redeploy; перелогин после этого НЕ нужен — шедулер
+  сам обновит токен ≤10 мин, статус позеленеет (фикс 03.11 чистит spotifyRefreshError).
   Маскировка «refreshed successfully»/вечного loggedIn=true — ИСПРАВЛЕНА 03.11:
   config.spotifyRefreshError + /status.json loggedIn=false с причиной + честные логи.
 - **client-stdout.log не ротировался (161МБ с 28.09) — ИСПРАВЛЕНО 03.11**: обнуляется вместе

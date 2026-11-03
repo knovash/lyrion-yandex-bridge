@@ -1,5 +1,23 @@
 # Active Context — что сейчас
 
+## 03.11 (вечер) ЛОГИН SPOTIFY — ПРИЧИНА НАЙДЕНА: облако Zeabur потеряло ВСЕ секретные env
+- Пробы: GET /authorize_spotify → 302 на accounts.spotify.com с **client_id= (ПУСТО)**; то же
+  для /authorize (Яндекс, client_id= пусто). DOMAIN на месте (redirect_uri корректный), сервис жив.
+  Значит на деплое alice-lms.zeabur.app пустые: SPOTIFY_CLIENT_ID/SECRET, YANDEX_CLIENT_ID/SECRET
+  (и вероятно SKILL_ID/SKILL_DEV_TOKEN/TTS_API_KEY — /info требует bearer, не проверить).
+- Это объясняет ВСЁ одной причиной: refresh 502 «refresh failed» с 29.10 ~19:45 (тогда был
+  редеплой облака — вероятно деплой sa_server b59ec49, Variables не перенеслись) И «не работает
+  логин» (Spotify отвечает invalid client на пустой client_id). Refresh_token на боксе НЕ протух
+  (dashboard: lifetime 180 дней) — «7 дней dev-режима» тут ни при чём.
+- ЧТО ДЕЛАЕТ ВЛАДЕЛЕЦ (Zeabur console → сервис alice-lms → Variables → Redeploy):
+  SPOTIFY_CLIENT_ID=f45a18e2bcfe456dbd9e7b73e74514af; SPOTIFY_CLIENT_SECRET — из дашборда SpotyAlice
+  (Settings → View client secret); YANDEX_CLIENT_ID/SECRET — приложение в oauth.yandex.ru;
+  SKILL_ID/SKILL_DEV_TOKEN/TTS_API_KEY — значения есть в config.json бокса (владельцу, не в банк!).
+- ПОСЛЕ восстановления env: перелогин Spotify НЕ обязателен — refresh_token в config.json бокса
+  валиден, шедулер ≤10 мин сам обновит access_token, фикс 03.11 очистит spotifyRefreshError →
+  статус позеленеет сам. Проверка удалённо: curl /authorize_spotify → client_id непустой.
+- Zeabur CLI на машине НЕТ — восстановление только руками владельца в консоли Zeabur.
+
 ## 03.11 (17:30) ФИКСЫ ПО ИТОГАМ HEALTH-CHECK — ГОТОВО, ДЕПЛОЙ НА .131, E2E ПРОЙДЕН
 - (1) LogReset: обнуляет data/log.txt И client-stdout.log; переоткрытие через LoggerContext.
   reconfigure() (appender.start() после stop() поток НЕ переоткрывает — грабля 03.11 15:45).
