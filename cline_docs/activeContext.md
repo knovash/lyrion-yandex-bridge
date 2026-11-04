@@ -1,5 +1,34 @@
 # Active Context — что сейчас
 
+## 05.11 (01:58) TTS: УБРАНА РАЗДАЧА КЛЮЧА, ДЕФОЛТ — ЛОКАЛЬНЫЙ PIPER (деплой на .131, e2e ок)
+- РЕШЕНИЕ владельца: ключ синтеза НЕ хранить на облаке и НЕ раздавать; дефолтный
+  синтез — локальный; облачные ключи — только свои (BYOK, как Google).
+- sa_client (коммит 798ddfb, задеплоен на .131): новый PiperTTS (офлайн, MIT, вызов
+  бинарника ProcessBuilder'ом по образцу ffmpeg, таймаут 60с); тумблер
+  VOICE_TOGGLE_TTS_PIPER дефолт ON, TTS_YANDEX дефолт OFF; в «Настройках голоса» новые
+  поля: Yandex TTS API key (свой), Piper bin, Piper voice .onnx; YandexTTS берёт ключ из
+  настроек с legacy-fallback на config.json (старые боксы не сломаются); InfoClient
+  больше НЕ принимает yandexSstTttsApiKey.
+- sa_server (коммит 2eb9aea, ЖДЁТ пуш+docker+redeploy владельца): TTS_API_KEY удалён из
+  /info, env-проверки и статус-страницы. ДО редеплоя старый образ ПРОДОЛЖАЕТ раздавать
+  ключ старым клиентам. TTS_API_KEY из Variables Zeabur можно удалить совсем.
+- .131: piper 2023.11.14-2 (aarch64) + голос ru_RU-irina-medium.onnx (63МБ) в /opt/piper/;
+  settings_voice.properties: пути к бинарнику и голосу. ГРАБЛЯ: /home/music был root-only
+  → piper молча печатает путь и exit 0 БЕЗ файла (не проверяет ошибку записи!); вылечено
+  chown squeezeboxserver:nogroup /home/music. Ещё found: speech.mp3 был root-owned с
+  09.09 (вероятно и Яндекс-TTS не мог перезаписывать; сейчас каталог доступен).
+  Скорость на rk3318: фраза 3с ≈ 8-9с (загрузка модели 4с + RTF 1.4) — терпимо для
+  уведомлений. e2e: speak на HomePod1 → piper → wav → playlist play → проиграно.
+- КАКИЕ КЛЮЧИ ВЛАДЕЛЬЦА ВСЁ ЕЩЁ РАЗДАЮТСЯ через /info (плейнтекст в config.json
+  пользователей): yandexSkillTokenDeveloper (dev-токен навыка — опаснее всего: Dialogs API
+  от имени навыка, фейковые callback/state, лимиты; ротация в dialogs.yandex.ru → все
+  клиенты заберут новый при старте) и skillId (публичный, не секрет). НЕ раздаются:
+  YANDEX_CLIENT_ID/SECRET, SPOTIFY_CLIENT_ID/SECRET (только внутри sa_server), DOMAIN
+  (публичный). instanceToken — персональный токен каждого клиента, не владельца.
+- TODO: владелец — push sa_server + ./mvn_package_app_docker_hub_build_push.sh + Zeabur
+  Redeploy; удалить TTS_API_KEY из Variables. Релиз v1.12 — по чек-листу (piper в релизе
+  потребует от пользователей установки бинарника+голоса — описать в README/strings).
+
 ## 05.11 (00:15) HEALTH-CHECK 03.11 17:25 → 05.11 00:15: система ЗДОРОВА
 - Владелец восстановил env на Zeabur ~03.11 21:35 (было 7 MISSING): сейчас 7 OK,
   TTS_API_KEY — всё ещё MISSING (единственный красный на главной облака).
