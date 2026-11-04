@@ -292,6 +292,28 @@ sudo systemctl restart lyrionmusicserver
 - Установить squeeze_remote/btremote.py для управления пультом — **TODO** (взять из [squeeze-alice](https://github.com/knovash/squeeze-alice))
 - Установить squeeze_remote/voice.py для голосового поиска с пульта — **TODO** (взять из [squeeze-alice](https://github.com/knovash/squeeze-alice))
 
+### 🗣️ Голосовые уведомления (TTS) — с версии 1.12
+
+С версии 1.12 уведомления по умолчанию синтезируются **локально** ([Piper](https://github.com/rhasspy/piper)) — без облака, API-ключей и оплаты. Один раз установите движок и русский голос:
+
+```bash
+# пример для aarch64 (Raspberry Pi и большинство TV-box); для x86_64 возьмите piper_linux_x86_64.tar.gz
+sudo mkdir -p /opt/piper && cd /opt/piper
+sudo curl -LO https://github.com/rhasspy/piper/releases/download/2023.11.14-2/piper_linux_aarch64.tar.gz
+sudo tar xzf piper_linux_aarch64.tar.gz && sudo rm piper_linux_aarch64.tar.gz
+# русский голос irina (~63 МБ); другие голоса — dmitri, ruslan и др.
+sudo curl -LO https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx
+sudo curl -LO https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx.json
+```
+
+Затем в веб-интерфейсе клиента `http://<ip-lms>:8888` → **«Настройки голоса»** укажите:
+- *Piper: команда или путь к бинарнику* → `/opt/piper/piper/piper`
+- *Piper: путь к голосу .onnx* → `/opt/piper/ru_RU-irina-medium.onnx`
+
+Альтернатива без установки — облачный синтез со **своим** ключом: в «Настройках голоса» включите TTS Yandex или TTS Google и впишите свой API-ключ (Yandex SpeechKit / Google Cloud TTS; у Google Standard-голоса 4 млн символов в месяц бесплатно).
+
+> **Примечание:** автоматическое обновление состояний устройств (вкл/выкл, громкость, канал) в приложении Яндекса с версии 1.12 по умолчанию выключено (тумблер «Пуш состояний устройств в Яндекс» в настройках клиента). Голосовое управление и сценарии работают как раньше.
+
 Баги есть, но я над этим иногда работаю...
 
 TODO:
