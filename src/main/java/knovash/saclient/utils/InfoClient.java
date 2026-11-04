@@ -84,12 +84,10 @@ public class InfoClient {
             config.skillId = info.skillId;
             changed = true;
         }
-        if (notEmpty(info.yandextSkillTokenDeveloper)) {
-            config.yandexSkillTokenDeveloper = info.yandextSkillTokenDeveloper;
-            changed = true;
-        }
-        // 05.11: TTS-ключ больше НЕ принимаем с облака (раздача ключа владельца
-        // отключена и на сервере). Ключ синтеза — только свой, в настройках клиента.
+        // 05.11: dev-токен навыка больше НЕ принимаем с облака (раздача отключена,
+        // пуш состояний закрыт тумблером TOGGLE_YANDEX_DEVICE_STATE_PUSH).
+        // Ключ для возврата фичи: config.json бокса (yandexSkillTokenDeveloper)
+        // или перевыпуск в dialogs.yandex.ru.
         if (changed) config.save();
         log.info("INFO UPDATED FROM SERVER");
     }
@@ -100,7 +98,6 @@ public class InfoClient {
 
     public static class Info {
 
-        public String yandextSkillTokenDeveloper;
         public String skillId;
     }
 }

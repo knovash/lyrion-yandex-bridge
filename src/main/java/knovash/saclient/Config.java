@@ -52,6 +52,8 @@ public class Config {
 
     // ---------- УДЯ (перенесено из squeeze-alice) ----------
     public String skillId = "";                       // id навыка УДЯ (для callback/state)
+    // 05.11: раздача dev-токена с облака отключена; поле живёт как ЛОКАЛЬНОЕ хранилище
+    // на случай возврата фичи пуша состояний (TOGGLE_YANDEX_DEVICE_STATE_PUSH)
     public String yandexSkillTokenDeveloper = "";     // OAuth-токен разработчика навыка
     public String yandexSstTttsApiKey = "";           // API-ключ Yandex SpeechKit (TTS)
     public String scenarioId = "";                    // id сценария Яндекса (голосовые уведомления)

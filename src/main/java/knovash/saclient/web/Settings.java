@@ -18,6 +18,11 @@ public class Settings extends SettingsBase {
         TOGGLE_EXPIRED_ALWAYS(false, "Всегда будить плеер, считать время просроченным (откл)"),
         TOGGLE_YANDEX_REFRESH(true, "Отправлять в Яндекс состояния устройств после каждого действия (вкл)"),
         TOGGLE_SCHEDULER_YANDEX_UPDATE_DEVICES(true, "Периодически отправлять состояние устройств в Яндекс (вкл)"),
+        // 05.11: МАСТЕР-выключатель пуша состояний в Яндекс (callback/state, dev-токен навыка).
+        // По умолчанию ОТКЛ: токен разработчика больше не раздаётся облаком. Для возврата
+        // фичи: включить тумблер + вписать yandexSkillTokenDeveloper в config.json
+        // (или вернуть раздачу в sa_server).
+        TOGGLE_YANDEX_DEVICE_STATE_PUSH(false, "Пуш состояний устройств в Яндекс / приложение (callback/state)"),
         TOGGLE_SCHEDULER_SPOTIFY_REFRESH_TOKEN(true, "Периодически обновлять токен Spotify (вкл)"),
         TOGGLE_HLS_CHECK(false, "Проверять при синхронизации если ссылка на Apple HLS не синхронизировать (вкл если слушаете Apple радио)");
 

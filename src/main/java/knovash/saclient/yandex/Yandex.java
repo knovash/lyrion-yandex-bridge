@@ -176,6 +176,10 @@ public class Yandex {
     }
 
     public static void sendDevicesStatesAsync() {
+        if (!TOGGLE_YANDEX_DEVICE_STATE_PUSH.value) {
+            log.info("DEVICE STATE PUSH DISABLED (TOGGLE_YANDEX_DEVICE_STATE_PUSH)");
+            return;
+        }
         if (!TOGGLE_YANDEX_REFRESH.value) {
             log.info("TOGGLE YANDEX REFRESH STATES DISABLED !!!");
             return;
@@ -195,6 +199,11 @@ public class Yandex {
     }
 
     public static void sendDeviceState(Device device, String type, String instance, String capState) {
+
+        if (!TOGGLE_YANDEX_DEVICE_STATE_PUSH.value) {
+            log.debug("DEVICE STATE PUSH DISABLED: skip {} {}", device.room, device.name);
+            return;
+        }
 
         log.info("DEVICE ROOM: " + device.room + " NAME " + device.name + " ID: " + device.id);
 
@@ -253,6 +262,11 @@ public class Yandex {
     }
 
     public static boolean sendDeviceOtherState(Device device, String type, String instance, String capState) {
+
+        if (!TOGGLE_YANDEX_DEVICE_STATE_PUSH.value) {
+            log.debug("DEVICE STATE PUSH DISABLED: skip other {} {}", device.room, device.name);
+            return true; // «успешно пропущено» — вызывающие не должны считать это ошибкой
+        }
 
         log.info("OTHER DEVICE ROOM: " + device.room + " NAME " + device.name + " ID: " + device.id);
 

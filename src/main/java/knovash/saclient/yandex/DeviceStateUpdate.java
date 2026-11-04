@@ -15,6 +15,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static knovash.saclient.Main.config;
+import static knovash.saclient.web.Settings.KeyToggle.*;
 
 @Data
 @AllArgsConstructor
@@ -27,6 +28,10 @@ public class DeviceStateUpdate {
 
     public static void sendBatchStateUpdates(List<DeviceStateUpdate> updates) {
         if (updates == null || updates.isEmpty()) {
+            return;
+        }
+        if (!TOGGLE_YANDEX_DEVICE_STATE_PUSH.value) {
+            log.debug("DEVICE STATE PUSH DISABLED: skip batch of {} updates", updates.size());
             return;
         }
 
