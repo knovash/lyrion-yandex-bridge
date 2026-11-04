@@ -1,5 +1,14 @@
 # Active Context — что сейчас
 
+## 05.11 (02:45) RELEASE v1.12 ОПУБЛИКОВАН
+- GitHub Release v1.12 создан владельцем (asset lyrion-yandex-bridge-v1.12.zip),
+  пуш main выполнен (43da9f3..6181d23, 18 коммитов). Проверено: raw repo.xml на main
+  отдаёт version 1.12 / sha 3f9ec36e…, asset URL → 302 на signed URL (файл на месте).
+  LMS установивших сам предложит обновление. Бокс .131 уже на этом коде.
+- ОТКРЫТЫЕ ПУНКТЫ: (1) sa_server — git push origin master (5 коммитов только локально);
+  (2) миграция с Zeabur до 01.12 — выбор платформы за владельцем (Amvera/Fly.io/VPS);
+  (3) свой домен ~300₽/год — рекомендация к миграции.
+
 ## 05.11 (02:30) RELEASE v1.12 ПОДГОТОВЛЕН (ждёт GitHub Release от владельца → потом пуш)
 - Коммит a66ac61 ЛОКАЛЬНО (пуш ПОСЛЕ создания Release — правило!): версии 1.12
   (pom/install.xml/ClientProcess.pm), README + раздел «Голосовые уведомления (TTS)»
