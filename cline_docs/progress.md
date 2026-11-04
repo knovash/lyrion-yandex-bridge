@@ -1,6 +1,11 @@
 # Progress — что работает, история, долги
 
 ## Работает (проверено в бою)
+- **Пуш состояний в Яндекс закрыт тумблером + SKILL_DEV_TOKEN убран из раздачи (05.11,
+  e2e на .131)**: TOGGLE_YANDEX_DEVICE_STATE_PUSH default OFF гейтит все 4 места пуша
+  callback/state; /info раздаёт только skillId — секретов владельца в раздаче больше нет.
+  Возврат фичи: тумблер + токен из ~/.sa_secrets/yandex_skill_dev_token.txt (или
+  config.json бокса / dialogs.yandex.ru) — детали в activeContext 05.11 02:10.
 - **TTS Piper локально по умолчанию + BYOK (05.11, e2e на .131)**: раздача Яндекс TTS-ключа
   с облака убрана (sa_client 798ddfb + sa_server 2eb9aea ждёт деплой); ключи облачных
   движков — только свои в «Настройках голоса» (Yandex поле новое, Google как было);

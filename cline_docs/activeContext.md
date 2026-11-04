@@ -1,5 +1,31 @@
 # Active Context — что сейчас
 
+## 05.11 (02:10) ПУШ СОСТОЯНИЙ В ЯНДЕКС ЗАКРЫТ, SKILL_DEV_TOKEN УБРАН ИЗ РАЗДАЧИ (e2e ок)
+- РЕШЕНИЕ владельца: фичу пуша состояний (callback/state) выключить, код сохранить,
+  раздачу/хранение dev-токена навыка убрать. Сделано:
+- sa_client (480ff2c, задеплоено на .131 02:07): мастер-тумблер
+  TOGGLE_YANDEX_DEVICE_STATE_PUSH (default OFF, страница /settings) гейтит ВСЕ 4 места:
+  Yandex.sendDevicesStatesAsync / sendDeviceState / sendDeviceOtherState (return true) /
+  DeviceStateUpdate.sendBatchStateUpdates. InfoClient больше НЕ принимает
+  yandextSkillTokenDeveloper. config.yandexSkillTokenDeveloper ОСТАВЛЕН в config.json
+  боксов как локальное хранилище (для возврата фичи). e2e 02:09: volume_up отработал
+  (17→20, LMS 200), callback/state после рестарта = 0, ошибок 0.
+- sa_server (d1d465a, ЖДЁТ пуш+docker+redeploy): SKILL_DEV_TOKEN удалён из /info,
+  env-проверки, статус-страницы; /info раздаёт ТОЛЬКО skillId (публичный).
+- КАК ВЕРНУТЬ ФИЧУ ПУША (запрос владельца — сохранить): (1) включить тумблер
+  TOGGLE_YANDEX_DEVICE_STATE_PUSH на :8888/settings; (2) dev-токен: файл
+  ~/.sa_secrets/yandex_skill_dev_token.txt на машине konstant (chmod 600, ВНЕ git!)
+  и/или config.json бокса поле yandexSkillTokenDeveloper (там живой), или перевыпуск
+  в dialogs.yandex.ru; (3) вписать токен в config.json каждого бокса (или вернуть
+  раздачу: в sa_server по коммитам 2eb9aea/d1d465a видно, что восстановить).
+  Пуш был нужен только для отображения вкл/выкл/громкости/канала в приложении Яндекса;
+  управление навыком работает без него.
+- ВАЖНО: до редеплоя sa_server старый образ ПРОДОЛЖАЕТ раздавать SKILL_DEV_TOKEN и
+  (если задан) TTS_API_KEY старым клиентам. После редеплоя Variables Zeabur можно
+  почистить: удалить SKILL_DEV_TOKEN и TTS_API_KEY (остаются нужными: DOMAIN,
+  YANDEX_CLIENT_ID/SECRET, SPOTIFY_CLIENT_ID/SECRET, SKILL_ID).
+- ТЕПЕРЬ ЧЕРЕЗ /info РАЗДАЁТСЯ ТОЛЬКО skillId — секретов владельца в раздаче НЕТ ВООБЩЕ.
+
 ## 05.11 (01:58) TTS: УБРАНА РАЗДАЧА КЛЮЧА, ДЕФОЛТ — ЛОКАЛЬНЫЙ PIPER (деплой на .131, e2e ок)
 - РЕШЕНИЕ владельца: ключ синтеза НЕ хранить на облаке и НЕ раздавать; дефолтный
   синтез — локальный; облачные ключи — только свои (BYOK, как Google).
