@@ -25,7 +25,10 @@ public class SettingsVoice extends SettingsBase {
         VOICE_TOGGLE_LMS_SAY_CHANNEL_NAME(false, "Говорить включаю канал <название канала>"),
         VOICE_TOGGLE_VOLUME_AMP_LMS(false, "Увеличивать громкость уведомлений в LMS"),
         VOICE_TOGGLE_VOLUME_AMP_FFMPEG(false, "Увеличивать громкость уведомлений в FFMPEG"),
-        VOICE_TOGGLE_TTS_YANDEX(true, "TTS Yandex"),
+        // 05.11: локальный piper — TTS по умолчанию (без облака и ключей);
+        // облачные движки — по желанию, со СВОИМ ключом пользователя (как Google)
+        VOICE_TOGGLE_TTS_PIPER(true, "TTS Piper (локальный, без облака и ключей)"),
+        VOICE_TOGGLE_TTS_YANDEX(false, "TTS Yandex (свой API-ключ SpeechKit)"),
         VOICE_TOGGLE_TTS_GOOGLE(false, "TTS Google");
 
         public final String description;
@@ -86,7 +89,11 @@ public class SettingsVoice extends SettingsBase {
 
     // ---------- Строковые настройки ----------
     public enum KeyString implements StringKey {
-        VOICE_STRING_GOOGLE_API_KEY("---", "Google TTS API key");
+        VOICE_STRING_GOOGLE_API_KEY("---", "Google TTS API key"),
+        // 05.11: ключ Яндекса больше НЕ раздаётся с облака — пользователь вписывает свой
+        VOICE_STRING_YANDEX_API_KEY("---", "Yandex TTS API key (SpeechKit, свой)"),
+        VOICE_STRING_PIPER_BIN("piper", "Piper: команда или путь к бинарнику piper"),
+        VOICE_STRING_PIPER_VOICE("", "Piper: путь к голосу .onnx (напр. ru_RU-irina-medium.onnx)");
 
         public final String description;
         public volatile String value;

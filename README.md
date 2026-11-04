@@ -22,7 +22,7 @@
 - Управление с телефона через виджеты Tasker и отображение состояния плееров (проект виджетов — `tasker/lyrion-tasker-widgets.xml`, пресеты Minimalistic Text — `tasker/MinimalisticTextPreferences/`)
 - Управление кнопками с пульта — **TODO**
 - Поиск в Spotify с голосового пульта (Yandex SST); поиск в Избранном с пульта — **TODO**
-- Передача голосовых и звуковых уведомлений на колонки LMS (Yandex TTS)
+- Передача голосовых и звуковых уведомлений на колонки LMS (TTS: локальный Piper по умолчанию — без облака и ключей; Яндекс/Google — опционально, со своим API-ключом)
 - Репитер пульта для увеличения расстояния — **TODO**: скрипты пока в [squeeze-alice](https://github.com/knovash/squeeze-alice)
 
 

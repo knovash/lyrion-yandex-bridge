@@ -81,8 +81,21 @@ public class YandexTTS {
                 + "&format=mp3"
                 + "&sampleRateHertz=48000";
 
+        // 05.11: ключ больше НЕ приходит с облака. Источники (по приоритету):
+        // 1) свой ключ пользователя из настроек («Настройки голоса»);
+        // 2) legacy-значение из config.json (ранее раздавалось облаком — остаётся
+        //    работать у тех, кто его уже получил, пока не заменят своим).
+        String apiKey = VOICE_STRING_YANDEX_API_KEY.value;
+        if (apiKey == null || apiKey.isEmpty() || "---".equals(apiKey)) {
+            apiKey = config.yandexSstTttsApiKey;
+        }
+        if (apiKey == null || apiKey.isEmpty() || "---".equals(apiKey)) {
+            throw new IOException("Yandex TTS API key не задан: Настройки голоса -> Yandex TTS API key "
+                    + "(или включите локальный TTS Piper)");
+        }
+
         Map<String, String> headers = new HashMap<>();
-        headers.put("Authorization", "Api-Key " + config.yandexSstTttsApiKey);
+        headers.put("Authorization", "Api-Key " + apiKey);
         headers.put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
 
         byte[] body = params.getBytes(StandardCharsets.UTF_8);

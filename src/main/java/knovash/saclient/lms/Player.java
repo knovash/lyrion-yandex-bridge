@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import knovash.saclient.utils.JsonUtils;
 import knovash.saclient.yandex.GoogleTTS;
+import knovash.saclient.yandex.PiperTTS;
 import knovash.saclient.yandex.YandexTTS;
 
 import java.time.LocalTime;
@@ -1260,6 +1261,12 @@ public class Player {
             this.volumeSetHardAsync(String.valueOf(volume), 300, 3); // громкость для уведомления
         }
 
+        if (VOICE_TOGGLE_TTS_PIPER.value) {
+            this.playFile(PiperTTS.textToVoiceFile(text)); // локальный синтез (без облака и ключей)
+            log.info("***** WAIT " + PiperTTS.duration * 1000 + VOICE_VALUE_DELAY_AFTER_NOTIFICATION.value);
+            this.waitMilSeconds((int) (PiperTTS.duration * 1000 + VOICE_VALUE_DELAY_AFTER_NOTIFICATION.value));
+            waitForPlaybackCompletion(this, VOICE_VALUE_WAIT_FOR_NOTIFICATION_COMPLITED.value);
+        }
         if (VOICE_TOGGLE_TTS_GOOGLE.value) {
             this.playFile(GoogleTTS.textToVoiceFile(text)); // генерация через Google
             log.info("***** WAIT " + GoogleTTS.duration * 1000 + VOICE_VALUE_DELAY_AFTER_NOTIFICATION.value);

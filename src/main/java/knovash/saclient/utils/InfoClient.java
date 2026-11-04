@@ -88,10 +88,8 @@ public class InfoClient {
             config.yandexSkillTokenDeveloper = info.yandextSkillTokenDeveloper;
             changed = true;
         }
-        if (notEmpty(info.yandexSstTttsApiKey)) {
-            config.yandexSstTttsApiKey = info.yandexSstTttsApiKey;
-            changed = true;
-        }
+        // 05.11: TTS-ключ больше НЕ принимаем с облака (раздача ключа владельца
+        // отключена и на сервере). Ключ синтеза — только свой, в настройках клиента.
         if (changed) config.save();
         log.info("INFO UPDATED FROM SERVER");
     }
@@ -103,7 +101,6 @@ public class InfoClient {
     public static class Info {
 
         public String yandextSkillTokenDeveloper;
-        public String yandexSstTttsApiKey;
         public String skillId;
     }
 }

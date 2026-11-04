@@ -1,5 +1,66 @@
 # Active Context — что сейчас
 
+## 05.11 (00:15) HEALTH-CHECK 03.11 17:25 → 05.11 00:15: система ЗДОРОВА
+- Владелец восстановил env на Zeabur ~03.11 21:35 (было 7 MISSING): сейчас 7 OK,
+  TTS_API_KEY — всё ещё MISSING (единственный красный на главной облака).
+- Spotify ЖИВ с 03.11 21:35: refresh 502 прекратились, /status.json loggedIn=true,
+  токен обновляется шедулером. Запросы 04.11 «включи …» через Spotify — все успешные.
+- Клиент .131: один процесс с 03.11 17:25 (деплой фиксов), падений 0. WS к облаку
+  непрерывен с 03.11 21:35 (~27ч). Stream Closed 0 (фикс log-rotate работает).
+  NoHttpResponseException к LMS ×1 за 28ч (было ×8391) — retry-фикс работает.
+- Ошибки за окно (все транзиентные/несущественные): PLAYER NOT FOUND ×6 только на
+  старте 03.11 17:25 (JBL black, GGMM_E2_2650(-2) — сохранённые комнаты несуществующих
+  плееров); ConnectTimeout к 192.168.1.135:1821 ×3 (03.11 вечер, устройство GGMM
+  оффлайн); NoRouteToHost ×6 (после успешных операций, не влияет); WS handshake ×1
+  (03.11 18:08 — редеплой облака, авто-реконнект ок).
+- Пользователи: ВСЕ запросы за 28ч (66 RX: навык /alice/ + УДЯ /v1.0/...action) —
+  ОДИН access_token = аккаунт владельца (Константин Н.). Чужих НИ ОДНОГО до клиента
+  не дошло; пробы без токена/с мусорным → 401 (security-фикс 03e6829 в бою).
+  Точные логи чужих попыток — только в Zeabur Runtime logs (CLI нет).
+- Активность 04.11: 5 «включи …» (12:43–13:38, все успешные), УДЯ-действия вечером
+  (громкости HomePod1, канал, on/off 20:34), Tasker get_refresh_json регулярно,
+  toggle_music 09:48.
+- LMS: жив с 03.11, server.log (/opt/lms_logs!) чистый за 04.11 (последняя запись
+  03.11 21:41 rescan). 6 плееров connected, Vimu on Smart TV Pro offline (ожидаемо).
+- ГРАБЛЯ: лог LMS реально в /opt/lms_logs (параметр --logdir), /var/log/squeezeboxserver
+  мёртвые пустые файлы. Логи клиента: /var/lib/squeezeboxserver/cache/LyrionYandexBridge/
+  {client-stdout.log, data/log.txt} (старый /opt/squeeze-alice-1.0 — мёртв с 28.09).
+- ОБСУЖДЕНИЕ (05.11): зачем TTS_API_KEY и бесплатная альтернатива. Яндекс SpeechKit — платный
+  (по символам, постоянного free tier нет). Google Cloud TTS Standard-голоса (ru-RU-Standard-A) —
+  4 млн симв/мес БЕСПЛАТНО постоянно, и этот движок УЖЕ в клиенте (SettingsVoice:
+  VOICE_TOGGLE_TTS_GOOGLE + VOICE_STRING_GOOGLE_API_KEY, по умолчанию выкл) → бесплатный путь
+  без кода: тумблеры + ключ GCP. Локальный офлайн-вариант — Piper TTS (MIT, ru-голоса
+  irina/dmitri/ruslan, создан для RPi, тянет rk3318; интеграция по образцу ffmpeg-вызовов
+  в YandexTTS). RHVoice — легче, но качество ниже. Silero — некоммерческая лицензия, не для
+  релиза. translate_tts (неофиц. Google) — не для публикуемого плагина. Решение за владельцем.
+- РИСКИ РАЗДАЧИ КЛЮЧА (05.11): Яндекс-ключ через /info уезжает плейнтекстом в config.json
+  КАЖДОГО пользователя → скомпрометирован по определению (масс-синтез за счёт владельца,
+  общие квоты на ключ). Google-ключ НЕ раздаётся (локальная настройка, BYOK). Варианты
+  убрать риск: (1) TTS-брокер на sa_server (ключ не покидает сервер, mp3 маленькие,
+  пер-юзер лимиты); (2) BYOK для всех движков; (3) Piper локально как дефолт релиза —
+  без ключей/денег. Важно: skillId/dev-токен из /info — та же природа (креды владельца,
+  нужны всем по архитектуре навыка).
+- ДОЛГ владельцу: добавить TTS_API_KEY в Variables Zeabur (последний из 8). КРИТИЧНОСТИ
+  НЕТ: InfoClient.setInfo пустыми значениями локальный config НЕ затирает — на .131
+  TTS работает с локального ключа. Страдают только НОВЫЕ установки плагина: /info отдаст
+  пустой yandexSstTttsApiKey → Яндекс-TTS (озвучка уведомлений) не заработает из коробки.
+  TTS_API_KEY = API-ключ Yandex SpeechKit (tts.api.cloud.yandex.net, поле
+  yandexSstTttsApiKey в config.json).
+
+## 03.11 (18:10) sa_server: НОВЫЙ ОБРАЗ УЖЕ В ПРОДУ (владелец запушил docker + redeploy на Zeabur)
+- Логи Zeabur подтверждают: Pulling docker.io/knovash/sa_ws_server → новый код стартовал →
+  сразу ERROR «MISSING ENV VARIABLES: YANDEX_CLIENT_ID … TTS_API_KEY» (7 шт; DOMAIN задан).
+  Значит деплой Zeabur идёт ИЗ DOCKER HUB (GitHub-пуш — только синхронизация исходников).
+- WS клиента .131 моментально переподключился: «instanceToken unknown, resolved by yandex
+  access_token → uid=409821939, WS CONNECTED» (fallback b59ec49 работает).
+- Главная https://alice-lms.zeabur.app/ отдаёт блок Variables: DOMAIN OK, 7 красных MISSING.
+  /authorize_spotify всё ещё client_id= (пусто). spotify на боксе: loggedIn=false + 502.
+- ОСТАЛОСЬ (владелец): Zeabur → alice-lms → Variables добавить 7 переменных (Zeabur сам
+  сделает redeploy; иначе — Redeploy вручную). SKILL_ID/SKILL_DEV_TOKEN/TTS_API_KEY владелец
+  берёт из config.json бокса (поля skillId / yandexSkillTokenDeveloper / yandexSstTttsApiKey).
+- После этого: главная → все OK; Spotify на .131 зазеленеет сам ≤10 мин (шедулер refresh),
+  БЕЗ перелогина. Проверю по команде владельца.
+
 ## 03.11 (18:07) sa_server ПОДГОТОВЛЕН К ПУШУ (владелец пушит и редеплоит Zeabur сам)
 - Ревью 2 незапушенных коммитов sa_server: `03e6829` SECURITY (обязательная авторизация
   /alice и /v1.0: без токена 401, чужой валидный аккаунт без клиента 403; удалены дыры ?uid=
