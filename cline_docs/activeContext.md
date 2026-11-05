@@ -1,5 +1,21 @@
 # Active Context — что сейчас
 
+## 05.11 (22:25) НАЙДЕН И ИСПРАВЛЕН СТАРЫЙ БАГ: уведомления не звучали (порт 8010)
+- Пока составлял карту эндпоинтов, вскрылось: TTS-URL (Yandex/Google/Piper) указывали на
+  http://ip:8010/music/… — файловый сервер СТАРОГО squeeze-alice. В sa_client порт 8010
+  никто не поднимает → LMS не мог скачать speech-файл (server.log: «Can't connect …:8010»,
+  ошибка прямо в момент моего «успешного» piper-e2e 01:55!) → голосовые уведомления на
+  LMS-плеерах НЕ работали ни у владельца, ни у пользователей с перехода на плагин.
+- ФИКС (c8731f7, деплой на .131, e2e ок): HandlerAll.serveSoundFile раздаёт /music/*
+  с диска /home/music (там пишут TTS-движки) + fallback classpath /sounds; TTS-URL →
+  :localPort (8888). E2e: GET :8888/music/speech_piper.wav = 200 (126КБ), speak →
+  VOICE:…:8888/…, в server.log ошибок скачивания НЕТ — прозвучало.
+- Фикс в main ЛОКАЛЬНО (не в релизе v1.12!). Вопрос владельцу: выпустить v1.12.1
+  (уведомления у пользователей заработают только с ним) или копить в v1.13.
+- Карта эндпоинтов sa_client :8888 — см. ответ 05.11 (страницы /, /players, /settings*,
+  /lms, /requests, /status.json, /log, /music/*, /form; API: /v1.0* УДЯ, /alice/ навык,
+  /cmd Tasker+пульт ~40 action, /spotify; /auth, /auth_spotify).
+
 ## 05.11 (02:45) RELEASE v1.12 ОПУБЛИКОВАН
 - GitHub Release v1.12 создан владельцем (asset lyrion-yandex-bridge-v1.12.zip),
   пуш main выполнен (43da9f3..6181d23, 18 коммитов). Проверено: raw repo.xml на main
