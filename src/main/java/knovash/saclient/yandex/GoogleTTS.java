@@ -47,7 +47,8 @@ public class GoogleTTS {
         }
         log.info("********* DURATION " + duration);
 
-        String httpUrl = "http://" + Main.myIp + ":8010/music/speech_google.mp3";
+        // 05.11 фикс: порт 8010 (legacy squeeze-alice) никто не слушал — см. YandexTTS
+        String httpUrl = "http://" + Main.myIp + ":" + Main.config.localPort + "/music/speech_google.mp3";
         log.info("VOICE:" + httpUrl);
         return httpUrl;
     }

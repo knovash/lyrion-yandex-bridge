@@ -155,7 +155,14 @@ public class HandlerAll implements HttpHandler {
         }
     }
 
-    /** Раздать звук уведомления из classpath /sounds (для Player.signal). */
+    /**
+     * Раздать звук уведомления: сначала файл из /home/music/ (туда пишут TTS-движки
+     * speech*.mp3/.wav и CopySoundsToLmsFolder кладёт sounds), при отсутствии —
+     * из classpath /sounds (Player.signal). Фикс 05.11: раньше TTS-URL указывали на
+     * порт 8010 (legacy squeeze-alice, где файловый сервер поднимался отдельно) —
+     * после переезда на плагин этот порт никто не слушал и LMS не мог скачать файл
+     * (server.log: "Can't connect to ... :8010/music/speech...") — уведомления молчали.
+     */
     private static void serveSoundFile(HttpExchange exchange, String path) throws IOException {
         String fileName = path.substring(path.lastIndexOf('/') + 1);
         if (fileName.isEmpty()) {
@@ -163,8 +170,22 @@ public class HandlerAll implements HttpHandler {
             exchange.close();
             return;
         }
+        boolean wav = fileName.toLowerCase().endsWith(".wav");
+        // 1) файл на диске (TTS-выход и скопированные sounds)
+        File diskFile = new File("/home/music/" + fileName);
+        if (diskFile.exists() && diskFile.isFile() && diskFile.canRead()) {
+            byte[] data = java.nio.file.Files.readAllBytes(diskFile.toPath());
+            exchange.getResponseHeaders().set("Content-Type", wav ? "audio/wav" : "audio/mpeg");
+            exchange.sendResponseHeaders(200, data.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(data);
+            }
+            return;
+        }
+        // 2) classpath /sounds (сигналы пульта)
         try (java.io.InputStream is = HandlerAll.class.getResourceAsStream("/sounds/" + fileName)) {
             if (is == null) {
+                log.warn("SOUND FILE NOT FOUND (disk /home/music and classpath /sounds): " + fileName);
                 exchange.sendResponseHeaders(404, -1);
                 exchange.close();
                 return;

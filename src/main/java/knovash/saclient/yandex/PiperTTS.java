@@ -43,7 +43,8 @@ public class PiperTTS {
         }
         log.info("********* DURATION " + duration);
 
-        String httpUrl = "http://" + Main.myIp + ":8010/music/speech_piper.wav";
+        // 05.11 фикс: отдаём wav с самого клиента (:localPort), порт 8010 не существует
+        String httpUrl = "http://" + Main.myIp + ":" + Main.config.localPort + "/music/speech_piper.wav";
         log.info("VOICE:" + httpUrl);
         return httpUrl;
     }

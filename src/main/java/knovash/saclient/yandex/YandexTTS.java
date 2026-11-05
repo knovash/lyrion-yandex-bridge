@@ -50,7 +50,9 @@ public class YandexTTS {
 
         log.info("********* DURATION "+ duration);
 
-        String httpUrl = "http://" + Main.myIp + ":8010/music/speech.mp3";
+        // 05.11 фикс: порт 8010 (legacy squeeze-alice) никто не слушал после перехода
+        // на плагин — LMS не мог скачать файл, уведомления молчали. Отдаём с себя (:localPort).
+        String httpUrl = "http://" + Main.myIp + ":" + config.localPort + "/music/speech.mp3";
         log.info("VOICE:" + httpUrl);
         return httpUrl;
     }
