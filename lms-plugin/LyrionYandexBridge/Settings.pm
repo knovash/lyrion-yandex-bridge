@@ -49,7 +49,8 @@ sub _clientStatus {
 
 	# селекты выбора комнаты для каждого плеера (только комната, без остальных настроек).
 	# inyandex: устройство этой комнаты зарегистрировано в Яндексе (тот же список,
-	# что и «Music devices in Yandex»)
+	# что и «Music devices in Yandex»). alice: Яндекс-колонки в комнате (модель + имя).
+	my %alicebyroom = %{ $d->{'aliceByRoom'} || {} };
 	my @yandexmusic = @{$d->{'musicYandex'} || []};
 	my @roomsel;
 	for my $p (@{$d->{'players'} || []}) {
@@ -61,6 +62,9 @@ sub _clientStatus {
 			'room'      => $room,
 			'options'   => \@rooms,
 			'inyandex'  => ($room ne '' && grep { $_ eq $room } @yandexmusic) ? 1 : 0,
+			'buttons'   => ($p->{'createButtons'} ? 1 : 0),
+			'alice'     => ($room ne '' && $alicebyroom{$room})
+				? join(', ', @{$alicebyroom{$room}}) : '',
 		};
 	}
 	$st{'roomselects'} = \@roomsel;
@@ -197,6 +201,26 @@ sub handler {
 				# клиент на успех отвечает 302-редиректом — это норма, не «fail»
 				my $ok = $r && ($r->is_success || $r->is_redirect);
 				$log->info("player room from settings page: $player -> $room ("
+					. ($ok ? 'ok' : 'fail') . ")");
+			}
+
+			# чекбоксы «Create action devices» lybbtn_<player>: в форме приходят только
+			# включённые. Включённые и изменившиеся шлём как 1; плееры из status.json,
+			# у которых было createButtons=1, а чекбокса в запросе нет — выключаем (0).
+			for my $p (@{ $cur->{'players'} || [] }) {
+				my $player = $p->{'name'} || '';
+				next if $player eq '' || $deleted{$player};
+				my $curbtn = $p->{'createButtons'} ? 1 : 0;
+				my $newbtn = $paramRef->{"lybbtn_$player"} ? 1 : 0;
+				next if $curbtn == $newbtn; # не изменился
+				my $playerBytes = Encode::is_utf8($player) ? encode('UTF-8', $player) : $player;
+				my $r = eval { $ua->post("http://127.0.0.1:$port/form", {
+					'action'                => 'player_buttons_set',
+					'player_name_value'     => $playerBytes,
+					'player_buttons_value'  => $newbtn,
+				}) };
+				my $ok = $r && ($r->is_success || $r->is_redirect);
+				$log->info("player buttons from settings page: $player -> $newbtn ("
 					. ($ok ? 'ok' : 'fail') . ")");
 			}
 

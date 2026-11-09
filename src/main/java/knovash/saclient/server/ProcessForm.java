@@ -56,6 +56,10 @@ public class ProcessForm {
                     lmsPlayers.playerRoomSet((HashMap<String, String>) bodyMap);
                     context.setRedirect("/players");
                     break;
+                case player_buttons_set:
+                    lmsPlayers.playerButtonsSet((HashMap<String, String>) bodyMap);
+                    context.setRedirect("/players");
+                    break;
                 case player_save:
                     lmsPlayers.playerSave((HashMap<String, String>) bodyMap);
                     context.setRedirect("/players");

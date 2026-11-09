@@ -290,16 +290,33 @@ public class SmartHome {
 
     public void createButtonsInAllRooms(List<String> roomsWithSpeaker) {
         log.info("ROOMS: " + Yandex.rooms);
-        if (roomsWithSpeaker == null || roomsWithSpeaker.isEmpty()) {
+        // fallback на «все комнаты с колонками» — только если список не передан вовсе;
+        // пустой список — валидный случай «ни у одного плеера не включены кнопки»
+        if (roomsWithSpeaker == null) {
             roomsWithSpeaker = Yandex.getRoomsWithAliceOrMusic();
         }
         log.info("ROOMS WITH SPEAKER: " + roomsWithSpeaker);
-        // создавать кнопки только разрешенные в настройках класс SettingsButtons
-        List<String> enabledButtonDescriptions = Arrays.stream(SettingsButtons.ToggleButton.values())
+        roomsWithSpeaker.forEach(this::createButtonDevicesForRoom);
+    }
+
+    // список включённых кнопок из настроек (класс SettingsButtons)
+    public List<String> buttonDescriptions() {
+        return Arrays.stream(SettingsButtons.ToggleButton.values())
                 .filter(button -> button.getValue())
-                .map(button -> button.getDescription())
+                .map(SettingsButtons.ToggleButton::getDescription)
                 .collect(Collectors.toList());
-        roomsWithSpeaker.stream().forEach(room -> enabledButtonDescriptions.forEach(button -> createDeviceToggle(room, button)));
+    }
+
+    // создать все включённые кнопки для комнаты (существующие не дублируются)
+    public void createButtonDevicesForRoom(String room) {
+        buttonDescriptions().forEach(button -> createDeviceToggle(room, button));
+    }
+
+    // удалить все устройства-действия (кнопки) комнаты
+    public void removeButtonDevicesByRoom(String room) {
+        boolean removed = devices.removeIf(d ->
+                room != null && room.equals(d.room) && "devices.types.other".equals(d.type));
+        log.info("REMOVE BUTTON DEVICES ROOM: " + room + " removed: " + removed);
     }
 
     public Device createDeviceToggle(String roomName, String deviceName) {

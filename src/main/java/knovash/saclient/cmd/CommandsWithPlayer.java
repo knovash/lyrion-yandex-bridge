@@ -46,6 +46,21 @@ public class CommandsWithPlayer {
                 break;
             case "spotify_link": // ссылка из «Поделиться» Spotify (Tasker, буфер обмена)
                 return ActionsAsync.spotifyLink(player, value);
+            case "spotify_artist": // включить исполнителя (локальные перехватчики фраз)
+                CompletableFuture.runAsync(() -> ActionsAsync.spotifyPlayCommand(player, "включи " + value, "artist"));
+                break;
+            case "spotify_album": // «спотифай X альбом Y»
+                CompletableFuture.runAsync(() -> ActionsAsync.spotifyPlayCommand(player, "включи альбом " + value, "album"));
+                break;
+            case "spotify_track": // «спотифай трек X»
+                CompletableFuture.runAsync(() -> ActionsAsync.spotifyPlayCommand(player, "включи трек " + value, "track"));
+                break;
+            case "spotify_playlist": // «спотифай плейлист X»
+                CompletableFuture.runAsync(() -> ActionsAsync.spotifyPlayCommand(player, "включи плейлист " + value, "playlist"));
+                break;
+            case "favorite_name": // «избранное <название закладки>» — включить закладку по названию
+                CompletableFuture.runAsync(() -> ActionsAsync.channelPlayByName(player, "включи избранное " + value));
+                break;
             case "play":
             case "turn_on_music":
                 ActionsAsync.turnOnMusic(player);

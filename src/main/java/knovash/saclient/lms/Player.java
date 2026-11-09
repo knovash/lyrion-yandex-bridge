@@ -33,6 +33,8 @@ public class Player {
     public String mac;
     public String name;
     public String room;
+    // создавать устройства-действия (кнопки УДЯ) для комнаты этого плеера
+    public boolean createButtons = true;
     // переменные настройки плеера
     public Integer volume_step;
     public Integer volume_low;

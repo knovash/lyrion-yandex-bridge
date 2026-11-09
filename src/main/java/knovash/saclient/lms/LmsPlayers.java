@@ -332,6 +332,48 @@ public class LmsPlayers {
         return "OK";
     }
 
+    // установка флага «создавать устройства-действия» (кнопки УДЯ) для плеера.
+    // Выкл → кнопки комнаты удаляются, если в комнате не осталось плееров с флагом;
+    // Вкл → кнопки комнаты создаются сразу.
+    public String playerButtonsSet(HashMap<String, String> parameters) {
+        log.info(line);
+        String playerName = parameters.getOrDefault(player_name_value, "null");
+        String value = parameters.getOrDefault(player_buttons_value, "0");
+        Player player = this.playerByName(playerName);
+        if (playerName.equals("null") || player == null) {
+            log.info("ERROR PLAYER NOT FOUND: " + playerName);
+            return "NULL";
+        }
+        boolean enable = "1".equals(value) || "true".equalsIgnoreCase(value);
+        log.info("PLAYER BUTTONS SET: " + playerName + " -> " + enable);
+        player.createButtons = enable;
+        String room = player.room;
+        if (room != null && !room.isEmpty()) {
+            boolean anyEnabled = players.stream()
+                    .anyMatch(p -> p != null && room.equals(p.room) && p.createButtons);
+            if (anyEnabled) {
+                smartHome.createButtonDevicesForRoom(room);
+            } else {
+                smartHome.removeButtonDevicesByRoom(room);
+            }
+            smartHome.write();
+        }
+        write();
+        log.info("FINISH PLAYER BUTTONS SET");
+        log.info(line);
+        return "OK";
+    }
+
+    // комнаты, для которых нужны кнопки: есть хотя бы один плеер с createButtons
+    public List<String> roomsWithButtons() {
+        if (players == null) return Collections.emptyList();
+        return players.stream()
+                .filter(p -> p != null && p.createButtons && p.room != null && !p.room.isEmpty())
+                .map(p -> p.room)
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
     public String playerSave(HashMap<String, String> parameters) {
         log.info(line);
 

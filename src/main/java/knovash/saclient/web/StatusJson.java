@@ -8,13 +8,44 @@ import knovash.saclient.Main;
 import knovash.saclient.SpotifyApi;
 import knovash.saclient.lms.Player;
 import knovash.saclient.yandex.Yandex;
+import knovash.saclient.yandex.YandexInfo;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
  * JSON-сводка состояния клиента для страницы плагина LMS (GET /status.json).
  */
 public class StatusJson {
+
+    // человекочитаемая модель по типу УДЯ-устройства Яндекс-колонки
+    private static String modelByType(String type) {
+        if (type == null) return "";
+        String prefix = "devices.types.smart_speaker.yandex.station";
+        if (!type.startsWith(prefix)) return "";
+        String suffix = type.substring(prefix.length());
+        switch (suffix) {
+            case "": return "Станция";
+            case ".lite": return "Лайт";
+            case ".lite_2": case ".lite2": return "Лайт 2";
+            case ".mini": return "Мини";
+            case ".mini_2": case ".mini2": return "Мини 2";
+            case ".mini_3": case ".mini3": return "Мини 3";
+            case ".midi": return "Миди";
+            case ".max": return "Макс";
+            case ".2": case "_2": return "Станция 2";
+            // кодовые имена платформ из вики сообщества (hackalice.me)
+            case ".micro": return "Лайт";
+            case ".plum": return "Лайт 2";
+            case ".cucumber": return "Миди";
+            case ".bergamot": return "Мини 3";
+            case ".pickle": return "Мини 3 Про";
+            case ".mango": return "Стрит";
+            case ".orion": return "Станция 3";
+            default: return suffix.replace(".", "").replace("_", " ");
+        }
+    }
 
     public static String get() {
         ObjectMapper mapper = new ObjectMapper();
@@ -37,6 +68,34 @@ public class StatusJson {
                 pn.put("name", p.name == null ? "" : p.name);
                 pn.put("room", p.room == null ? "" : p.room);
                 pn.put("connected", p.connected);
+                pn.put("createButtons", p.createButtons);
+            }
+        }
+
+        // Яндекс-колонки по комнатам: "aliceByRoom": { "Склад": ["Лайт (имя)", ...] }
+        ObjectNode aliceByRoom = root.putObject("aliceByRoom");
+        if (Yandex.yandexInfo != null && Yandex.yandexInfo.devices != null && Yandex.yandexInfo.rooms != null) {
+            Map<String, String> roomNameById = new HashMap<>();
+            for (YandexInfo.Room r : Yandex.yandexInfo.rooms) {
+                if (r != null && r.id != null) roomNameById.put(r.id, r.name == null ? "" : r.name);
+            }
+            Map<String, YandexInfo.Device> deviceById = new HashMap<>();
+            for (YandexInfo.Device dv : Yandex.yandexInfo.devices) {
+                if (dv != null && dv.id != null) deviceById.put(dv.id, dv);
+            }
+            for (YandexInfo.Room r : Yandex.yandexInfo.rooms) {
+                if (r == null || r.devices == null) continue;
+                ArrayNode arr = null;
+                for (String deviceId : r.devices) {
+                    YandexInfo.Device dv = deviceById.get(deviceId);
+                    if (dv == null || dv.type == null) continue;
+                    if (!dv.type.startsWith("devices.types.smart_speaker.yandex.station")) continue;
+                    String model = modelByType(dv.type);
+                    String entry = (dv.name == null || dv.name.isEmpty())
+                            ? (model.isEmpty() ? "Станция" : model) : dv.name;
+                    if (arr == null) arr = aliceByRoom.putArray(roomNameById.getOrDefault(r.id, ""));
+                    arr.add(entry);
+                }
             }
         }
 

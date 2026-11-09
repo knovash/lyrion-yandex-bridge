@@ -50,9 +50,14 @@ public class ProviderUserDevices {
                     .forEach(p -> smartHome.create(p.room, null));
         }
 
-        // создать девайсы кнопок команд
-        log.info("CREATE TOGGLS IN ALL ROOMS " + rooms);
-        smartHome.createButtonsInAllRooms(rooms);
+        // создать девайсы кнопок команд — только в комнатах, где есть плеер
+        // с включённым флагом createButtons; кнопки комнат без таких плееров удалить
+        List<String> roomsWithButtons = lmsPlayers.roomsWithButtons();
+        log.info("CREATE TOGGLS IN ROOMS " + roomsWithButtons);
+        smartHome.createButtonsInAllRooms(roomsWithButtons);
+        smartHome.devices.removeIf(d -> "devices.types.other".equals(d.type)
+                && (d.room == null || !roomsWithButtons.contains(d.room)));
+        smartHome.write();
 
         smartHome.devices.forEach(device -> device.capabilities.forEach(capability -> capability.state = null));
         responseYandex.payload.devices = smartHome.devices;
