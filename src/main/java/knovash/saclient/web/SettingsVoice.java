@@ -29,7 +29,10 @@ public class SettingsVoice extends SettingsBase {
         // облачные движки — по желанию, со СВОИМ ключом пользователя (как Google)
         VOICE_TOGGLE_TTS_PIPER(true, "TTS Piper (локальный, без облака и ключей)"),
         VOICE_TOGGLE_TTS_YANDEX(false, "TTS Yandex (свой API-ключ SpeechKit)"),
-        VOICE_TOGGLE_TTS_GOOGLE(false, "TTS Google");
+        VOICE_TOGGLE_TTS_GOOGLE(false, "TTS Google"),
+        // 10.11: озвучка ответов фраз нативным голосом Алисы через облачный
+        // сценарий УДЯ (devices.capabilities.quasar/tts); выкл — локальный Piper
+        VOICE_TOGGLE_SAY_ALICE(true, "Голос уведомлений: Алиса через облако (выкл = локальный Piper)");
 
         public final String description;
         public volatile boolean value;
@@ -93,7 +96,9 @@ public class SettingsVoice extends SettingsBase {
         // 05.11: ключ Яндекса больше НЕ раздаётся с облака — пользователь вписывает свой
         VOICE_STRING_YANDEX_API_KEY("---", "Yandex TTS API key (SpeechKit, свой)"),
         VOICE_STRING_PIPER_BIN("piper", "Piper: команда или путь к бинарнику piper"),
-        VOICE_STRING_PIPER_VOICE("", "Piper: путь к голосу .onnx (напр. ru_RU-irina-medium.onnx)");
+        VOICE_STRING_PIPER_VOICE("", "Piper: путь к голосу .onnx (напр. ru_RU-irina-medium.onnx)"),
+        // cookies аккаунта Яндекса для облачного TTS-сценария (Session_id=...; yandexuid=...)
+        VOICE_STRING_YA_COOKIES("---", "Яндекс cookies для голоса Алисы (Session_id=...; yandexuid=...)");
 
         public final String description;
         public volatile String value;

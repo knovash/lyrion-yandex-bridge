@@ -134,6 +134,10 @@ sub handler {
 			my ($name) = $f =~ m{([^/]+)$};
 			next if !-f $f;
 			next if $name eq 'log.txt' || $name eq 'client-stdout.log' || $name eq 'client.pid';
+		# НЕ трогаем настройки голоса (settings_voice.properties): cookies Яндекса для
+		# TTS Алисы и пути Piper не относятся к привязке УДЯ — сброс связи их убивать
+		# не должен (добыча cookies заново — ручная процедура через браузер).
+		next if $name eq 'settings_voice.properties';
 			next if $name =~ /\.bak/;
 			next if $name !~ /\.(json|properties)$/;
 			if (rename($f, $f . $suffix)) {

@@ -3,6 +3,7 @@ package knovash.saclient.cmd;
 import lombok.extern.log4j.Log4j2;
 import knovash.saclient.Context;
 import knovash.saclient.lms.Player;
+import knovash.saclient.yandex.YandexAliceSay;
 
 import java.util.HashMap;
 import java.util.Set;
@@ -52,6 +53,15 @@ public class HandlePathCmd {
         );
         if (UpdateActions.contains(action))
             lmsPlayers.updatePlayers(); // обновить состояние плееров
+
+        // озвучка голосом Алисы (облачный сценарий) или локальным Piper;
+        // плеер не нужен: колонка задаётся параметром alice=<device_id>
+        if ("voice_say".equals(action)) {
+            context.bodyResponse = YandexAliceSay.voiceSay(queryParams.get("alice"), value);
+            log.info(finish);
+            log.info("");
+            return context;
+        }
 
         // действия где плеер не требуется
         response = CommandsWithoutPlayer.run(action, value, context.body);
