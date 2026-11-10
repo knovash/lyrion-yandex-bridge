@@ -174,16 +174,16 @@ sub _serverStatus {
 	if ($java) {
 		my $v = `$java -version 2>&1 | head -1`;
 		$v =~ s/\s+$//;
-		$srv{'java'} = qq{<span style="color:green">$java</span> — $v};
+		$srv{'java'} = qq{<span style="color:green">$java</span> - $v};
 	}
 	else {
-		$srv{'java'} = '<span style="color:red">not found</span> — sudo apt install default-jre-headless';
+		$srv{'java'} = '<span style="color:red">not found</span> - sudo apt install default-jre-headless';
 	}
 
 	# ffmpeg (опционален: усиление громкости уведомлений)
 	$srv{'ffmpeg'} = Slim::Utils::Misc::findbin('ffmpeg')
 		? qq{<span style="color:green">ok</span>}
-		: '<span style="color:orange">not found (optional) — sudo apt install ffmpeg';
+		: '<span style="color:orange">not found (optional) - sudo apt install ffmpeg';
 
 	# piper: установлен / идёт установка / нет
 	my $p = _piperFind();
@@ -201,7 +201,7 @@ sub _serverStatus {
 		}
 		elsif (-e $logf && -M $logf < 5.0 / 1440) {    # лог свежее 5 минут
 			$srv{'piperinstalling'} = 1;
-			$srv{'piperinfo'} = 'installing…';
+			$srv{'piperinfo'} = 'installing...';
 		}
 		else {
 			$srv{'piperinfo'} = '<span style="color:red">not installed</span>';
@@ -213,7 +213,7 @@ sub _serverStatus {
 	my $ck = _propGet('VOICE_STRING_YA_COOKIES') // '';
 	$srv{'cookies'} = ($ck ne '' && $ck ne '---')
 		? '<span style="color:green">set</span>'
-		: '<span style="color:orange">not set (Alice voice disabled) — paste on client settings page</span>';
+		: '<span style="color:orange">not set (Alice voice disabled) - paste on client settings page</span>';
 
 	return \%srv;
 }

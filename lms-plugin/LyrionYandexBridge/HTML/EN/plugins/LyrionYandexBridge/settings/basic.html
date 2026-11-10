@@ -29,15 +29,15 @@
 	[% WRAPPER setting title="PLUGIN_LYRION_YANDEX_BRIDGE_VOICE" desc="PLUGIN_LYRION_YANDEX_BRIDGE_VOICE_DESC" %]
 		<table style="width:100%">
 			<tr><td style="width:28%; padding:2px 6px; vertical-align:top;"><b>Voice engine</b></td><td style="padding:2px 6px;">
-				<label><input type="radio" name="lybvoice" value="alice"[% IF srv.voicemode != 'piper' %] checked[% END %]> Alice — native voice via cloud (needs cookies)</label><br>
-				<label><input type="radio" name="lybvoice" value="piper"[% IF srv.voicemode == 'piper' %] checked[% END %]> Piper — local, offline</label>
-				<br><i>Default is Alice; on cloud failure it falls back to Piper automatically.</i>
+				<label><input type="radio" name="lybvoice" value="alice"[% IF srv.voicemode != 'piper' %] checked[% END %]> Alice (cloud) - real Alice voice, requires cookies</label><br>
+				<label><input type="radio" name="lybvoice" value="piper"[% IF srv.voicemode == 'piper' %] checked[% END %]> Piper (local) - offline, no cookies needed</label>
+				<br><i>Default is Alice. If the cloud is unreachable, Piper is used automatically.</i>
 			</td></tr>
 			<tr><td style="padding:2px 6px; vertical-align:top;"><b>Piper TTS</b></td><td style="padding:2px 6px;">
 				[% IF srv.piperok %]
-					<span style="color:green">installed</span> — [% srv.piperinfo %]
+					<span style="color:green">installed</span> - [% srv.piperinfo %]
 				[% ELSIF srv.piperinstalling %]
-					<span style="color:orange">installing… refresh this page in a minute</span>
+					<span style="color:orange">installing... refresh this page in a minute</span>
 				[% ELSE %]
 					[% srv.piperinfo %] &nbsp;<input type="submit" name="piperinstall" value="Install Piper (~68 MB)">
 				[% END %]
