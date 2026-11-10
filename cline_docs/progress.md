@@ -170,3 +170,27 @@
   Tasker-виджеты (профиль refresh every 2 min) → /cmd get_refresh_json → p.title() всех плееров,
   и JBL white был единственным с tracks=0. Клиентский фикс 09.10 в Player.title()
   (при playlist_tracks==0 не слать playlist name/album) — спам исчезает после деплоя jar на бокс.
+
+## 10.11 — голос Алисы (voice_say), кнопка Piper, alice-root-wizard
+
+- **voice_say готов и работает в проде**: /cmd?action=voice_say&alice=<quasar_uuid>&value=<текст>
+  → YandexAliceSay: m/-API (cookies+csrf), сценарий «SA voice <id>» (переиспользует
+  «ХА <id>» от старого HA; свой триггер = encode(id)+"с" — иначе VOICE_TRIGGER_TAKEN).
+  Фолбэк на Piper при ошибке облака. Тумблер VOICE_TOGGLE_SAY_ALICE + cookies — в
+  settings_voice.properties (ресет их больше НЕ трогает!). Грабли: pkill-шаблон
+  должен быть «lyrion-yandex-bridge» (с bridge); настройки Piper — в properties-файле,
+  не в config.json; новый jar стартовать из рабочей папки datadir; права файлов —
+  squeezeboxserver (root-правки ломали запись настроек).
+- **Кнопка Install Piper** на странице плагина: Bin/setup-piper.sh (без root, в
+  <datadir>/piper, GitHub+HF, самопроверка). Проверена живой установкой на .131
+  (двойная копия рядом с /opt/piper — рабочий конфиг указывает на datadir-копию).
+  Блок Voice на странице: только ASCII (шаблон LMS Latin-1 → mojibake от «—»/«…»).
+- **quasar device_id ↔ навык**: Диалоги НЕ присылают device_id сессии (проверено на
+  живом BODY) — только application_id (hex), УДЯ его не знает → карта
+  rooms_and_alice_ids для «раз два» незаменима; локальные фразы шлют room= явно.
+- **alice-root-wizard.sh** (репо cline, docs/lite-scripts/): мастер рута+настройки
+  станций для владельца (8 этапов, серийник-сверка, без AirPlay, ALICEID-probe
+  голосом). Ассеты в ~/tools/alice-wizard/assets/ (squeezelite static снят с Лайта 1).
+- **Бэклог**: QR-логин вместо ручных cookies (passport magic-code); v1.13 keepalive WS.
+- **CHANGELOG.md** заведён: v1.13 (не выпущена) + чек-лист выпуска (версии в pom /
+  install.xml / ClientProcess.pm jarName — синхронно; jar → Bin/; zip в dist-lms/).
