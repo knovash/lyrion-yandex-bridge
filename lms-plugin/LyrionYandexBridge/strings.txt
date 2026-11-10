@@ -132,3 +132,11 @@ PLUGIN_LYRION_YANDEX_BRIDGE_PLAYERREMOVE
 PLUGIN_LYRION_YANDEX_BRIDGE_PLAYERREMOVE_CONFIRM
 	EN	Remove this player from the bridge? It will be re-added automatically if it appears in LMS again.
 	RU	Удалить этого плеера из моста? Если он снова появится в LMS, будет добавлен автоматически.
+
+PLUGIN_LYRION_YANDEX_BRIDGE_VOICE
+	EN	Voice notifications
+	RU	Голосовые уведомления
+
+PLUGIN_LYRION_YANDEX_BRIDGE_VOICE_DESC
+	EN	Voice engine for announcements (Alice via cloud scenario or local Piper TTS) and server dependencies status.
+	RU	Движок озвучки уведомлений (Алиса через облачный сценарий или локальный Piper) и статус зависимостей сервера.

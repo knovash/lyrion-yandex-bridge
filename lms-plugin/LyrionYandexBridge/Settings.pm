@@ -8,7 +8,7 @@ use base qw(Slim::Web::Settings);
 
 use JSON::XS;
 use LWP::UserAgent;
-use File::Spec::Functions qw(catfile);
+use File::Spec::Functions qw(catfile catdir);
 use Encode qw(encode);
 use Slim::Utils::Log;
 use Slim::Utils::Network;
@@ -109,6 +109,115 @@ sub _clientStatus {
 	return \%st;
 }
 
+# --- серверные зависимости и состояние голоса (Piper/Алиса) -----------------
+
+# найти установленный Piper: сначала /opt/piper (ручная установка), затем
+# <datadir>/piper (ставится кнопкой). Возвращает хеш с путями и размерами.
+sub _piperFind {
+	my $dir = Plugins::LyrionYandexBridge::ClientProcess::dataDir();
+	for my $base ('/opt/piper', catfile($dir, 'piper')) {
+		my $bin = catfile($base, 'piper', 'piper');
+		next unless -x $bin;
+		my ($voice) = glob("$base/*.onnx");
+		return {
+			'base'  => $base,
+			'bin'   => $bin,
+			'voice' => defined $voice ? $voice : '',
+			'ok'    => defined $voice && -s $voice ? 1 : 0,
+		};
+	}
+	return;
+}
+
+# прочитать значение ключа из data/settings_voice.properties
+sub _propGet {
+	my ($key) = @_;
+	my $f = catfile(Plugins::LyrionYandexBridge::ClientProcess::dataDir(), 'data', 'settings_voice.properties');
+	open my $fh, '<', $f or return;
+	my $val;
+	while (my $l = <$fh>) {
+		if ($l =~ /^\Q$key\E=(.*)$/) { $val = $1; chomp $val; last; }
+	}
+	close $fh;
+	return $val;
+}
+
+# установить ключ в data/settings_voice.properties (перезапись строки)
+sub _propSet {
+	my ($key, $val) = @_;
+	my $dir = Plugins::LyrionYandexBridge::ClientProcess::dataDir();
+	my $f = catfile($dir, 'data', 'settings_voice.properties');
+	mkdir catdir($dir, 'data') unless -d catdir($dir, 'data');
+	my @lines;
+	if (open my $fh, '<', $f) { @lines = <$fh>; close $fh; }
+	@lines = grep { !/^\Q$key\E=/ } @lines;
+	push @lines, "$key=$val\n";
+	if (open my $out, '>', $f) { print $out @lines; close $out; }
+	else { $log->error("cannot write $f: $!"); }
+}
+
+sub _humanSize {
+	my ($b) = @_;
+	return '' unless defined $b;
+	my @u = ('B', 'KB', 'MB', 'GB');
+	my $i = 0;
+	while ($b >= 1024 && $i < 3) { $b /= 1024; $i++; }
+	return sprintf('%.0f %s', $b, $u[$i]);
+}
+
+# сводка «Сервер»: java/piper/ffmpeg/cookies + режим голоса
+sub _serverStatus {
+	my %srv;
+
+	# java
+	my $java = Plugins::LyrionYandexBridge::ClientProcess::javaPath();
+	if ($java) {
+		my $v = `$java -version 2>&1 | head -1`;
+		$v =~ s/\s+$//;
+		$srv{'java'} = qq{<span style="color:green">$java</span> — $v};
+	}
+	else {
+		$srv{'java'} = '<span style="color:red">not found</span> — sudo apt install default-jre-headless';
+	}
+
+	# ffmpeg (опционален: усиление громкости уведомлений)
+	$srv{'ffmpeg'} = Slim::Utils::Misc::findbin('ffmpeg')
+		? qq{<span style="color:green">ok</span>}
+		: '<span style="color:orange">not found (optional) — sudo apt install ffmpeg';
+
+	# piper: установлен / идёт установка / нет
+	my $p = _piperFind();
+	if ($p && $p->{'ok'}) {
+		$srv{'piperok'}   = 1;
+		$srv{'piperbin'}  = $p->{'bin'};
+		$srv{'pipervoice'} = $p->{'voice'};
+		$srv{'piperinfo'} = _humanSize(-s $p->{'bin'}) . ' + voice ' . _humanSize(-s $p->{'voice'});
+	}
+	else {
+		my $dir = Plugins::LyrionYandexBridge::ClientProcess::dataDir();
+		my $logf = catfile($dir, 'piper-install.log');
+		if (-e catfile($dir, 'piper', 'INSTALLED')) {
+			$srv{'piperinfo'} = 'installed (see log)';
+		}
+		elsif (-e $logf && -M $logf < 5.0 / 1440) {    # лог свежее 5 минут
+			$srv{'piperinstalling'} = 1;
+			$srv{'piperinfo'} = 'installing…';
+		}
+		else {
+			$srv{'piperinfo'} = '<span style="color:red">not installed</span>';
+		}
+	}
+
+	# режим голоса и cookies Алисы
+	$srv{'voicemode'} = (_propGet('VOICE_TOGGLE_SAY_ALICE') // 'true') eq 'false' ? 'piper' : 'alice';
+	my $ck = _propGet('VOICE_STRING_YA_COOKIES') // '';
+	$srv{'cookies'} = ($ck ne '' && $ck ne '---')
+		? '<span style="color:green">set</span>'
+		: '<span style="color:orange">not set (Alice voice disabled) — paste on client settings page</span>';
+
+	return \%srv;
+}
+
 sub handler {
 	my ($class, $client, $paramRef, $callback, $httpClient, $response) = @_;
 
@@ -148,6 +257,50 @@ sub handler {
 			}
 		}
 		Plugins::LyrionYandexBridge::ClientProcess->start;
+	}
+
+	# Установка Piper кнопкой: фоновый запуск setup-piper.sh (качает ~68МБ,
+	# пишет прогресс в <datadir>/piper-install.log; статус — на странице).
+	if ($paramRef->{'piperinstall'}) {
+		my $dir  = Plugins::LyrionYandexBridge::ClientProcess::dataDir();
+		my $bin  = catfile(Plugins::LyrionYandexBridge::ClientProcess::baseDir(), 'Bin', 'setup-piper.sh');
+		if (-f $bin) {
+			unlink catfile($dir, 'piper', 'INSTALLED');
+			$log->info("piper install requested: sh $bin $dir (background)");
+			system('/bin/sh', '-c', qq{nohup /bin/sh "$bin" "$dir" >/dev/null 2>&1 &});
+		}
+		else {
+			$log->error("setup script not found: $bin");
+		}
+	}
+
+	# после успешной установки Piper (INSTALLED) — раз перезапустить клиента,
+	# чтобы он подхватил пути из settings_voice.properties
+	{
+		my $dir = Plugins::LyrionYandexBridge::ClientProcess::dataDir();
+		my $mk  = catfile($dir, 'piper', 'INSTALLED');
+		if (-e $mk) {
+			my $t = (stat $mk)[9] || 0;
+			if ($t > ($prefs->get('piperRestarted') || 0)) {
+				$prefs->set('piperRestarted' => $t);
+				$log->info('piper installed — restarting client to pick up settings');
+				Plugins::LyrionYandexBridge::ClientProcess->stop;
+				Plugins::LyrionYandexBridge::ClientProcess->start;
+			}
+		}
+	}
+
+	# Режим голоса уведомлений (alice|piper): пишем VOICE_TOGGLE_SAY_ALICE
+	# в settings_voice.properties и перезапускаем клиента (читает файл при старте)
+	if ($paramRef->{'saveSettings'} && defined $paramRef->{'lybvoice'}) {
+		my $new = $paramRef->{'lybvoice'} eq 'piper' ? 'false' : 'true';
+		my $cur = _propGet('VOICE_TOGGLE_SAY_ALICE') // 'true';
+		if ($new ne $cur) {
+			_propSet('VOICE_TOGGLE_SAY_ALICE' => $new);
+			$log->info("voice engine switched to $paramRef->{'lybvoice'} — restarting client");
+			Plugins::LyrionYandexBridge::ClientProcess->stop;
+			Plugins::LyrionYandexBridge::ClientProcess->start;
+		}
 	}
 
 	if ($paramRef->{'saveSettings'}) {
@@ -288,6 +441,9 @@ sub handler {
 	$paramRef->{'requestsurl'} = 'http://' . (Slim::Utils::Network::serverAddr() || 'localhost')
 		. ':' . ($prefs->get('port') || 8888) . '/requests';
 	$paramRef->{'lasterror'} = $prefs->get('lasterror') || '';
+
+	# серверные зависимости (java/piper/ffmpeg/cookies + режим голоса)
+	$paramRef->{'srv'} = _serverStatus();
 
 	# сводка состояния из самого клиента (обновляется при открытии страницы)
 	$paramRef->{'status'} = $paramRef->{'running'} ? _clientStatus() : undef;
