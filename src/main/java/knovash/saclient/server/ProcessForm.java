@@ -5,6 +5,7 @@ import knovash.saclient.Context;
 import knovash.saclient.utils.Parser;
 import knovash.saclient.web.PageIndex;
 import knovash.saclient.web.PagePlayers;
+import knovash.saclient.web.PageYaCookies;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -43,6 +44,10 @@ public class ProcessForm {
                     break;
                 case "settings_voice_save":
                     settingsVoice.handleSaveAll(context);
+                    break;
+                case "ya_cookies_save": // страница «Настройка cookies»: ключ из cookie Яндекса
+                    PageYaCookies.save(bodyMap);
+                    context.setRedirect("/ya_cookies");
                     break;
                 case statusbar_refresh:
                     PageIndex.refresh((HashMap<String, String>) bodyMap);

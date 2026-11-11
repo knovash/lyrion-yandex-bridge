@@ -54,6 +54,7 @@ public class PageIndex {
                 "<p><a href=/settings_lms>Настройки LMS</a></p>" +
                 "<p><a href=/players>Настройки плееров и комнат</a></p>" +
                 "<p><a href=/settings>Настройки</a></p>" +
+                "<p><a href=/ya_cookies>Настройка cookies</a></p>" +
                 "<p><a href=/settings_buttons>Настройки устройств-действий в УДЯ</a></p>" +
                 "<p><a href=/settings_tasker>Настройки Tasker</a></p>" +
                 "<p><a href=/settings_voice>Настройки голосовых уведомлений</a></p>" +
