@@ -14,6 +14,7 @@ import knovash.saclient.yandex.provider.ProviderUserDevices;
 import knovash.saclient.yandex.provider.ProviderUserUnlink;
 import knovash.saclient.web.PageIndex;
 import knovash.saclient.web.PageLms;
+import knovash.saclient.web.PageLocalCommands;
 import knovash.saclient.web.PagePlayers;
 import knovash.saclient.web.PageRequests;
 import knovash.saclient.web.StatusJson;
@@ -112,6 +113,8 @@ public class HandlerAll implements HttpHandler {
                 return settingsTasker.action(context);
             case "/settings_voice":
                 return settingsVoice.action(context);
+            case "/local_commands":
+                return PageLocalCommands.action(context);
             case "/lms":
                 return PageLms.action(context);
             // история поисковых запросов навыка (data/search_requests.txt)

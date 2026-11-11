@@ -49,6 +49,7 @@ public class HandlePathCmd {
                 "next",
                 "prev",
                 "whats_playing",
+                "whats_playing_text",
                 "title",
                 "favorites_add"
         );

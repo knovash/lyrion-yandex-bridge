@@ -134,6 +134,9 @@ public class CommandsWithPlayer {
             case "whats_playing": // сказать что играет через плеер LMS
                 ActionsAsync.whatsPlayingSayToLms(player, false);
                 break;
+            case "whats_playing_text": // локальная фраза «что играет»: вернуть текст — станция озвучит (voice_say/Piper)
+                if (player == null) return "плеер не найден";
+                return ActionsAsync.whatsPlayingAnswerForAlice(player, false);
             case "get_room_player": // Таскер по названию виджета вернуть комнату и плеер при активации нового виджета
                 return Tasker.playerNameByWidgetName(value);
             case "get_playlist": // Таскер для плейлиста
