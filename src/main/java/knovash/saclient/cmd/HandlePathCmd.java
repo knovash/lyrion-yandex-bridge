@@ -43,6 +43,7 @@ public class HandlePathCmd {
                 "play_pause",
                 "toggle_music",
                 "switch_here",
+                "switch_room",
                 "separate_on",
                 "separate_off",
                 "next",

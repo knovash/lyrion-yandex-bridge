@@ -237,6 +237,33 @@ public class ActionsAsync {
         });
     }
 
+    // Локальная фраза станций «переключи музыку в/на <комната|плеер>» (whatplays):
+    // value — комната УДЯ (нечётко, любой падеж: «в спальню» → «Спальня») ИЛИ имя
+    // плеера (тогда берём его комнату). Затем switchHere целевого плеера —
+    // как если бы «переключи сюда» сказали в той комнате. Возвращает текст ответа.
+    public static String switchRoom(String value) {
+        log.info("SWITCH ROOM: " + value);
+        if (value == null || value.trim().isEmpty()) return "не понял куда переключить музыку";
+        // 1) value = комната УДЯ? (нечёткий подбор по списку комнат)
+        String room = Utils.roomNameByNearest(value);
+        if (room != null) {
+            Player target = lmsPlayers.playerByRoom(room);
+            if (target == null) return "в комнате " + room + " нет колонки";
+            log.info("SWITCH ROOM BY ROOM: " + value + " -> " + room + " PLAYER: " + target.name);
+            CompletableFuture.runAsync(() -> switchHere(target));
+            return "переключаю музыку в комнате " + room;
+        }
+        // 2) value = имя плеера? -> плеер его комнаты
+        Player byName = lmsPlayers.playerByNearestName(value);
+        if (byName == null || byName.room == null) return "нет такой комнаты или колонки";
+        Player target = lmsPlayers.playerByRoom(byName.room);
+        if (target == null) target = byName;
+        log.info("SWITCH ROOM BY PLAYER: " + value + " -> " + byName.name + " ROOM: " + target.room);
+        Player finalTarget = target;
+        CompletableFuture.runAsync(() -> switchHere(finalTarget));
+        return "переключаю музыку в комнате " + target.room;
+    }
+
     // Девайс - Отдельно/Вместе
     // Таскер - Отдельно/Вместе
     public static void separateSet(Player player, String action) {

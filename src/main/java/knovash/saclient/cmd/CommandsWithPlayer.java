@@ -97,6 +97,8 @@ public class CommandsWithPlayer {
             case "switch_here":
                 ActionsAsync.switchHere(player);
                 break;
+            case "switch_room": // локальная фраза «переключи музыку в/на <комната|плеер>»: цель в value
+                return ActionsAsync.switchRoom(value);
             case "separate_on":
                 ActionsAsync.separateSet(player, "Отдельно");
                 break;

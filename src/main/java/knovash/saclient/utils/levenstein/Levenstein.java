@@ -46,7 +46,12 @@ public class Levenstein {
         return d[s1.length][s2.length];
     }
 
-    public static int getDistanceWordAndWord(String word1, String word2) {
+    // STATIC filalDistance/finalElement — общее состояние: БЕЗ синхронизации
+    // параллельные /cmd-запросы (Таскер, станции) затирают результаты друг друга
+    // (симптом: «ERROR ROOM Гостиная NOT EXISTS» на точном имени). Все методы,
+    // трогающие статику, — synchronized на мониторе класса (вложенные вызовы
+    // одного потока reentrant-safe).
+    public static synchronized int getDistanceWordAndWord(String word1, String word2) {
 //        log.info("START " + val);
         if (isCyrillic(word1) && !isCyrillic(word2)) word1 = Utils.convertCyrilicToLatin(word1);
         int d = dist(word1.toLowerCase().toCharArray(), word2.toLowerCase().toCharArray());
@@ -59,19 +64,19 @@ public class Levenstein {
         return d;
     }
 
-    public static String compareWordAndWord(String wordNearest, String wordCorrect) {
+    public static synchronized String compareWordAndWord(String wordNearest, String wordCorrect) {
         int dist = getDistanceWordAndWord(wordNearest, wordCorrect);
         if (dist < 3) return wordCorrect;
         return null;
     }
 
-    public static Boolean compareWordAndWordBool(String wordNearest, String wordCorrect) {
+    public static synchronized Boolean compareWordAndWordBool(String wordNearest, String wordCorrect) {
         int dist = getDistanceWordAndWord(wordNearest, wordCorrect);
         if (dist < 3) return true;
         return false;
     }
 
-    public static String getNearestElementInListWord(String value, List<String> list) {
+    public static synchronized String getNearestElementInListWord(String value, List<String> list) {
 //        log.info("SEARCH: '" + value + "' IN: " + list);
         filalDistance = 100;
         list.stream()
@@ -82,7 +87,7 @@ public class Levenstein {
         return finalElement;
     }
 
-    public static String searchTextInList(String text, List<String> list) {
+    public static synchronized String searchTextInList(String text, List<String> list) {
 //        log.info("SEARCH TEXT: " + text + " IN: " + list);
 
         List<String> words = Stream.of(text.split(" "))
@@ -111,7 +116,7 @@ public class Levenstein {
     }
 
     //    mission control & Mission Control: Celebrating NASA and Space Explorers everywhere.
-    public static String searchShortInLong(String shortName, String longName) {
+    public static synchronized String searchShortInLong(String shortName, String longName) {
         log.info(">>>> " + shortName + " IN " + longName);
         String result = null;
         List<String> shortWords = List.of(shortName.split(" "));
