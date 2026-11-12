@@ -1,5 +1,5 @@
 # Active Context — что сейчас
-## 12.11 (13:5x) RELEASE v1.13 СОБРАН И ЗАКОММИЧЕН — ждёт GitHub Release от владельца → потом пуш main
+## 12.11 (14:0x) RELEASE v1.13 ОПУБЛИКОВАН (Release + пуш main e9852e3..00f7aa1, проверки пройдены)
 - **Что в v1.13 (всё в релизе)** — кратко: voice_say (голос настоящей
   Алисы: m/-API cookies+csrf, сценарий «SA voice <id>», фолбэк Piper), tts_file,
   switch_room, whats_playing_text, страницы /local_commands и /ya_cookies,
@@ -34,10 +34,14 @@
   респаунит клиента сам.
 - **README**: разделы v1.13 (локальные фразы, TTS, страницы) дописаны ранее;
   дата релиза в CHANGELOG проставлена.
-- **ДАЛЬШЕ (порядок критичен)**: владелец создаёт GitHub Release v1.13
-  (tag v1.13; asset = dist-lms/lyrion-yandex-bridge-v1.13.zip, имя файла НЕ
-  менять — на него указывает repo.xml) → Cline пушит main → проверка raw
-  repo.xml (version 1.13 / sha 681a9656… / asset-URL 302) → план DONE.
+- **ПУБЛИКАЦИЯ (14:0x)**: владелец создал GitHub Release v1.13 (asset
+  lyrion-yandex-bridge-v1.13.zip); Cline проверил asset скачиванием — sha1
+  совпал с repo.xml (681a9656…); пуш main (13 коммитов, tip 00f7aa1); raw
+  repo.xml на main = version 1.13 / sha / url v1.13 (проверено GitHub API +
+  cache-buster; чистый raw-CDN обновится в пределах ~5 мин кэша — ПРОВЕРЕНО
+  14:0x, у LMS пользователей обновление предложится само). .131 владелец
+  обновит сам (см. буллет E2E выше). РЕЛИЗ ЗАКРЫТ; следующий кандидат v1.14:
+  keepalive WS, QR-логин (план на /ya_cookies).
 
 
 ## 08.11 (10:40) РЕШЕНО: устройства пропали из УДЯ — «зомби-WS» после рестарта облака

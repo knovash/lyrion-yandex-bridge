@@ -6,6 +6,12 @@
   Подробности/TODO v1.13 (keepalive-PING и пр.) — activeContext 08.11.
 
 ## Работает (проверено в бою)
+- **v1.13 ОПУБЛИКОВАН (12.11)**: GitHub Release + пуш main (13 коммитов) —
+  голос Алисы voice_say (cookies, фолбэк Piper), tts_file, switch_room,
+  whats_playing_text, страницы /local_commands и /ya_cookies, voice-блок +
+  Install Piper, синхронные /cmd для локальных фраз, Create buttons;
+  фиксы Levenstein-гонка / TTS-URL 8010 / Reset не трогает голосовые
+  настройки. repo.xml v1.13 проверен (asset sha сверян скачиванием).
 - **v1.12 ОПУБЛИКОВАН (05.11)**: GitHub Release + пуш main (18 коммитов с 13.10): TTS Piper
   локально по умолчанию + BYOK-ключи, пуш состояний УДЯ за тумблером (off), фиксы
   03.11/27.10/24.10/19.10/13.10 (log-rotate, Spotify-статус, retry, Remove player,
@@ -222,12 +228,13 @@
 - **12.11 — готовим релиз v1.13**: полный контекст для релизной сессии —
   activeContext 12.11 (состояние версий, чек-лист, E2E-список, блокеры:
   keepalive WS + голосовой тест владельцем).
-- **12.11 (13:5x) — RELEASE v1.13 СОБРАН И ЗАКОММИЧЕН, ждёт публикации**:
-  версии 1.13 ×3, fat-jar + dist-zip (sha 681a96564197…), repo.xml → v1.13,
-  CHANGELOG датирован (keepalive WS → v1.14), секрет-скан чист. E2E на .131
-  пропущен по решению владельца (бокс офлайн; функциональность подтверждена
-  владельцем ранее, обновит сам). Голосовые тесты switch_room / «что играет»
-  ПОДТВЕРЖДЕНЫ владельцем 12.11. Осталось: GitHub Release v1.13 (владелец,
-  asset dist-lms/lyrion-yandex-bridge-v1.13.zip) → пуш main → проверка
-  raw repo.xml.
+- **12.11 (14:0x) — RELEASE v1.13 ОПУБЛИКОВАН**: GitHub Release v1.13
+  (владелец, asset sha сверян скачиванием = 681a9656…), пуш main
+  (e9852e3..00f7aa1), raw repo.xml = 1.13 (API+cache-buster). Состав релиза —
+  CHANGELOG v1.13: голос Алисы (voice_say + /ya_cookies), tts_file,
+  switch_room, whats_playing_text + /local_commands, voice-блок + Install
+  Piper, синхронные /cmd, Create buttons; фиксы Levenstein/8010/Reset.
+  E2E .131 пропущен по решению владельца (обновит сам; рецепты — activeContext
+  12.11). Голосовые тесты подтверждены владельцем 12.11. v1.14-кандидаты:
+  keepalive WS, QR-логин.
 
