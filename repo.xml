@@ -23,7 +23,7 @@
             target="unix|mac"
             minTarget="8.0"
             maxTarget="*"
-            sha="bebcd5905302a87d4e47eee4ec374514ca0738f5"
+            sha="67c12a8570a059b82049611012be88626ea92d21"
             url="https://github.com/knovash/lyrion-yandex-bridge/releases/download/v1.13.1/lyrion-yandex-bridge-v1.13.1.zip"
             icon="https://raw.githubusercontent.com/knovash/lyrion-yandex-bridge/main/lms-plugin/LyrionYandexBridge/HTML/EN/plugins/LyrionYandexBridge/html/images/icon.png"
             creator="Konstantin"
