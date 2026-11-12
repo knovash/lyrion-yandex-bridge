@@ -194,3 +194,32 @@
 - **Бэклог**: QR-логин вместо ручных cookies (passport magic-code); v1.13 keepalive WS.
 - **CHANGELOG.md** заведён: v1.13 (не выпущена) + чек-лист выпуска (версии в pom /
   install.xml / ClientProcess.pm jarName — синхронно; jar → Bin/; zip в dist-lms/).
+
+## 11.11 — switch_room, whats_playing_text, страницы /local_commands и /ya_cookies
+
+- **switch_room** (`/cmd?action=switch_room&value=<комната|плеер>`): локальная
+  фраза станций «переключи музыку в/на X» (whatplays v5 на .120 Гостиная /
+  .126 Гараж). Комната УДЯ нечётко → плеер комнаты; иначе плеер нечётко → его
+  комната; далее switch_here. ActionsAsync.switchRoom + case в
+  CommandsWithPlayer + UpdateActions. Задеплоено на .131, смоки стабильны
+  (спальню→Спальня, гостиную→Гостиная, jbl white→Гараж, homepod1→Гостиная).
+  Ждёт голосового теста владельцем.
+- **ФИКС: гонка static-полей Levenstein** — filalDistance/finalElement общие
+  для потоков: параллельные /cmd (Таскер + станции) затирали результаты,
+  симптом «ERROR ROOM Гостиная NOT EXISTS» на точном имени. Все методы со
+  статикой synchronized (монитор класса, reentrant), прогон 8×2000 — чисто.
+- **whats_playing_text** (`/cmd?action=whats_playing_text&room=…`): возврат
+  текста для фразы «что играет» на станциях (та же логика, что навык «Раз
+  Два» — whatsPlaying); озвучка как «спотифай» (voice_say / Piper+aplay).
+  Старый whats_playing не тронут. whatplays: паттерн *то*играет*
+  (регистронезависимо — ASR даёт «Что играет» с заглавной).
+- **Страница «Локальные команды root станции»** (/local_commands, пункт меню;
+  PageLocalCommands: таблица 11 фраз + низ «что такое рут станции»). Смок 200.
+- **Страница «Настройка cookies»** (/ya_cookies, пункт меню): форма
+  Session_id/yandexuid → VOICE_STRING_YA_COOKIES, применяется сразу без
+  рестарта; инструкции F12/Cookies, безопасность, план QR-логина. Смок 200.
+- Все фичи в CHANGELOG v1.13-кандидат, README дополнен (таблица фраз).
+- **12.11 — готовим релиз v1.13**: полный контекст для релизной сессии —
+  activeContext 12.11 (состояние версий, чек-лист, E2E-список, блокеры:
+  keepalive WS + голосовой тест владельцем).
+
