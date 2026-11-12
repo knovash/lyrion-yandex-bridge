@@ -4,6 +4,7 @@ import lombok.extern.log4j.Log4j2;
 import knovash.saclient.Context;
 import knovash.saclient.utils.Parser;
 import knovash.saclient.web.PageIndex;
+import knovash.saclient.web.PageStations;
 import knovash.saclient.web.PagePlayers;
 import knovash.saclient.web.PageYaCookies;
 
@@ -48,6 +49,16 @@ public class ProcessForm {
                 case "ya_cookies_save": // страница «Настройка cookies»: ключ из cookie Яндекса
                     PageYaCookies.save(bodyMap);
                     context.setRedirect("/ya_cookies");
+                    break;
+                case "stations_save": // «Рутованные станции»: список + ssh-пароль
+                    PageStations.save(bodyMap);
+                    context.setRedirect("/stations");
+                    break;
+                case "station_check": // проверить привязку станции (read-only)
+                    PageStations.op(context, "check", bodyMap.get("station_name"));
+                    break;
+                case "station_repoint": // перенацелить станцию(и) на этот сервер
+                    PageStations.op(context, "repoint", bodyMap.get("station_name"));
                     break;
                 case statusbar_refresh:
                     PageIndex.refresh((HashMap<String, String>) bodyMap);

@@ -16,6 +16,7 @@ import knovash.saclient.web.PageIndex;
 import knovash.saclient.web.PageLms;
 import knovash.saclient.web.PageLocalCommands;
 import knovash.saclient.web.PagePlayers;
+import knovash.saclient.web.PageStations;
 import knovash.saclient.web.PageYaCookies;
 import knovash.saclient.web.PageRequests;
 import knovash.saclient.web.StatusJson;
@@ -116,6 +117,8 @@ public class HandlerAll implements HttpHandler {
                 return settingsVoice.action(context);
             case "/ya_cookies":
                 return PageYaCookies.action(context);
+            case "/stations":
+                return PageStations.action(context);
             case "/local_commands":
                 return PageLocalCommands.action(context);
             case "/lms":

@@ -46,6 +46,9 @@
             <artifactId>json</artifactId>
             <version>20230618</version>
         </dependency>
+        <!-- SSH к рутованным станциям (/stations) — системный ssh+sshpass
+             (JSch не осилил ed25519-only dropbear Лайтов); на сервере:
+             apt install sshpass openssh-client -->
     </dependencies>
     <build>
         <plugins>
