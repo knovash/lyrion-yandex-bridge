@@ -40,6 +40,7 @@ data/
 target/
 dependency-reduced-pom.xml
 dist-lms/*.zip
+lms-plugin/LyrionYandexBridge/Bin/*.jar
 
 ### Local secrets (tokens!) ###
 config.json

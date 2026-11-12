@@ -1,6 +1,6 @@
 # Active Context — что сейчас
-## 12.11 (13:44) ГОТОВИМ РЕЛИЗ v1.13 — весь контекст для релизной сессии здесь
-- **Что в v1.13 (код в main, НЕ выпущен)** — кратко: voice_say (голос настоящей
+## 12.11 (13:5x) RELEASE v1.13 СОБРАН И ЗАКОММИЧЕН — ждёт GitHub Release от владельца → потом пуш main
+- **Что в v1.13 (всё в релизе)** — кратко: voice_say (голос настоящей
   Алисы: m/-API cookies+csrf, сценарий «SA voice <id>», фолбэк Piper), tts_file,
   switch_room, whats_playing_text, страницы /local_commands и /ya_cookies,
   voice-блок на странице плагина (тумблер Алиса/Piper + Install Piper +
@@ -8,34 +8,36 @@
   per-player чекбокс Create buttons; фиксы: гонка static-полей Levenstein
   (synchronized), TTS-URL :8010→:8888 (c8731f7), Reset не трогает
   settings_voice.properties, ASCII в basic.html. ПОЛНЫЙ список — CHANGELOG.md
-  «v1.13 (не выпущена — кандидат)».
-- **Версии сейчас**: pom.xml / install.xml / ClientProcess.pm jarName = 1.12;
-  repo.xml → v1.12 (опубликован 05.11); dist-lms/ — только zips v1.11/v1.12.
-  На релизе поднять все три места до 1.13 синхронно.
-- **Бокс .131**: бегает jar с именем lyrion-yandex-bridge-1.12.jar, но код
-  НОВЕЕ v1.12 (деплои 10–11.11: voice_say, switch_room, страницы, фикс
-  Levenstein). При точечных деплоях имя 1.12 НЕ менять (ClientProcess.pm
-  хардкодит jarName) — на релизе станет 1.13 везде.
-- **ЧЕК-ЛИСТ ВЫПУСКА** — низ CHANGELOG.md; порядок публикации — techContext.md
-  «Релиз» (GitHub Release со STRICTO asset ДО пуша repo.xml, иначе 404 у
-  пользователей; ветки master→main, dev не трогает repo.xml).
-- **E2E на .131 перед релизом** (дополнить классику новым): клиент поднялся
-  (:8888), /status.json 200, музыка вкл/выкл, «раз два», voice_say, speak
-  (Piper), страница плагина (блок Voice), Reset НЕ трогает cookies; новое:
-  /local_commands 200, /ya_cookies 200, /cmd switch_room (спальню→Спальня),
-  whats_playing_text (текст ответа). Стабильность — testChecks.md.
-- **ДО РЕЛИЗА решить**: (1) keepalive-пинги WS в CloudClient — TODO с
-  инцидента 08.11 (зомби-сессии, activeContext 08.11): в v1.13 или бэклог;
-  (2) голосовой тест владельцем switch_room («переключи музыку в спальню» /
-  «на jbl white») и «что играет» — планы cline 2026-11-11-switch-music-phrase /
-  2026-11-11-web-local-commands ждут шаг 6 (HTTP-смоки пройдены 11.11).
+  «v1.13 (2026-11-12)».
+- **Сделано (12.11 13:5x)**: версии 1.13 ×3 синхронно (pom.xml /
+  install.xml / ClientProcess.pm jarName); mvn -DskipTests package после
+  rm -rf target; fat-jar 1.13 → lms-plugin/…/Bin/ (+ правило в .gitignore:
+  бинарь в git не идёт); assembly-zip → dist-lms/lyrion-yandex-bridge-v1.13.zip
+  (структура = v1.12 + Bin/setup-piper.sh; install.xml внутри = 1.13 —
+  проверено распаковкой); sha1 681a965641976b4c8c5917148fdd964c115a5a63 →
+  repo.xml (version/sha/url → v1.13); CHANGELOG: дата релиза, keepalive
+  перенесён в v1.14; скан секретов git grep — чисто; commit.
+- **E2E на .131 ПРОПУЩЕН по решению владельца** (12.11: «131 нам не нужен,
+  релиз только в гит делаем, на 131 обновлю сам»). Функциональность подтверждена
+  владельцем на живом коде того же source (деплои 10–11.11 + «всё работает,
+  протестировано»). Обновление .131 (владелец): LMS сам предложит после пуша
+  repo.xml, либо zip вручную; jar станет 1.13 — ClientProcess.pm ждёт ровно это
+  имя, старый 1.12-jar из Bin/ удалить; после root-scp → chown (грабля 07.10).
+- **РЕШЕНО**: (1) keepalive-пинги WS — НЕ в v1.13 (не реализан), TODO v1.14
+  (инцидент зомби-WS 08.11, activeContext ниже); (2) голосовые тесты
+  ПОДТВЕРЖДЕНЫ владельцем 12.11 — switch_room и «что играет» работают (планы
+  cline 2026-11-11-switch-music-phrase / -web-local-commands шаг 6 закрыты).
 - **Деплой-рецепты (проверены 11.11)**: рестарт моста — pkill -f 'bridg[e]'
   отдельной чистой командой (шаблон с [e], иначе ssh-сессия самоубивается —
   имя jar в cmdline); после root-scp → chown -R squeezeboxserver:nogroup +
   find -user root пусто (грабля 07.10 — автообновление плагина); LMS-плагин
   респаунит клиента сам.
-- **README**: разделы v1.13 (локальные фразы, TTS, страницы) уже дописаны;
-  на релизе — дата в CHANGELOG, пробежать глазами меню/страницы.
+- **README**: разделы v1.13 (локальные фразы, TTS, страницы) дописаны ранее;
+  дата релиза в CHANGELOG проставлена.
+- **ДАЛЬШЕ (порядок критичен)**: владелец создаёт GitHub Release v1.13
+  (tag v1.13; asset = dist-lms/lyrion-yandex-bridge-v1.13.zip, имя файла НЕ
+  менять — на него указывает repo.xml) → Cline пушит main → проверка raw
+  repo.xml (version 1.13 / sha 681a9656… / asset-URL 302) → план DONE.
 
 
 ## 08.11 (10:40) РЕШЕНО: устройства пропали из УДЯ — «зомби-WS» после рестарта облака
