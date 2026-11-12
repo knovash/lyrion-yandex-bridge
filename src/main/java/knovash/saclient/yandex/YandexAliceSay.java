@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 
 import static knovash.saclient.web.SettingsVoice.KeyString.VOICE_STRING_YA_COOKIES;
 import static knovash.saclient.web.SettingsVoice.KeyToggle.VOICE_TOGGLE_SAY_ALICE;
+import static knovash.saclient.web.SettingsVoice.KeyToggle.VOICE_TOGGLE_TTS_PIPER;
 
 /*
  * Озвучка произвольного текста НАСТОЯЩИМ голосом Алисы на колонке.
@@ -43,7 +44,9 @@ public class YandexAliceSay {
             return "ALICE ok";
         } catch (Exception e) {
             log.error("ALICE SAY ошибка: " + e.getMessage());
-            String p = piper(text);
+            // v1.13.1: фолбэк на Piper только когда движок Piper включён
+            // (на слабых боксах piper не запускается — не тратим 60с и не рискуем OOM)
+            String p = VOICE_TOGGLE_TTS_PIPER.value ? piper(text) : null;
             if (p != null) {
                 log.info("фолбэк на Piper (причина: " + e.getMessage() + ")");
                 return p; // чистый "PIPER <url>" — скрипт скачает и сыграет
@@ -74,38 +77,54 @@ public class YandexAliceSay {
         return sb.toString();
     }
 
-    private static Map<String, String> headers() {
+    private static final String UA_BROWSER =
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
+
+    // v1.13.1: браузерный UA на всех m/-API запросах, Origin/Referer на мутациях
+    private static Map<String, String> headers(boolean mutation) {
         String cookies = VOICE_STRING_YA_COOKIES.value;
         if (cookies == null || cookies.isBlank() || "---".equals(cookies))
             throw new IllegalStateException("cookies не заданы (Настройки голоса)");
         Map<String, String> h = new HashMap<>();
         h.put("Cookie", cookies.trim());
+        h.put("User-Agent", UA_BROWSER);
+        if (mutation) {
+            h.put("Origin", "https://iot.quasar.yandex.ru");
+            h.put("Referer", "https://iot.quasar.yandex.ru/");
+        }
         return h;
     }
 
+    // v1.13.1: паттерн терпим к экранированным кавычкам (\"csrfToken2\":\"…\")
     private static String csrf() {
         if (csrf != null) return csrf;
-        Map<String, String> h = headers();
-        HttpResponseResult r = httpClient.doGet("https://yandex.ru/iot", h);
+        HttpResponseResult r = httpClient.doGet("https://yandex.ru/iot", headers(false));
         if (!r.isSuccess()) throw new IllegalStateException("yandex.ru/iot HTTP " + r.getStatusCode());
-        Matcher m = Pattern.compile("\"csrfToken2\":\"(.+?)\"").matcher(r.getBody());
+        Matcher m = Pattern.compile("csrfToken2\\\\?\"\\s*:\\s*\\\\?\"([^\"\\\\]+)").matcher(r.getBody());
         if (!m.find()) throw new IllegalStateException("csrfToken2 не найден (cookies живы?)");
         csrf = m.group(1);
+        log.info("ALICE csrf обновлён (длина " + csrf.length() + ")");
         return csrf;
     }
 
+    // v1.13.1: GET — без csrf (достаточно cookies), мутации — с csrf;
+    // 403 -> бэкофф-ретраи с обновлением csrf (антифрод / уставший токен)
     private static HttpResponseResult request(String method, String url, String body) {
-        HttpResponseResult r = exec(method, url, body);
-        if (r.getStatusCode() == 403) { // протух csrf — сброс и повтор
-            csrf = null;
+        HttpResponseResult r = null;
+        for (int attempt = 1; attempt <= 3; attempt++) {
             r = exec(method, url, body);
+            if (r.getStatusCode() != 403) return r;
+            log.warn("ALICE 403 на " + method + " " + url + " (попытка " + attempt + "/3) — обновляю csrf, пауза 1.5с");
+            csrf = null;
+            try { Thread.sleep(1500); } catch (InterruptedException e) { Thread.currentThread().interrupt(); return r; }
         }
         return r;
     }
 
     private static HttpResponseResult exec(String method, String url, String body) {
-        Map<String, String> h = headers();
-        h.put("x-csrf-token", csrf());
+        boolean mutation = "PUT".equals(method) || "POST".equals(method);
+        Map<String, String> h = headers(mutation);
+        if (mutation) h.put("x-csrf-token", csrf());
         if ("PUT".equals(method)) return httpClient.doPut(url, body, h);
         if ("POST".equals(method)) return httpClient.doPost(url, body == null ? "{}" : body, h);
         return httpClient.doGet(url, h);

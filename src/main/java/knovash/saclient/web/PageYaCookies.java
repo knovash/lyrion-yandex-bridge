@@ -31,7 +31,7 @@ public class PageYaCookies {
                         "<form method='POST' action='/form'>" +
                         "<input type='hidden' name='action' value='ya_cookies_save'>" +
                         "<textarea name='ya_cookies' rows='3' cols='90' " +
-                        "placeholder='Session_id=...; yandexuid=...'>" +
+                        "placeholder='Скопируйте заголовок Cookie целиком из F12 → Network'>" +
                         (set ? escape(current.trim()) : "") + "</textarea><br>" +
                         "<button type='submit'>Сохранить</button>" +
                         " <small>(применяется сразу, рестарт не нужен; чтобы сбросить — очистите поле)</small>" +
@@ -50,11 +50,15 @@ public class PageYaCookies {
                         "<p>1. Откройте <b>yandex.ru</b> в браузере (Chrome/Firefox) и войдите в свой аккаунт.</p>" +
                         "<p>2. Нажмите <b>F12</b> → вкладка <b>Application</b> (Хранение) → <b>Cookies</b> → " +
                         "<b>https://yandex.ru</b>.</p>" +
-                        "<p>3. Найдите строку <b>Session_id</b> и скопируйте её значение (длинная строка вида " +
-                        "<code>№:1647…</code>). Рядом возьмите и <b>yandexuid</b>.</p>" +
-                        "<p>4. Вставьте в поле выше в формате: <code>Session_id=значение; yandexuid=значение</code>.</p>" +
-                        "<p><small>Альтернатива: F12 → Network → любой запрос к yandex.ru → заголовок Cookie → " +
-                        "скопировать целиком.</small></p>" +
+                        "<p>3. Перейдите на вкладку <b>Network</b> (Сеть), обновите страницу (F5) и кликните " +
+                        "первый запрос к <b>yandex.ru</b>.</p>" +
+                        "<p>4. В <b>Request Headers</b> найдите заголовок <b>Cookie:</b> и скопируйте его " +
+                        "<b>целиком</b> (все поля: Session_id, yandexuid, yandex_login и остальные).</p>" +
+                        "<p>5. Вставьте скопированное в поле выше — как есть, целиком.</p>" +
+                        "<p><b>Важно:</b> нужен именно полный заголовок Cookie. Только Session_id+yandexuid " +
+                        "недостаточно: Яндекс возвращает 403 на изменение сценариев.</p>" +
+                        "<p><small>Сессия живёт долго; после смены пароля или «Выйти на всех устройствах» — " +
+                        "повторите шаги.</small></p>" +
                         "</fieldset>" +
 
                         "<fieldset><legend><b>Безопасность</b></legend>" +
