@@ -1,4 +1,48 @@
 # Active Context — что сейчас
+## 12.11 (15:48) ТЕСТ v1.13 НА ЧИСТОМ LMS (.130) — НАЙДЕНЫ ПРОБЛЕМЫ ГОЛОСА; БЭКЛОГ v1.14 (7 блоков) записан в CHANGELOG
+- **Установка v1.13 на чистый бокс .130 (orangepizero, LMS 9.1.1 armhf,
+  Java 11.0.32) — чистая**: все файлы squeezeboxserver:nogroup (грабля 07.10
+  не сработала), jar 1.13 + setup-piper.sh на месте. 10 рестартов клиента —
+  все ручные (сохранения настроек/движок/LMS-рестарт 11:22), «crashed» = 0.
+  OAuth/облако/Spotify/5 плееров (HomePod1/2/3, Radiotechnika, JBL white)/
+  УДЯ-устройства — ок. Доступ: root@192.168.1.130 (пароль у владельца).
+- **Проблемы чистой установки (ГОЛОС)**:
+  1. `setup-piper.sh` умер вместе с рестартом LMS (запущен фоном от плагина
+     в 11:19, LMS рестартовал 11:22) НА САМОПРОВЕРКЕ: piper-install.log
+     обрывается на «самопроверка: синтез…», финальные шаги (прописать пути,
+     авто-рестарт) НЕ выполнены → в settings_voice.properties
+     VOICE_STRING_PIPER_BIN=piper (голое имя, в PATH squeezeboxserver нет) и
+     VOICE_STRING_PIPER_VOICE= (пусто). Файлы при этом скачаны корректно:
+     <datadir>/piper/piper/piper (755) + ru_RU-irina-medium.onnx (63МБ).
+  2. Выходной каталог TTS `/home/music` на чистой системе НЕ существует;
+     владелец создал руками от root (нужно chown squeezeboxserver:nogroup —
+     известная грабля «piper молча exit 0 при отказе записи»).
+  3. `settings_voice.properties` права 644, там ЛОКАЛЬНО cookies Яндекса
+     (полная сессия аккаунта) → рекомендовано chmod 600.
+  4. «Голос Алисы не говорит» на .130 = НЕ ПРИШЛО ни одного voice_say-запроса
+     (движок VOICE_TOGGLE_SAY_ALICE переключён корректно, cookies считаны);
+     станции с локальными фразами смотрят на .131 (офлайн) — их запросы
+     уходят мимо .130. Ручной тест: /cmd?action=voice_say&alice=<quasar_id>&
+     value=<urlencode>. ALICEID хранится в per-host конфиге whatplays станций.
+  5. Косметика: TZ бокса UTC (логи -3ч от МСК; LMS внутри показывает Москву;
+     рекомендация timedatectl set-timezone Europe/Moscow); в момент настройки
+     IPv6 «Network is unreachable» к api.iot.yandex.net (нет v6-маршрута,
+     прошло само); разовая гонка «переключение движка → рестарт → форма
+     (fail)×6» — не баг.
+- **Ручные инструкции владельцу выданы** (12.11): chown /home/music, пути
+  Piper через веб /settings_voice (bin = <datadir>/piper/piper/piper, voice =
+  <datadir>/piper/ru_RU-irina-medium.onnx), тесты: piper напрямую su-ом от
+  squeezeboxserver, /cmd tts_file, /cmd speak (room urlencode), /cmd
+  voice_say с ALICEID. СТАТУС ручных правок НЕ ПРОВЕРЕН: бокс .130 выключен
+  (No route to host на 15:48). Проверить при следующем включении.
+- **БЭКЛОГ v1.14 (7 блоков) ЗАПИСАН в CHANGELOG** (раздел «v1.14 (бэклог)»):
+  cookies валидация+QR-логин; Reinstall Piper (setsid+pid); проверка путей в
+  Voice-блоке; пути/права (дефолт вывода TTS в datadir); кнопки теста голоса;
+  страница «Рутованные станции» (статусы/управление/смена IP/диагностика;
+  агент+heartbeat — целевая архитектура, SSH — быстрый шаг). Старт v1.14 — по
+  решению владельца. Кандидаты в той же очереди: keepalive WS (перенесён из
+  v1.13), QR-логин.
+
 ## 12.11 (14:0x) RELEASE v1.13 ОПУБЛИКОВАН (Release + пуш main e9852e3..00f7aa1, проверки пройдены)
 - **Что в v1.13 (всё в релизе)** — кратко: voice_say (голос настоящей
   Алисы: m/-API cookies+csrf, сценарий «SA voice <id>», фолбэк Piper), tts_file,
