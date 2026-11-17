@@ -147,6 +147,14 @@ input-события → btkeys.sh → HTTP `/cmd` клиента sa_client (у�
   ЖДЁМ от владельца: rdesc РЕАЛЬНОГО G20S с ноутбука (0005:1D5A:C081.*, команды в
   bt-lite/06) → файл 07 → Алексею на дифф с эталоном.
 
+- **17.11 (вечер, ноутбук)**: G20S PRO спарен с ноутбуком (свежая пара, Connected), снят
+  и декодирован его Report Descriptor (bt-lite/07-g20s-rdesc.txt + 10-descriptor-decoded.md):
+  id1=клавиатура 8Б+LED-out 1Б (LogMax 0xFF), id3=consumer ARRAY 2×16 UsageMax 0x29C,
+  id2=мышь с wheel (LogMin 0x81!), id1E=vendor 20Б+out, id5=SystemControl(pwr/sleep).
+  ⚠ Найдено расхождение: пульт шлёт id3 ТРИ байта при объявленных ЧЕТЫРЁХ (захват «41 00 00»).
+  Профиль — ATV-класс, почти клон blercatv-эталона (UsageMax 0x29C совпадает). Пакет bt-lite
+  готов к отправке Алексею. Станция .122: BT выключен на время ноутбука (hciconfig down) — восстановить!
+
 ## Дальше (план)
 1. **Откат Entware bluez на 5.78**: `opkg list | grep bluez` (есть ли версия), иначе кросс-
    компиляция статик aarch64 5.78 (по образцу alice_ipc_mon). Повторить «свежая пара → dd event-узла».
