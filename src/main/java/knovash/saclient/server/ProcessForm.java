@@ -66,6 +66,12 @@ public class ProcessForm {
                 case "station_scan_add": // добавить найденный сканом ip ("*" = все с рутом)
                     PageStations.scanAdd(context, bodyMap.get("station_ip"));
                     break;
+                case "station_add": // добавить ip вручную (однострочная форма, другая подсеть)
+                    PageStations.scanAdd(context, bodyMap.get("station_ip"));
+                    break;
+                case "station_remove": // убрать станцию из списка (на станции ничего не делается)
+                    PageStations.remove(context, bodyMap.get("station_ip"));
+                    break;
                 case "station_service": // вкл/выкл сервиса на станции (sq|ap|wp)
                     PageStations.service(context, bodyMap.get("station_ip"), bodyMap.get("station_service"), bodyMap.get("station_state"));
                     break;

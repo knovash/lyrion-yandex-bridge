@@ -104,6 +104,9 @@ OTA, squeezelite, слушатель whatplays и (опционально) AirPl
 `squeezelite.sh <IP> --name "<Имя>"` → `local_commands.sh <IP> --room <Комната>
 --aliceid <UUID> --player "<Имя>"` → `airplay.sh <IP>` (опционально).
 Payload-бинарники (dropbear, squeezelite, alice_ipc_mon, tcpcat) уже в репозитории.
+Скачать весь комплект одним архивом для самостоятельной установки с ноутбука:
+[`alice-root-wizard.zip`](https://raw.githubusercontent.com/knovash/lyrion-yandex-bridge/main/alice-root-wizard.zip)
+(та же ссылка — на странице «Рутованные станции» клиента; обновляется вместе с репозиторием).
 
 > ⚠️ Рут — на свой риск: сброс колонки отвязывает аккаунт, неудачная прошивка
 > может окирпичить устройство. Нужна прошивка `yandexmicro 0.369.1.46…` (.46);

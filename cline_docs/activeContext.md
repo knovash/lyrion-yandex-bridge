@@ -1,4 +1,18 @@
 # Active Context — что сейчас
+## 17.11 (13:1x) СДЕЛАНО: v1.14.1 — zip рут-комплекта в гите + ссылка + упрощение ввода
+- alice-root-wizard.zip в корне репо: 3 886 385 B, 30 записей, sha256
+  9826f3d7970c4c2a426f282fd7bfd23c37c21c5089f562194086ca47160c685d. Raw-URL стабилен:
+  raw.githubusercontent.com/knovash/lyrion-yandex-bridge/main/alice-root-wizard.zip
+- /stations: ссылка «Скачать скрипты получения рут (zip)» + manual.txt; textarea убран;
+  «удалить» per station (confirm, station_remove); ручное добавление одной строкой
+  (station_add → scanAdd с extractIp-валидацией); пароль отдельной формой (save() без
+  stations_list список не трогает — обратная совместимость сохранена).
+- Фикс ROOM: scriptStatus режет `[[:space:]]*#.*$` до снятия кавычек (проверено:
+  «Гараж' # комментарий…» → «Гараж», «Душ» → «Душ»). mvn package OK.
+- Регенерация zip: cd alice-root-wizard && zip -rq ../alice-root-wizard.zip . (в CHANGELOG).
+- Релиз 1.14.1 — по решению владельца (jar уже собран в target/, версии пока 1.14 —
+  поднимем при релизе).
+
 ## 17.11 (12:3x) RELEASE v1.14 ОПУБЛИКОВАН (asset sha сверен, repo.xml=1.14)
 - Владелец создал GitHub Release v1.14; Cline скачал asset (6 329 977 B) и сверил sha1
   (fe2fb507b35ea737dd225edd8ade801c8bbc3894 — бит-в-бит = repo.xml). Пуш main

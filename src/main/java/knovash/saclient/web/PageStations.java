@@ -53,6 +53,12 @@ public class PageStations {
     private static final Pattern NEIGH_RE = Pattern.compile("^(\\d+\\.\\d+\\.\\d+\\.\\d+).*lladdr\\s+([0-9a-fA-F:]{17})");
     private static final DateTimeFormatter TS = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
+    /** Дистрибутив рут-комплекта: zip в корне репо, raw-URL стабилен между релизами. */
+    private static final String ROOT_ZIP_URL =
+            "https://raw.githubusercontent.com/knovash/lyrion-yandex-bridge/main/alice-root-wizard.zip";
+    private static final String ROOT_MANUAL_URL =
+            "https://raw.githubusercontent.com/knovash/lyrion-yandex-bridge/main/alice-root-wizard/manual.txt";
+
     public static Context action(Context context) {
         render(context);
         return context;
@@ -63,7 +69,6 @@ public class PageStations {
         JSONArray stations = root.optJSONArray("stations");
         String pass = root.optString("sshPassword", "");
 
-        StringBuilder list = new StringBuilder();
         StringBuilder rows = new StringBuilder();
         for (int i = 0; stations != null && i < stations.length(); i++) {
             JSONObject st = stations.optJSONObject(i);
@@ -72,7 +77,6 @@ public class PageStations {
             String name = st.optString("name", "");
             if (name.isEmpty() || "?".equals(name)) name = "станция " + ip;
             int port = st.optInt("port", 2222);
-            list.append(ip).append('\n');
             rows.append("<tr><td>").append(escape(name))
                     .append("</td><td><code>").append(escape(ip)).append(':').append(port).append("</code></td>")
                     .append(svcCell(st.optJSONObject("services"), "sq", ip, "squeezelite"))
@@ -80,9 +84,10 @@ public class PageStations {
                     .append(svcCell(st.optJSONObject("services"), "wp", ip, "лок.команды"))
                     .append(actionCell("station_check", ip, "Проверить"))
                     .append(actionCell("station_repoint", ip, "Перенацелить сюда"))
+                    .append(deleteCell(ip))
                     .append("</tr>");
         }
-        if (rows.length() == 0) rows.append("<tr><td colspan='7'>станции не заданы — введите ip ниже или нажмите «Найти»</td></tr>");
+        if (rows.length() == 0) rows.append("<tr><td colspan='8'>станции не заданы — нажмите «Найти» или добавьте вручную ниже</td></tr>");
 
         String scanBlock = lastScanRows.isEmpty() ? "" :
                 "<h3>Скан сети (" + escape(lastScanAt) + ")</h3>" +
@@ -101,7 +106,7 @@ public class PageStations {
                         "<b>«Перенацелить сюда»</b> — станция перепропишет адреса на этот сервер и перезапустит " +
                         "сервисы (если IP уже этот — просто рестарт). Ничего автоматического не происходит.</p>" +
                         "<table border='1' cellpadding='4' cellspacing='0'>" +
-                        "<tr><th>Станция</th><th>Адрес</th><th>squeezelite</th><th>AirPlay</th><th>лок.команды</th><th></th><th></th></tr>" + rows + "</table>" +
+                        "<tr><th>Станция</th><th>Адрес</th><th>squeezelite</th><th>AirPlay</th><th>лок.команды</th><th></th><th></th><th></th></tr>" + rows + "</table>" +
                         "<form method='POST' action='/form' style='display:inline'><input type='hidden' name='action' value='station_check'>" +
                         "<input type='hidden' name='station_ip' value='ALL'><button type='submit'>Проверить ВСЕ</button></form> " +
                         "<form method='POST' action='/form' style='display:inline'><input type='hidden' name='action' value='station_repoint'>" +
@@ -109,18 +114,24 @@ public class PageStations {
                         (lastResult.isEmpty() ? "" :
                                 "<h3>Результат последней операции</h3><pre>" + escape(lastResult) + "</pre>") +
                         "</fieldset>" +
-                        "<fieldset><legend><b>Список станций</b></legend>" +
-                        "<form method='POST' action='/form'>" +
-                        "<input type='hidden' name='action' value='stations_save'>" +
-                        "<p>Сюда введите ip ваших станций, имеющих рут, для их поиска и подключения:</p>" +
-                        "<textarea name='stations_list' rows='5' cols='40'>" + escape(list.toString().trim()) + "</textarea><br>" +
-                        "<p>SSH-пароль root станций: <input type='text' name='ssh_password' value=\"" + escape(pass) + "\" size='20'> " +
-                        "<small>(хранится в data/stations.json на этом сервере)</small></p>" +
-                        "<button type='submit'>Сохранить</button></form>" +
+                        "<fieldset><legend><b>Поиск и добавление станций</b></legend>" +
                         "<form method='POST' action='/form' style='display:inline'><input type='hidden' name='action' value='station_scan'>" +
                         "<button type='submit'>Найти станции с рутом в сети</button></form> " +
-                        "<small>Скан подсети: :2222 открыт = рут (ssh), :5555 = adb; остальные живые хосты — по MAC.</small>" +
+                        "<small>Скан подсети: :2222 открыт = рут (ssh), :5555 = adb; остальные живые хосты — по MAC.</small><br><br>" +
+                        "<form method='POST' action='/form' style='display:inline'><input type='hidden' name='action' value='station_add'>" +
+                        "Добавить вручную (скан не видит — другая подсеть): " +
+                        "<input type='text' name='station_ip' size='16' placeholder='192.168.1.115'> " +
+                        "<button type='submit'>Добавить</button></form>" +
                         scanBlock +
+                        "<h3>Доступ</h3>" +
+                        "<form method='POST' action='/form'>" +
+                        "<input type='hidden' name='action' value='stations_save'>" +
+                        "SSH-пароль root станций: <input type='text' name='ssh_password' value=\"" + escape(pass) + "\" size='20'> " +
+                        "<small>(хранится в data/stations.json на этом сервере)</small> " +
+                        "<button type='submit'>Сохранить</button></form>" +
+                        "<p><b>Нет рута на станции?</b> Скачайте комплект для самостоятельной установки с ноутбука (Linux): " +
+                        "<a href='" + ROOT_ZIP_URL + "'>Скачать скрипты получения рут (zip)</a> — " +
+                        "распакуйте и действуйте по <a href='" + ROOT_MANUAL_URL + "'>manual.txt</a>.</p>" +
                         "</fieldset>";
 
         context.bodyResponse = PageIndex.pageOuter(inner, "Рутованные станции", "Рутованные станции");
@@ -129,31 +140,35 @@ public class PageStations {
 
     // ==================== операции (из ProcessForm) ====================
 
-    /** Сохранение списка: только IP по одному в строке (старый формат «имя;ip;порт» тоже принимается). */
+    /** Сохранение: пароль всегда; список — только если пришёл stations_list (textarea убрана,
+     *  форма пароля отдельная; старые клиенты с textarea тоже работают). */
     public static void save(Map<String, String> body) {
-        String list = body.getOrDefault("stations_list", "");
         String pass = body.getOrDefault("ssh_password", "");
         JSONObject root = read();
-        JSONArray old = root.optJSONArray("stations");
-        JSONArray arr = new JSONArray();
-        for (String line : list.split("\\r?\\n")) {
-            String ip = extractIp(line.trim());
-            if (ip == null) continue;
-            JSONObject st = findByIp(old, ip);
-            if (st == null) {
-                st = new JSONObject().put("name", "станция " + ip).put("port", 2222);
+        String savedList = "";
+        if (body.containsKey("stations_list")) {
+            JSONArray old = root.optJSONArray("stations");
+            JSONArray arr = new JSONArray();
+            for (String line : body.get("stations_list").split("\\r?\\n")) {
+                String ip = extractIp(line.trim());
+                if (ip == null) continue;
+                JSONObject st = findByIp(old, ip);
+                if (st == null) {
+                    st = new JSONObject().put("name", "станция " + ip).put("port", 2222);
+                }
+                st.put("ip", ip);
+                st.put("port", st.optInt("port", 2222));
+                String name = st.optString("name", "");
+                if (name.isEmpty() || "?".equals(name)) st.put("name", "станция " + ip);
+                arr.put(st);
             }
-            st.put("ip", ip);
-            st.put("port", st.optInt("port", 2222));
-            String name = st.optString("name", "");
-            if (name.isEmpty() || "?".equals(name)) st.put("name", "станция " + ip);
-            arr.put(st);
+            root.put("stations", arr);
+            savedList = " Список станций сохранён (" + arr.length() + " шт.).";
         }
-        root.put("stations", arr);
         root.put("sshPassword", pass);
         write(root);
-        lastResult = "Список станций сохранён (" + arr.length() + " шт.). Имена и статусы подтянутся после «Проверить».";
-        log.info("STATIONS saved: " + arr.length());
+        lastResult = "SSH-пароль сохранён." + savedList + " Имена и статусы подтянутся после «Проверить».";
+        log.info("STATIONS saved: password" + (savedList.isEmpty() ? "" : " + list"));
     }
 
     /** Проверка (check — теперь полный статус сервисов) или перенастройка (repoint). Ключ — ip. */
@@ -251,7 +266,7 @@ public class PageStations {
     static String scriptStatus() {
         return "MAC=$(cat /sys/class/net/wlan0/address 2>/dev/null)\n"
                 + "SERIAL=$(tr ' ' '\\n' </proc/cmdline | grep androidboot.serialno | cut -d= -f2)\n"
-                + "ROOM=$(sed -n \"s/^ROOM=//p\" /data/opt/bin/whatplays.sh 2>/dev/null | head -1 | sed \"s/^'//; s/'$//\")\n"
+                + "ROOM=$(sed -n \"s/^ROOM=//p\" /data/opt/bin/whatplays.sh 2>/dev/null | head -1 | sed \"s/[[:space:]]*#.*$//; s/^'//; s/'$//\")\n"
                 + "echo \"MAC=$MAC\"\n"
                 + "echo \"SERIAL=$SERIAL\"\n"
                 + "echo \"ROOM=$ROOM\"\n"
@@ -406,7 +421,7 @@ public class PageStations {
         return context;
     }
 
-    /** Добавить ip из результатов скана ("*" = все найденные с рутом). */
+    /** Добавить ip из результатов скана или вручную ("*" = все найденные с рутом). */
     public static Context scanAdd(Context context, String ipOrAll) {
         JSONObject root = read();
         JSONArray stations = root.optJSONArray("stations");
@@ -418,8 +433,9 @@ public class PageStations {
                 ? new ArrayList<>(lastScanRooted) : List.of(ipOrAll == null ? "" : ipOrAll);
         StringBuilder out = new StringBuilder();
         int added = 0;
-        for (String ip : add) {
-            if (ip.isBlank() || findByIp(stations, ip) != null) continue;
+        for (String raw : add) {
+            String ip = extractIp(raw == null ? "" : raw.trim());
+            if (ip == null || findByIp(stations, ip) != null) continue;
             stations.put(new JSONObject().put("name", "станция " + ip).put("ip", ip).put("port", 2222));
             out.append("добавлена ").append(ip).append(" (имя подтянется после «Проверить»)\n");
             added++;
@@ -427,6 +443,31 @@ public class PageStations {
         write(root);
         lastResult = "Добавлено станций: " + added + "\n" + out;
         log.info("STATIONS scanAdd: +" + added);
+        render(context);
+        return context;
+    }
+
+    /** Убрать станцию из списка (на самой станции ничего не делается). */
+    public static Context remove(Context context, String ip) {
+        JSONObject root = read();
+        JSONArray stations = root.optJSONArray("stations");
+        JSONArray arr = new JSONArray();
+        int removed = 0;
+        for (int i = 0; stations != null && i < stations.length(); i++) {
+            JSONObject st = stations.optJSONObject(i);
+            if (st == null) continue;
+            if (ip != null && ip.equals(st.optString("ip"))) {
+                removed++;
+                continue;
+            }
+            arr.put(st);
+        }
+        root.put("stations", arr);
+        write(root);
+        lastResult = removed > 0
+                ? "Станция " + ip + " убрана из списка (на самой станции ничего не удалено)"
+                : "станция не найдена: " + ip;
+        log.info("STATIONS remove " + ip + ": " + removed);
         render(context);
         return context;
     }
@@ -485,6 +526,16 @@ public class PageStations {
                 "<input type='hidden' name='action' value='" + action + "'>" +
                 "<input type='hidden' name='station_ip' value='" + escape(ip) + "'>" +
                 "<button type='submit'>" + label + "</button></form></td>";
+    }
+
+    /** Кнопка удаления станции из списка (только из stations.json, с подтверждением). */
+    private static String deleteCell(String ip) {
+        return "<td><form method='POST' action='/form' style='display:inline'>" +
+                "<input type='hidden' name='action' value='station_remove'>" +
+                "<input type='hidden' name='station_ip' value='" + escape(ip) + "'>" +
+                "<button type='submit' style='font-size:x-small'" +
+                " onclick=\"return confirm('Убрать " + escape(ip) + " из списка? (на станции ничего не удаляется)')\">" +
+                "удалить</button></form></td>";
     }
 
     // ==================== разное ====================
