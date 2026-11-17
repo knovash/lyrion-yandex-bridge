@@ -1,0 +1,23 @@
+#!/bin/sh
+# squeezelite (нативный LMS-плеер) на Станции Лайт 1.
+# Статик aarch64 (ядро 64-бит) поверх 32-бит userland — работает.
+# Сервер LMS: 192.168.1.137. Выход: ALSA default (plug->dmix 48кГц, Алиса поверх).
+S=/data/opt/bin/squeezelite
+N="Yandex Lite 2 SL"
+# статик alsa-lib собрана с prefix=/root/alsastatic — на колонке его нет,
+# поэтому явно указываем системный alsa.conf (плагины dmix/softvol/plug встроены)
+export ALSA_CONFIG_PATH=/usr/share/alsa/alsa.conf
+start() {
+  [ -x $S ] || return 0
+  pidof squeezelite >/dev/null 2>&1 && return 0
+  i=0
+  while [ $i -lt 120 ] && ! ip -4 addr show wlan0 2>/dev/null | grep -q inet; do sleep 1; i=$((i+1)); done
+  setsid $S -n "$N" -s 192.168.1.137 -o default -C 1 > /tmp/squeezelite.log 2>&1 < /dev/null &
+}
+stop() { killall squeezelite 2>/dev/null; }
+case "$1" in
+  start) start ;;
+  stop) stop ;;
+  restart) stop; sleep 2; start ;;
+esac
+exit 0

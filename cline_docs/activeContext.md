@@ -1,4 +1,23 @@
 # Active Context — что сейчас
+## 17.11 СДЕЛАНО: alice-root-wizard влит в sa_client — правки скриптов + README
+- Владелец перенёс ~/IdeaProjects/alice-root-wizard → sa_client/alice-root-wizard (в git untracked,
+  закоммитит владелец). Старая копия ~/IdeaProjects/alice-root-wizard НЕ удалялась (решение за владельцем).
+- Правки по ревью 17.11 (Java-клиент НЕ менялся):
+  1) save_to_payloads.sh: grab() — 0-байтный файл = обрыв SSH → rm + warn (payload не портится).
+  2) root.sh: + command -v ssh; проверки payload -f → -s (пустые бинарники отсекаются).
+  3) local_commands.sh: флаг --player "<имя LMS-плеера>" → sed announce() в whatplays.sh
+     (замена хардкода "Yandex Lite 2 SL"), проверка подстановки grep -F; -s проверки; heredoc обновлён.
+  4) squeezelite.sh: -s проверки. S97whatplays stop: + kill maind --cli. SHA256SUMS перегенерён, sha -c OK.
+  5) manual.txt: убран manual_fast.txt (его не было), 7 путей → sa_client/alice-root-wizard,
+     задокументирован --player (раздел 5, announce, чек-лист), версия 2026-11-17.
+  6) README.md: новый раздел «🔓 Рут Яндекс Станции Лайт — alice-root-wizard/» перед «Локальными
+     фразами» (таблица возможностей рута + конвейер + warning) и подраздел «Почему локальные фразы
+     лучше голосового навыка Раз Два» (таблица: команда/скорость/интернет/приватность/доступность/
+     ответ/арбитраж/управление/бонусы).
+- Валидация: bash -n все *.sh + sh -n S97whatplays OK; симуляция --player: announce() заменился,
+  синтаксис whatplays после sed валиден; без --player дефолт не трогается (обратная совместимость).
+
+
 ## 12.11 (21:0x) RELEASE v1.13.1 ОПУБЛИКОВАН (asset sha сверен, пуш main, repo.xml=1.13.1)
 - Владелец создал GitHub Release v1.13.1; Cline скачал asset и сверил sha1
   (921e0f6e… = repo.xml бит-в-бит); пуш main 8bb7988..4f65c7b; raw repo.xml

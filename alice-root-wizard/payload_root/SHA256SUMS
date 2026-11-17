@@ -1,0 +1,4 @@
+e64c14e56cf350b64b5b31fc42c8e6163103c3fa8793b5451703f1430abbc343  ./bin/yandex-noupdate.sh
+86dee7ca66376f9ff463dd3d455e8f248239becdeb46ea8f71886ef1eaa4d3e7  ./ssh/dropbearkey
+374be9f85dabfab4d1f649d553f45e6238973e272b447fd2d81c2ab24a654db2  ./ssh/dropbear
+8e94cf22b4424f28f5d1a0a6d993798c171dfec330efd898ff4beee34386995a  ./init/S99zdropbear

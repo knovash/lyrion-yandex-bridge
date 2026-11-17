@@ -44,3 +44,6 @@ lms-plugin/LyrionYandexBridge/Bin/*.jar
 
 ### Local secrets (tokens!) ###
 config.json
+
+### alice-root-wizard: bin/ внутри payload_* — это бинарники колонок, не Eclipse ###
+!alice-root-wizard/**/bin/

@@ -1,0 +1,618 @@
+================================================================================
+  ИНСТРУКЦИЯ ПО ИСПОЛЬЗОВАНИЮ alice-root-wizard
+  Версия: 2026-11-17 (перенос в sa_client, --player, правки скриптов)
+  Назначение: рут + софт для Яндекс Станции Лайт 1 (yandexmicro, YNDX-00025)
+  Размещение: sa_client/alice-root-wizard/ (репозиторий Lyrion Yandex Bridge)
+================================================================================
+
+СОДЕРЖАНИЕ
+  0. Что это и как устроено
+  1. Структура проекта
+  2. Подготовка: save_to_payloads.sh
+  3. Этап 1 — рут: stand.sh + root.sh
+  4. Этап 2 — squeezelite.sh
+  5. Этап 3 — local_commands.sh
+  6. Этап 4 (опционально) — airplay.sh
+  7. Этап 5 — реестр на .131 (/form)
+  8. Этап 6 — голосовой тест
+  9. Проверка после ребута
+ 10. Типичные ошибки и решения
+ 11. Откат
+ 12. Параметры, дефолты и сводка станций
+ 13. Обновление payload с эталона
+ 14. Справка по фразам whatplays
+ 15. Получение ALICEID через API УДЯ
+
+--------------------------------------------------------------------------------
+0. ЧТО ЭТО И КАК УСТРОЕНО
+--------------------------------------------------------------------------------
+
+6 независимых скриптов + 4 папки payload_* с файлами для копирования на колонку.
+
+    stand.sh              — стенд lite-kit (DNS + HTTPS-сервер прошивки)
+    root.sh               — минимальный рут: dropbear SSH + OTA-off + маркеры
+    squeezelite.sh        — LMS-плеер squeezelite
+    local_commands.sh     — whatplays (голосовые фразы)
+    airplay.sh            — AirPlay 2 (shairport-sync + nqptp + avahi)
+    save_to_payloads.sh   — копирует рабочие файлы с эталона в payload_*
+
+Каждый этап изолирован:
+  - stand.sh + root.sh  — обязательная пара (сначала стенд, потом рут)
+  - squeezelite.sh, local_commands.sh, airplay.sh — независимы
+  - каждый можно перезапускать отдельно
+
+Инфраструктура:
+  LMS + мост sa_client:  192.168.1.131 (LMS :9000, мост :8888)
+  SSH-порт станции:      2222
+  ADB-порт станции:      5555
+  Прошивка для рута:     yandexmicro 0.369.1.46.4778262442.20261013.297
+
+--------------------------------------------------------------------------------
+1. СТРУКТУРА ПРОЕКТА
+--------------------------------------------------------------------------------
+
+    alice-root-wizard/
+    ├── stand.sh
+    ├── root.sh
+    ├── squeezelite.sh
+    ├── local_commands.sh
+    ├── airplay.sh
+    ├── save_to_payloads.sh
+    ├── manual.txt
+    └── payload_*/
+        ├── payload_root/
+        │   ├── SHA256SUMS
+        │   ├── bin/yandex-noupdate.sh
+        │   ├── init/S99zdropbear
+        │   └── ssh/{dropbear, dropbearkey}
+        ├── payload_squeezelite/
+        │   ├── SHA256SUMS
+        │   ├── bin/squeezelite
+        │   └── init/S98squeeze
+        ├── payload_local_commands/
+        │   ├── SHA256SUMS
+        │   ├── bin/{whatplays.sh, alice_ipc_mon, tcpcat}
+        │   └── init/S97whatplays
+        └── payload_airplay/          (опционально)
+            ├── SHA256SUMS
+            ├── init/S99zairplay-lite1
+            └── opt/airplay/
+
+--------------------------------------------------------------------------------
+2. ПОДГОТОВКА: save_to_payloads.sh
+--------------------------------------------------------------------------------
+
+Один раз (и при обновлении эталона):
+
+    cd ~/IdeaProjects/sa_client/alice-root-wizard
+    chmod +x *.sh
+
+    # с эталона .115 (Гостиная, проверен голосом)
+    ./save_to_payloads.sh
+
+    # или с .122 (Розовая)
+    REF_IP=192.168.1.122 ./save_to_payloads.sh
+
+    # или с .113 (Душ, discovery без -s)
+    REF_IP=192.168.1.113 ./save_to_payloads.sh
+
+    # + AirPlay (если есть колонка с AirPlay)
+    AIRPLAY_IP=192.168.1.126 ./save_to_payloads.sh
+
+Проверить результат:
+
+    tree -a -L 3 -h --dirsfirst
+    # ИЛИ
+    find . -type f -not -path './.git/*' -printf '%10s  %p\n' | sort -k2
+
+Ожидаемые размеры:
+  dropbear                ~2.7 МБ
+  dropbearkey             ~2.3 МБ
+  squeezelite             ~2.8 МБ
+  alice_ipc_mon            ~700 КБ
+  tcpcat                   ~700 КБ
+  whatplays.sh             ~14 КБ
+  yandex-noupdate.sh       ~7 КБ
+  S97/S98/S99              ~500-1000 Б
+
+--------------------------------------------------------------------------------
+3. ЭТАП 1 — РУТ: stand.sh + root.sh
+--------------------------------------------------------------------------------
+
+ТРЕБУЕТСЯ:
+  - Ноутбук с Linux, sudo, интернет, в той же LAN
+  - Роутер с доступом к настройкам DNS
+  - Телефон с «Дом с Алисой» на LTE
+  - Колонка Лайт 1 с прошивкой .46 (для рута)
+
+--- ТЕРМИНАЛ 1: stand.sh ---
+
+    cd ~/IdeaProjects/sa_client/alice-root-wizard
+    ./stand.sh
+
+Скрипт:
+  1) поставит зависимости
+  2) освободит :53 (dnsmasq), :80 и :443 (apache2 + старые python lite-kit)
+  3) склонирует lite-kit в ~/lite-kit (если нет)
+  4) найдёт прошивку .46 в ~/tools/lite-kit/firmware/yandexmicro/ и скопирует
+  5) напечатает IP ноутбука и инструкции
+  6) запустит стенд в форграунде
+
+--- РУКАМИ (пока стенд работает) ---
+
+  1. Роутер: DNS 1 = <IP ноутбука из stand.sh>, DNS 2 = пусто.
+     Если роутер требует непустой DNS 2 — вписать тот же IP.
+
+  2. Сброс колонки:
+     - выдернуть питание
+     - вставить обратно
+     - при появлении подсветки зажать ▶‖ 6-10 секунд
+     - дождаться жёлто-зелёного кольца
+
+  3. Привязка через «Дом с Алисой»:
+     - телефон ОТКЛЮЧИТЬ от Wi-Fi (только LTE!)
+     - приложение → «Добавить устройство»
+     - дойти до экрана пароля Wi-Fi → ОСТАНОВИТЬСЯ (пароль не вводить)
+     - ждать 30-60 секунд, колонка возьмёт оффер .46 со стенда
+
+  IP колонки — в логе стенда (терминал 1) или в DHCP-таблице роутера.
+
+  ПРОВЕРКА СТЕНДА (терминал 2):
+    sudo ss -tulpn | grep -E ':(53|80|443) '   # :53 dnsmasq, :80/:443 python3
+    dig @192.168.1.130 quasar.yandex.net +short   # должен вернуть .130
+    curl -sk https://192.168.1.130/ -o /dev/null -w "HTTPS: %{http_code}\n"
+
+--- ТЕРМИНАЛ 2: root.sh (после появления ADB) ---
+
+    cd ~/IdeaProjects/sa_client/alice-root-wizard
+    ./root.sh <IP_колонки>
+
+Скрипт:
+  1) защита от повторного запуска (если SSH уже работает → die)
+  2) adb connect + ожидание ADB root (до 5 мин)
+  3) remount rw
+  4) dropbear + dropbearkey + S99zdropbear
+  5) mkdir /data/opt/bin, /data/opt/etc/dropbear, /etc/dropbear
+  6) OTA-off через yandex-noupdate.sh + постоянная копия в /data/opt/
+  7) маркеры activate_* +i
+  8) remount ro
+  9) timeout 15 adb shell ... start dropbear (не блокируется)
+ 10) проверка SSH с ретраями (5 × 3с)
+
+Ожидаемый результат в конце:
+  [root] SSH работает
+  ГОТОВО. Рут на <IP> есть.
+  ВАЖНО: если yandex-noupdate.sh написал "Перезагрузи колонку" — сделайте adb reboot
+
+--- ОБЯЗАТЕЛЬНО: ребут ---
+
+    adb reboot
+    sleep 90
+
+    ssh -p 2222 root@<IP> "id; ps | grep [d]ropbear"
+    # ожидаем uid=0(root) + dropbear БЕЗ ручного запуска
+
+    ssh -p 2222 root@<IP> "ps | grep -E 'maind --updatesd' || echo 'updatesd НЕ работает (хорошо)'"
+    # ожидаем "updatesd НЕ работает"
+
+    ssh -p 2222 root@<IP> "sh /data/opt/yandex-noupdate.sh status"
+    # ожидаем: launch.json: updatesd убран, applier: заглушён, ota key: подменён,
+    # процессы апдейтера: maind --updatesd не запущен
+
+--- ВЫКЛЮЧИТЬ СТЕНД ---
+
+  Терминал 1: Ctrl+C
+  Роутер: вернуть DNS как было
+
+  Правильная остановка (не просто Ctrl+C):
+    sudo pkill -9 -f 'lite-kit'
+    sudo pkill -9 dnsmasq
+    sudo ss -tulpn | grep -E ':(53|80|443) '   # должно быть пусто
+    sudo systemctl start apache2   # если нужен
+
+--------------------------------------------------------------------------------
+4. ЭТАП 2 — squeezelite.sh (LMS-плеер)
+--------------------------------------------------------------------------------
+
+    cd ~/IdeaProjects/sa_client/alice-root-wizard
+    ./squeezelite.sh <IP_колонки>
+
+Дефолт: LMS=<discovery>, NAME="Yandex Lite 2 SL"
+
+Опции:
+  --lms <HOST:PORT>    явно указать LMS (по умолчанию — discovery)
+  --name "<NAME>"      имя плеера в LMS
+
+ВАЖНО: по умолчанию -s НЕ добавляется. Squeezelite сам находит LMS
+       через broadcast на :3483. Это проверено на .122 и .113.
+       -s нужен только если LMS в другой подсети или broadcast блокируется.
+
+ИМЯ ПЛЕЕРА:
+  Должно совпадать с тем, что ждёт announce() в whatplays.sh.
+  На эталоне .115: [ "$RP" = "Yandex Lite 2 SL" ] && return
+  Если задать своё имя — надо поправить whatplays.sh (см. Этап 3).
+
+Проверка:
+  - в LMS http://192.168.1.131:9000 → плеер '<NAME>' должен появиться
+  - через SSH: cat /proc/$(pidof squeezelite)/cmdline
+
+ГРАБЛИ squeezelite на .113:
+  - При ручном запуске из SSH: "test_open:281 playback open error: No such file
+    or directory" — потому что нет export ALSA_CONFIG_PATH.
+  - В S98squeeze ДОЛЖНА быть строка:
+        export ALSA_CONFIG_PATH=/usr/share/alsa/alsa.conf
+  - Если её нет — добавить, иначе плеер падает.
+
+--------------------------------------------------------------------------------
+5. ЭТАП 3 — local_commands.sh (голосовые фразы)
+--------------------------------------------------------------------------------
+
+    cd ~/IdeaProjects/sa_client/alice-root-wizard
+    ./local_commands.sh <IP_колонки> --room <Имя> --aliceid <UUID>
+
+Параметры:
+  --room <Имя>       ИМЯ комнаты (обязательно) — как в УДЯ, например «Душ»
+  --aliceid <UUID>   UUID колонки (обязательно, см. раздел 15)
+  --player "<Имя>"   имя LMS-плеера станции для announce() — то же, что --name
+                     в squeezelite.sh. По умолчанию не меняется ("Yandex Lite 2 SL")
+  --bridge <H:P>     адрес моста (по умолчанию 192.168.1.131:8888)
+  --lms <H:P>        адрес LMS (по умолчанию 192.168.1.131:9000)
+
+Что делает скрипт:
+  1) ssh connect
+  2) читает MAC wlan0 → SQP
+  3) готовит whatplays.sh локально (sed по LMS/SAC/ROOM/SQP/ALICEID + PLAYER при --player)
+  4) проверяет синтаксис
+  5) remount rw + push бинарников в /data/opt/bin/
+  6) push S97whatplays в /etc/init.d/
+  7) remount ro
+  8) kill старых процессов + очистка /tmp
+  9) ЗАПУСК whatplays через ДВОЙНОЙ setsid (SSH не блокируется)
+ 10) проверка отдельным SSH (процессы + лог)
+ 11) смоук whats_playing_text через мост
+
+КЛЮЧЕВОЙ ПАТТЕРН запуска (busybox sh + SSH):
+
+  busybox sh НЕ отвязывает stdin/stdout от SSH-пайпа при "setsid ... &".
+  Рабочий паттерн — двойной setsid + </dev/null + exit 0:
+
+    ssh host 'setsid sh -c "setsid <CMD>" </dev/null >/dev/null 2>&1 & sleep 1; exit 0'
+
+  Без этого SSH висит после запуска whatplays.
+
+Проверка после запуска:
+  - процессы: супервизор (while :; do ... done), whatplays.sh, maind --cli,
+              alice_ipc_mon, subshell ({whatplays.sh})
+  - лог: === старт v5 === + CLI-сессия cancel: одиночная
+  - смоук вернёт текст «сейчас играет/не играет ...»
+
+ВАЖНО про announce():
+  Если имя плеера (--name в squeezelite.sh) НЕ равно "Yandex Lite 2 SL",
+  проще всего перезапустить local_commands.sh с --player "<то же имя>".
+  Или поправить announce() в /data/opt/bin/whatplays.sh вручную:
+
+    ssh -p 2222 root@<IP> '
+      mount -o remount,rw /
+      sed -i "s#Yandex Lite 2 SL#<ИМЯ_ПЛЕЕРА>#g" /data/opt/bin/whatplays.sh
+      sh -n /data/opt/bin/whatplays.sh
+      sync; mount -o remount,ro /
+      ps | grep -E "whatpl[a]ys\.sh" | awk "{print \$1}" | xargs -r kill -9 2>/dev/null || true
+      sleep 2
+      /etc/init.d/S97whatplays start   # или двойной setsid вручную
+    '
+
+  Без этого announce() не сработает → колонка будет говорить поверх своей музыки
+  (или падать с onTtsPlayerError).
+
+--------------------------------------------------------------------------------
+6. ЭТАП 4 (ОПЦИОНАЛЬНО) — airplay.sh
+--------------------------------------------------------------------------------
+
+    cd ~/IdeaProjects/sa_client/alice-root-wizard
+    ./airplay.sh <IP_колонки>
+
+Требуется:
+  - payload_airplay заполнен (AIRPLAY_IP=<ip> save_to_payloads.sh)
+  - Entware (/data/opt/bin/yse)
+
+Проверка:
+  - iPhone → AirPlay → колонка должна быть в списке
+  - Логи: ssh -p 2222 root@<IP> 'tail -f /tmp/shairport.log /tmp/nqptp.log'
+
+ГРАБЛИ:
+  - Звук только 48кГц (44.1 дрейфует)
+  - avahi host-name должен быть уникальным на каждой колонке
+
+--------------------------------------------------------------------------------
+7. ЭТАП 5 — РЕЕСТР НА .131 (/form)
+--------------------------------------------------------------------------------
+
+    http://192.168.1.131:8888/form
+
+В поле «Станции» добавить строку:
+
+    <Имя>;<IP_колонки>;2222
+
+Например: Душ;192.168.1.113;2222
+
+SSH-пароль root станции.
+
+Нажать «Сохранить» → «Проверить».
+
+Проверка:
+    ssh -p 2222 root@192.168.1.131 'cat data/stations.json'
+
+--------------------------------------------------------------------------------
+8. ЭТАП 6 — ГОЛОСОВОЙ ТЕСТ
+--------------------------------------------------------------------------------
+
+На колонке произнести:
+
+  «Алиса, дальше»           — переключение трека/канала
+  «Алиса, назад»            — предыдущий
+  «Алиса, повтор»           — тумблер повтора
+  «Алиса, рандом»           — тумблер шафла
+  «Алиса, отдельно»         — разгруппировать
+  «Алиса, вместе»           — сгруппировать
+  «Алиса, что играет»       — озвучка текущего трека
+  «Алиса, спотифай <X>»     — включить исполнителя
+  «Алиса, избранное <X>»    — закладка LMS
+
+Параллельно на колонке:
+
+    ssh -p 2222 root@<IP>
+    tail -f /tmp/whatplays.log
+
+Для «дальше» ожидаемое в логе:
+    ФРАЗА: альше · текст: Дальше
+    → cancel (мгновенный)
+    → next (трек/канал, room=<Имя>)
+
+Если ФРАЗА есть, а next нет — проблема с мостом.
+Если ФРАЗА нет — проблема с alice_ipc_mon (IPC не читается).
+
+--------------------------------------------------------------------------------
+9. ПРОВЕРКА ПОСЛЕ РЕБУТА
+--------------------------------------------------------------------------------
+
+    adb reboot
+    sleep 90
+
+    ssh -p 2222 root@<IP> "id"                           # uid=0(root)
+    ssh -p 2222 root@<IP> "ps | grep -E 'whatpl[a]ys|alice_ip[c]|main[d] --cli'"
+    ssh -p 2222 root@<IP> "cat /proc/\$(pidof squeezelite)/cmdline | tr '\\0' ' '"
+
+Ожидаем:
+  - SSH отвечает (S99zdropbear)
+  - whatplays процессы есть (S97whatplays + супервизор)
+  - squeezelite с -n "<NAME>" (без -s, если discovery)
+
+Если что-то не так — перезапустить соответствующий скрипт.
+
+--------------------------------------------------------------------------------
+10. ТИПИЧНЫЕ ОШИБКИ И РЕШЕНИЯ
+--------------------------------------------------------------------------------
+
+А. ADB без root (uid=2000)
+   Причина: прошивка не .46 или оффер не пришёл.
+   Решение: повторить сброс, привязку (телефон на LTE!), проверить DNS.
+
+Б. adb: device offline
+   Причина: колонка не в сети / другой IP / сброс не завершён.
+   Решение: ping <IP>, adb disconnect && adb connect <IP>:5555.
+
+В. stand.sh: "Address already in use" на :53 / :80 / :443
+   Причина: apache2 на :80, старый python lite-kit на :443, системный dnsmasq.
+   Решение: исправленный stand.sh уже освобождает эти порты.
+            Если повторилось — вручную:
+              sudo systemctl stop apache2 dnsmasq
+              sudo pkill -9 apache2 dnsmasq
+              sudo ss -tulpn | grep -E ':(80|443|53) '   # должно быть пусто
+
+Г. SSH молчит после ребута
+   Решение:
+     adb shell "cat /data/opt/etc/dropbear/dropbear.log"
+     adb shell "ls -la /data/opt/etc/dropbear/"
+     adb shell "/etc/init.d/S99zdropbear start"
+
+Д. root.sh зависает на "Старт dropbear"
+   Причина: adb shell не возвращает управление, dropbear держит пайп.
+   Решение: Ctrl+C, adb shell "ps | grep dropbear" — процесс обычно работает.
+            Исправленный root.sh использует timeout 15.
+
+Е. local_commands.sh зависает на "Рестарт whatplays"
+   Причина: setsid ... & через SSH не отвязывает stdin/stdout.
+   Решение: исправленный local_commands.sh использует двойной setsid:
+              setsid sh -c "setsid ..." </dev/null >/dev/null 2>&1 & sleep 1; exit 0
+            Если повторилось — запустить вручную:
+              ssh -p 2222 root@<IP> 'setsid sh -c "setsid /bin/sh -c \"while :; do /data/opt/bin/whatplays.sh >> /tmp/whatplays.err 2>&1; sleep 3; done\"" </dev/null >/dev/null 2>&1 & sleep 1; exit 0'
+
+Ж. whatplays не запускается, файла /tmp/whatplays.log нет
+   Причина: процесс ни разу не стартовал.
+   Решение: проверить err-лог: cat /tmp/whatplays.err
+            запустить вручную в форграунде через SSH, чтобы увидеть ошибку:
+              ssh -p 2222 root@<IP> '/data/opt/bin/whatplays.sh'
+
+З. «maind --updatesd РАБОТАЕТ» в status
+   Причина: launch.json обновлён, но процесс уже в памяти.
+   Решение: adb reboot — после ребута updatesd не запустится.
+
+И. squeezelite: "unable to open output device: default"
+   Причина: нет export ALSA_CONFIG_PATH=/usr/share/alsa/alsa.conf
+   Решение: добавить в /etc/init.d/S98squeeze перед start():
+              export ALSA_CONFIG_PATH=/usr/share/alsa/alsa.conf
+
+К. «что играет» говорит поверх музыки / onTtsPlayerError
+   Причина: имя плеера не совпадает с announce() в whatplays.sh.
+   Решение: sed -i "s#Yandex Lite 2 SL#<ИМЯ>#g" /data/opt/bin/whatplays.sh
+            (и рестарт whatplays).
+
+--------------------------------------------------------------------------------
+11. ОТКАТ
+--------------------------------------------------------------------------------
+
+--- Откат OTA-off ---
+    ssh -p 2222 root@<IP> "sh /data/opt/yandex-noupdate.sh restore"
+
+--- Снять маркеры ---
+    ssh -p 2222 root@<IP> '
+      chattr -i /data/quasar/activate_* 2>/dev/null
+      rm -f /data/quasar/activate_*
+    '
+
+--- Удалить dropbear ---
+    ssh -p 2222 root@<IP> '
+      mount -o remount,rw /
+      rm -f /etc/init.d/S99zdropbear
+      rm -f /data/opt/bin/dropbear /data/opt/bin/dropbearkey
+      sync; mount -o remount,ro /
+    '
+
+--- Удалить whatplays ---
+    ssh -p 2222 root@<IP> '
+      ps | grep -E "whatpl[a]ys\.sh" | awk "{print \$1}" | xargs -r kill -9
+      rm -f /etc/init.d/S97whatplays
+      rm -f /data/opt/bin/whatplays.sh /data/opt/bin/alice_ipc_mon /data/opt/bin/tcpcat
+    '
+
+--- Полный сброс колонки ---
+  Сброс кнопкой (питание → ▶‖ 6-10с) снесёт всё. Повторить по инструкции.
+
+--------------------------------------------------------------------------------
+12. ПАРАМЕТРЫ, ДЕФОЛТЫ И СВОДКА СТАНЦИЙ
+--------------------------------------------------------------------------------
+
+Инфраструктура:
+  LMS:             192.168.1.131:9000
+  BRIDGE (мост):   192.168.1.131:8888
+  SSH-порт:        2222
+  ADB-порт:        5555
+
+Дефолты в скриптах:
+  squeezelite.sh:  LMS="" (discovery), NAME="Yandex Lite 2 SL"
+  local_commands.sh: LMS=192.168.1.131:9000, BRIDGE=192.168.1.131:8888
+  root.sh:         SSH_PORT=2222, ADB_PORT=5555
+
+Переопределить через env:
+  LMS=10.0.0.5:9000 ./squeezelite.sh <IP>
+  BRIDGE=10.0.0.5:8888 ./local_commands.sh <IP> ...
+
+СВОДКА СТАНЦИЙ (актуально на 2026-11-15):
+
+  Станция             IP        Серийник              UUID (ALICEID)                        ROOM        NAME в LMS
+  ─────────────────────────────────────────────────────────────────────────────────────────────────
+  Гостиная фиолет    .115      LP…a41b6f6f           0c1ae602-f240-4f0d-ab20-f0cb52cd05ec  Гостиная    Yandex Lite 2 SL
+  Розовая            .122      LN…f1a7950            5560cb4c-e8df-4c22-b2f6-27d8c0d7e91e  Спальня     Yandex Lite SL
+  Душ                .113      LY…81b1bc4b           ede2e7e9-f002-43f4-8c7e-aa29274b3e4b  Душ         Yandex Lite SL Душ
+  Спальня            ?         LP…daa7a6da           5617c9ce-a078-41b8-8db6-82c901380c08  Спальня     ?
+  Веранда            ?         LG…44f9f78b           a30d1c33-a153-4af5-adef-c3a757907f4b  Веранда     ?
+
+ВНИМАНИЕ: имя плеера в squeezelite.sh --name должно совпадать с тем, что
+ждёт announce() в whatplays.sh. Если не совпадает — поправить whatplays.sh.
+
+--------------------------------------------------------------------------------
+13. ОБНОВЛЕНИЕ PAYLOAD С ЭТАЛОНА
+--------------------------------------------------------------------------------
+
+Когда на эталоне (.115 или .122) обновили whatplays.sh или другие файлы:
+
+    cd ~/IdeaProjects/sa_client/alice-root-wizard
+    ./save_to_payloads.sh
+    ls -la payload_*/SHA256SUMS
+
+Применить на всех колонках:
+
+    for ip in 192.168.1.115 192.168.1.122 192.168.1.113; do
+      ./local_commands.sh $ip --room <Имя> --aliceid <UUID>
+    done
+
+Или только на одной:
+
+    ./local_commands.sh <IP> --room <Имя> --aliceid <UUID>
+
+--------------------------------------------------------------------------------
+14. СПРАВКА ПО ФРАЗАМ whatplays
+--------------------------------------------------------------------------------
+
+Голосовые фразы, которые ловит whatplays.sh:
+
+    дальше                  → next (трек или канал)
+    назад                   → prev
+    повтор                  → repeat_on / repeat_off (тумблер)
+    рандом                  → shuffle_on / shuffle_off (тумблер)
+    отдельно                → separate_on
+    вместе                  → separate_off
+    переключи сюда          → switch_here
+    переключи музыку в/на X → switch_room
+    что играет              → whats_playing_text (голосом)
+    спотифай X              → spotify_artist
+    спотифай X альбом Y     → spotify_album
+    спотифай трек X         → spotify_track
+    спотифай плейлист X     → spotify_playlist
+    избранное X             → favorite_name
+
+Триггеры в коде:
+  PATTERNS='альше азад овтор андом тдельно месте ереключи грает'
+  SPOPAT='потифай otify збранное'
+
+Шаблоны БЕЗ первой буквы (регистронезависимость): ASR выдаёт «Дальше»,
+«Что играет» с заглавной, а glob в shell чувствителен к регистру.
+
+--------------------------------------------------------------------------------
+15. ПОЛУЧЕНИЕ ALICEID ЧЕРЕЗ API УДЯ
+--------------------------------------------------------------------------------
+
+ALICEID (UUID для voice_say) — берётся ТОЛЬКО через API УДЯ.
+НЕ путать с серийником (LY0000…:NNNNNNNNN) — это другое поле!
+
+Способ (нужен OAuth-токен с правом iot:view):
+
+    curl -s -H "Authorization: Bearer <OAuth-токен>" \
+      "https://api.iot.yandex.net/v1.0/user/info" \
+      | jq '.devices[] | select(.quasar_info.device_id == "<серийник>") | {id, name, room}'
+
+Где:
+  - <серийник> — ищем по полю quasar_info.device_id
+  - "id"       — ЭТО UUID для --aliceid
+  - "room"     — комната УДЯ (для --room)
+
+Пример для Яндекс Лайт Душ (.113):
+  серийник = LY000000000000120306000081b1bc4b
+  UUID     = ede2e7e9-f002-43f4-8c7e-aa29274b3e4b
+  room     = Душ
+
+Альтернативы (менее надёжные):
+  - https://iot.quasar.yandex.ru/m/v3/user/devices — отдаёт тот же JSON,
+    но структура внутренняя и может измениться.
+  - yandex.ru/iot → устройство → quasar_device_id (не всегда виден).
+
+Если сценария "SA voice <UUID>" в УДЯ НЕТ — voice_say уйдёт в fallback на Piper:
+  - Создать: yandex.ru/iot → Сценарии → "SA voice <UUID>"
+  - Триггер: редкая фраза (например «пустышка»)
+  - Действие: <станция> → Скажи «пустышка» (текст не важен)
+
+Проверка:
+  wget -qO- "http://192.168.1.131:8888/cmd?action=voice_say&alice=<UUID>&value=%D1%82%D0%B5%D1%81%D1%82"
+  # ALICE ok — сценарий есть, голос Алисы через voice_say работает
+  # PIPER <url> — fallback на Piper (голос локальный)
+  # ошибка — ни сценария, ни Piper
+
+--------------------------------------------------------------------------------
+КОНЕЦ ИНСТРУКЦИИ
+--------------------------------------------------------------------------------
+
+Краткий чек-лист для новой колонки:
+
+    [ ] 1. ./save_to_payloads.sh
+    [ ] 2. ./stand.sh (терминал 1) + руками DNS/сброс/привязка
+    [ ] 3. Проверка стенда: ss :53/:80/:443, dig @.130
+    [ ] 4. ./root.sh <IP> (терминал 2)
+    [ ] 5. adb reboot → sleep 90 → ssh id = uid=0(root)
+    [ ] 6. Проверка OTA-off: sh /data/opt/yandex-noupdate.sh status
+    [ ] 7. ./squeezelite.sh <IP> [--name "..."]
+    [ ] 8. Найти UUID через api.iot.yandex.net (раздел 15)
+    [ ] 9. ./local_commands.sh <IP> --room <Имя> --aliceid <UUID>
+    [ ] 10. Если --name != "Yandex Lite 2 SL" — добавить --player "<ИМЯ>" (фикс announce())
+    [ ] 11. http://192.168.1.131:8888/form → добавить станцию
+    [ ] 12. Голосом: «Алиса, дальше», «Алиса, что играет»
+
