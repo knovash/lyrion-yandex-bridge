@@ -1,4 +1,19 @@
 # Active Context — что сейчас
+## 17.11 (СДЕЛАНО, ждёт деплоя владельцем) ЗАДАЧА: /stations v2 — IP-only ввод, автопоиск, статусы сервисов, вкл/выкл
+- Утверждённый план выполнен полностью (владелец выбрал: вкл/выкл = ТОЛЬКО старт/стоп установленного):
+  1) .clinerules: правило «плагины LMS локально не обновляет Cline» — коммит ebba730.
+  2) PageStations.java переписан (~580 строк): render (таблица со статусами сервисов + скан-блок),
+     save IP-only (extractIp, старый формат тоже ест), op(check=scriptStatus+applyStatus|repoint) по ip,
+     service() вкл/выкл, scan() /24 64потока :2222/:5555 + readArp() `ip neigh` + isYandexMac/learnOui,
+     scanAdd() (* = все с рутом), helpers.
+  3) scriptStatus: MAC/SERIAL/ROOM/LMS/SAC/SQS + SQ/WP/AP INST/RUN; scriptService: off = stop+kill+
+     mv init в /data/opt/disabled (remount rw/ro), on = cp обратно + start.
+  4) ProcessForm: + station_scan, station_scan_add, station_service; check/repoint по station_ip.
+  5) Валидация: mvn package OK (jar собран); sh -n на реальных Java-строках scriptStatus (извлечены
+     python-скриптом) и обоих вариантов scriptService — OK. e2e на живых станциях НЕ делался —
+     владелец обновит плагин сам (правило 17.11) и проверит.
+  6) CHANGELOG: секция «v1.14 (в разработке)». Коммит и пуш в main (версия релиза не трогается).
+
 ## 17.11 СДЕЛАНО: alice-root-wizard влит в sa_client — правки скриптов + README
 - ОТПУШЕНО В MAIN: коммит 4bd80fe (24 файла, 1924 вставок; e30e33a..4bd80fe) + memory-bank
   follow-up. Версия НЕ поднималась: pom/repo.xml не тронуты, raw repo.xml = 1.13.1,

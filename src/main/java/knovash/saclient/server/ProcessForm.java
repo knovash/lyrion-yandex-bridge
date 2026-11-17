@@ -54,11 +54,20 @@ public class ProcessForm {
                     PageStations.save(bodyMap);
                     context.setRedirect("/stations");
                     break;
-                case "station_check": // проверить привязку станции (read-only)
-                    PageStations.op(context, "check", bodyMap.get("station_name"));
+                case "station_check": // проверить станцию: полный статус сервисов + привязка
+                    PageStations.op(context, "check", bodyMap.getOrDefault("station_ip", bodyMap.get("station_name")));
                     break;
                 case "station_repoint": // перенацелить станцию(и) на этот сервер
-                    PageStations.op(context, "repoint", bodyMap.get("station_name"));
+                    PageStations.op(context, "repoint", bodyMap.getOrDefault("station_ip", bodyMap.get("station_name")));
+                    break;
+                case "station_scan": // автопоиск станций с рутом в подсети
+                    PageStations.scan(context);
+                    break;
+                case "station_scan_add": // добавить найденный сканом ip ("*" = все с рутом)
+                    PageStations.scanAdd(context, bodyMap.get("station_ip"));
+                    break;
+                case "station_service": // вкл/выкл сервиса на станции (sq|ap|wp)
+                    PageStations.service(context, bodyMap.get("station_ip"), bodyMap.get("station_service"), bodyMap.get("station_state"));
                     break;
                 case statusbar_refresh:
                     PageIndex.refresh((HashMap<String, String>) bodyMap);
