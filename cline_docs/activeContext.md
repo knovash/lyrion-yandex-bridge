@@ -1,5 +1,10 @@
 # Active Context — что сейчас
 ## 17.11 СДЕЛАНО: alice-root-wizard влит в sa_client — правки скриптов + README
+- ОТПУШЕНО В MAIN: коммит 4bd80fe (24 файла, 1924 вставок; e30e33a..4bd80fe) + memory-bank
+  follow-up. Версия НЕ поднималась: pom/repo.xml не тронуты, raw repo.xml = 1.13.1,
+  новые файлы доступны по raw-URL (проверено fetch'ем). Пользователям LMS обновление
+  не придёт. ГРАБЛЯ .gitignore: правило bin/ (Eclipse) съедало payload_*/bin/ — добавлен
+  negation !alice-root-wizard/**/bin/ (без него binary-комплект молча не попал бы в git).
 - Владелец перенёс ~/IdeaProjects/alice-root-wizard → sa_client/alice-root-wizard (в git untracked,
   закоммитит владелец). Старая копия ~/IdeaProjects/alice-root-wizard НЕ удалялась (решение за владельцем).
 - Правки по ревью 17.11 (Java-клиент НЕ менялся):
