@@ -1,5 +1,10 @@
 # Progress — что работает, история, долги
 
+- **17.11: RELEASE v1.14 подготовлен** (коммит+пуш main, ждёт GitHub Release владельца):
+  версии 1.14×3 (pom/install/ClientProcess.pm), dist-lms/lyrion-yandex-bridge-v1.14.zip
+  (6 329 977 B, sha1 fe2fb507…, 18 записей без дублей — Bin/ вычищен до сборки),
+  repo.xml→1.14. Состав: /stations v2 + alice-root-wizard в репо + README. gh CLI нет —
+  Release создаёт владелец (tag v1.14, asset zip), затем Cline сверит sha скачиванием.
 - **17.11: /stations v2 (main, ждёт деплоя владельцем)** — ввод только ip (имя авто:
   ROOM → серийник → «станция ip»), автопоиск «Найти станции с рутом в сети» (/24,
   :2222=рут/:5555=adb + ARP `ip neigh` MAC; OUI Яндекса автообучается с рутованных,

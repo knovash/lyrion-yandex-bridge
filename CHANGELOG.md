@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.14 (в разработке)
+## v1.14 (2026-11-17)
 
 ### Новое
 
@@ -22,6 +22,11 @@
     (автостарт снят, rootfs возвращается в RO), on = возврат скрипта + start;
   - кнопка «Проверить ВСЕ»; check/repoint адресуются по ip (station_ip; старый
     station_name принимается для совместимости).
+- **Каталог `alice-root-wizard/` в репозитории** — комплект рута Яндекс Станции Лайт 1
+  (скрипты stand/root/squeezelite/local_commands/airplay/save_to_payloads, payload-бинарники
+  dropbear/squeezelite/alice_ipc_mon/tcpcat с SHA256SUMS, manual.txt); README дополнен
+  разделами «Рут Станции Лайт» и «Почему локальные фразы лучше навыка Раз Два».
+  На работу плагина/клиента не влияет (доки и скрипты).
 
 ## v1.13.1 (2026-11-12)
 

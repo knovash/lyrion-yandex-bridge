@@ -1,4 +1,17 @@
 # Active Context — что сейчас
+## 17.11 (12:3x) RELEASE v1.14 ПОДГОТОВЛЕН (zip собран, sha fe2fb507, repo.xml→1.14; ждёт GitHub Release от владельца)
+- Версии 1.14 синхронно в 3 местах: pom.xml / install.xml / ClientProcess.pm (jarName).
+- mvn package OK: jar 6 960 114 B; dist-lms/lyrion-yandex-bridge-v1.14.zip 6 329 977 B,
+  sha1 fe2fb507b35ea737dd225edd8ade801c8bbc3894, 18 записей, БЕЗ дублей jar —
+  ГРАБЛЯ учтена: assembly включает lms-plugin/** целиком вместе с Bin/, поэтому старые
+  jar из Bin/ вычищены ДО сборки (v1.13 страдал дублями), новый jar скопирован в Bin/ после.
+- repo.xml: version=1.14, sha=fe2fb507…, url=asset v1.14. CHANGELOG: v1.14 датирован
+  17.11 + пункт про alice-root-wizard в репо. Коммит+пуш main.
+- Состав v1.14 (с 1.13.1): /stations v2 (запись ниже) + alice-root-wizard в репо + README.
+- ОСТАЁТСЯ: владелец создаёт GitHub Release v1.14 (tag v1.14, asset
+  dist-lms/lyrion-yandex-bridge-v1.14.zip) → Cline сверяет sha скачиванием → DONE.
+  Далее владелец САМ обновляет плагин на своих LMS (правило 17.11) и тестирует /stations v2.
+
 ## 17.11 (СДЕЛАНО, ждёт деплоя владельцем) ЗАДАЧА: /stations v2 — IP-only ввод, автопоиск, статусы сервисов, вкл/выкл
 - Утверждённый план выполнен полностью (владелец выбрал: вкл/выкл = ТОЛЬКО старт/стоп установленного):
   1) .clinerules: правило «плагины LMS локально не обновляет Cline» — коммит ebba730.
