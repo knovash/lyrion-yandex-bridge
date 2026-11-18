@@ -65,6 +65,17 @@
   textarea нет; главная 200. ГРАБЛЯ: pkill -f с паттерном, совпадающим с cmdline самого
   ssh-шелл-команды, убивает сессию до echo — kill доходит, просто вывод пропадает.
 
+## 18.11 (14:20) Доделка после релиза: страница «Настройки BT пульта» (/stations?bt=1)
+- Грабля: правки прошлой сессии (btSettingsPage/handle) в PageStations.java
+  НЕ попали в файл — релиз v1.14.2 вышел без страницы. Добавлена заново
+  через РЕАЛЬНУЮ точку входа action()+context.queryMap (HandlerAll →
+  PageStations.action; switch только по path, query отдельно в queryMap).
+- Грабля деплоя .131: супервизор стартует jar по имени из ClientProcess.pm —
+  после установки 1.14.2.jar клиент продолжал бегать из 1.14.jar. Лечится
+  обновлением ClientProcess.pm (+для надёжности перезаписать старое имя jar).
+- Живая проверка: bt=1 → 200 с раскладкой; /stations → ссылка + 🔑 на месте.
+- Страница войдёт в СЛЕДУЮЩИЙ релиз (zip v1.14.2 уже опубликован и не трогаем).
+
 ## 18.11 (11:50) RELEASE v1.14.2 ОПУБЛИКОВАН (asset sha 5144b666 сверен, repo.xml=1.14.2)
 - Состав: BT-пульты на рутованных Лайтах (bt_remote.sh + payload_bt_remote:
   btrcv/btkeys-listener/bt-connect/bt-remove/bt-listeners-start/beep.wav) +
