@@ -65,7 +65,18 @@
   textarea нет; главная 200. ГРАБЛЯ: pkill -f с паттерном, совпадающим с cmdline самого
   ssh-шелл-команды, убивает сессию до echo — kill доходит, просто вывод пропадает.
 
-## 17.11 (12:3x) RELEASE v1.14 ОПУБЛИКОВАН (asset sha сверен, repo.xml=1.14)
+## 18.11 (11:50) RELEASE v1.14.2 ОПУБЛИКОВАН (asset sha 5144b666 сверен, repo.xml=1.14.2)
+- Состав: BT-пульты на рутованных Лайтах (bt_remote.sh + payload_bt_remote:
+  btrcv/btkeys-listener/bt-connect/bt-remove/bt-listeners-start/beep.wav) +
+  /stations колонка «пульт» + кнопка 🔑 + переименование скриптов (whatplays→
+  commandslistener, S97whatplays→S97cmdlistener, btkeys-grab→btkeys-listener
+  на всех 3 станциях и в коде). Секрет решения: вендор-ядро отдаёт input
+  только через EVIOCGRAB (btrcv). Грабля .115: bt-listeners-start v1 убивал
+  вендорский D-Bus → умирали bluealsa и platformd → Алиса молчала; v2 не трогает.
+- Дальше: тест на .115 после ребута (пульт + Алиса вместе), страница
+  «Настройки BT пульта» (раскладка кнопок), S99-автозапуск BT-стека.
+
+
 - Владелец создал GitHub Release v1.14; Cline скачал asset (6 329 977 B) и сверил sha1
   (fe2fb507b35ea737dd225edd8ade801c8bbc3894 — бит-в-бит = repo.xml). Пуш main
   e79f030..0d20dea; raw repo.xml на main = 1.14 (проверено fetch'ем). LMS пользователей сам предложит обновление.
