@@ -28,12 +28,12 @@ import java.util.regex.Pattern;
 
 /**
  * Страница /stations — «Рутованные станции»: список станций (ssh root@ip -p порт),
- * проверка их текущей привязки (какой сервер прописан в whatplays/squeezelite)
+ * проверка их текущей привязки (какой сервер прописан в commandslistener/squeezelite)
  * и кнопка «Перенацелить сюда» — смена привязки станций при переезде сервера
  * LMS/sa_client на другой IP. Перенастройка выполняется ТОЛЬКО по нажатию
  * (решение владельца 12.11 — ничего автоматического).
  *
- * Рецепт обкатан вручную 12.11 (.120/.126): whatplays = /data/opt/bin/whatplays.sh
+ * Рецепт обкатан вручную 12.11 (.120/.126): commandslistener = /data/opt/bin/commandslistener.sh
  * (writable), адрес squeezelite-сервера в /etc/init.d/S98squeeze (rootfs станций
  * RO — remount rw на время правки), sshd станций (S99zdropbear) на порту 2222.
  * Новый адрес = Main.myIp (этот сервер). Список и пароль — data/stations.json
@@ -102,7 +102,7 @@ public class PageStations {
 
         String inner =
                 "<fieldset><legend><b>Рутованные станции</b></legend>" +
-                        "<p>Привязка станций к серверу: whatplays шлёт локальные фразы на веб этого клиента, " +
+                        "<p>Привязка станций к серверу: commandslistener шлёт локальные фразы на веб этого клиента, " +
                         "squeezelite станции подключается к LMS. При смене IP сервера нажмите " +
                         "<b>«Перенацелить сюда»</b> — станция перепропишет адреса на этот сервер и перезапустит " +
                         "сервисы (если IP уже этот — просто рестарт). Ничего автоматического не происходит.</p>" +
@@ -282,29 +282,29 @@ public class PageStations {
     }
 
     /**
-     * Полный статус станции одним вызовом: MAC/серийник/ROOM из whatplays, адреса LMS/SAC,
+     * Полный статус станции одним вызовом: MAC/серийник/ROOM из commandslistener, адреса LMS/SAC,
      * установленность и живость squeezelite / лок.команд / AirPlay. Ключи парсятся applyStatus().
      */
     static String scriptStatus() {
         return "MAC=$(cat /sys/class/net/wlan0/address 2>/dev/null)\n"
                 + "SERIAL=$(tr ' ' '\\n' </proc/cmdline | grep androidboot.serialno | cut -d= -f2)\n"
-                + "ROOM=$(sed -n \"s/^ROOM=//p\" /data/opt/bin/whatplays.sh 2>/dev/null | head -1 | sed \"s/[[:space:]]*#.*$//; s/^'//; s/'$//\")\n"
+                + "ROOM=$(sed -n \"s/^ROOM=//p\" /data/opt/bin/commandslistener.sh 2>/dev/null | head -1 | sed \"s/[[:space:]]*#.*$//; s/^'//; s/'$//\")\n"
                 + "echo \"MAC=$MAC\"\n"
                 + "echo \"SERIAL=$SERIAL\"\n"
                 + "echo \"ROOM=$ROOM\"\n"
-                + "echo \"LMS=$(grep '^LMS=' /data/opt/bin/whatplays.sh 2>/dev/null | head -1 | cut -d= -f2-)\"\n"
-                + "echo \"SAC=$(grep '^SAC=' /data/opt/bin/whatplays.sh 2>/dev/null | head -1 | cut -d= -f2-)\"\n"
+                + "echo \"LMS=$(grep '^LMS=' /data/opt/bin/commandslistener.sh 2>/dev/null | head -1 | cut -d= -f2-)\"\n"
+                + "echo \"SAC=$(grep '^SAC=' /data/opt/bin/commandslistener.sh 2>/dev/null | head -1 | cut -d= -f2-)\"\n"
                 + "echo \"SQS=$(grep -oE '[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+' /etc/init.d/S98squeeze 2>/dev/null | sort -u | tr '\\n' ' ')\"\n"
                 + "echo \"SQ_INST=$([ -x /data/opt/bin/squeezelite ] && echo 1 || echo 0)\"\n"
                 + "echo \"SQ_RUN=$(pidof squeezelite >/dev/null 2>&1 && echo 1 || echo 0)\"\n"
-                + "echo \"WP_INST=$([ -f /data/opt/bin/whatplays.sh ] && echo 1 || echo 0)\"\n"
-                + "echo \"WP_RUN=$(ps | grep -q 'whatpl[a]ys' && echo 1 || echo 0)\"\n"
+                + "echo \"WP_INST=$([ -f /data/opt/bin/commandslistener.sh ] && echo 1 || echo 0)\"\n"
+                + "echo \"WP_RUN=$(ps | grep -q 'commandslistene[r]' && echo 1 || echo 0)\"\n"
                 + "echo \"AP_INST=$([ -f /etc/init.d/S99zairplay-lite1 ] || [ -d /data/opt/airplay ] && echo 1 || echo 0)\"\n"
                 + "echo \"AP_RUN=$(ps | grep -qE 'shairpo[r]t|avah[i]|nqpt[p]' && echo 1 || echo 0)\"\n"
                 + "echo \"BT_INST=$([ -x /data/opt/bin/btrcv ] && echo 1 || echo 0)\"\n"
                 + "echo \"BT_RUN=$(ps | grep -q 'btrc[v]' && echo 1 || echo 0)\"\n"
                 + "echo \"BT_REMOTES=$(grep -vcE '^#|^$|default' /data/opt/bt.conf 2>/dev/null || echo 0)\"\n"
-                + "echo \"PROCS=$(ps | grep -cE 'whatpl[a]ys|squeezelite')\"\n";
+                + "echo \"PROCS=$(ps | grep -cE 'commandslistene[r]|squeezelite')\"\n";
     }
 
     /**
@@ -332,8 +332,8 @@ public class PageStations {
                         + "setsid sh -c 'setsid /usr/libexec/bluetooth/bluetoothd -E -d </dev/null >/dev/null 2>&1 &' >/dev/null 2>&1; echo 'вендор bluetoothd возвращён'";
                 break;
             default:
-                init = "S97whatplays";
-                extraKill = "ps | grep 'whatpl[a]ys' | awk '{print $1}' | xargs -r kill 2>/dev/null; "
+                init = "S97cmdlistener";
+                extraKill = "ps | grep 'commandslistene[r]' | awk '{print $1}' | xargs -r kill 2>/dev/null; "
                         + "killall alice_ipc_mon tcpcat 2>/dev/null; "
                         + "ps | grep 'main[d] --cli' | awk '{print $1}' | xargs -r kill 2>/dev/null";
         }
@@ -370,11 +370,11 @@ public class PageStations {
 
     /**
      * Перенастройка на новый IP (обкатано вручную 12.11): старый IP берём из SAC
-     * whatplays, заменяем в whatplays и S98squeeze (remount rw/ro), рестартуем
-     * S98squeeze и S97whatplays. При совпадении IP — только рестарт.
+     * whatplays, заменяем в commandslistener и S98squeeze (remount rw/ro), рестартуем
+     * S98squeeze и S97cmdlistener. При совпадении IP — только рестарт.
      */
     static String scriptRepoint(String newIp) {
-        return "WP=/data/opt/bin/whatplays.sh\n"
+        return "WP=/data/opt/bin/commandslistener.sh\n"
                 + "NEW=" + newIp + "\n"
                 + "OLD=$(grep -oE 'https?://[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+' $WP 2>/dev/null | head -1 | grep -oE '[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+')\n"
                 + "echo \"было: ${OLD:-не найдено} -> стало: $NEW\"\n"
@@ -388,11 +388,11 @@ public class PageStations {
                 + "  echo 'IP уже этот — только рестарт сервисов'\n"
                 + "fi\n"
                 + "/etc/init.d/S98squeeze stop 2>/dev/null; sleep 1; /etc/init.d/S98squeeze start 2>/dev/null\n"
-                + "ps | grep 'whatpl[a]ys' | awk '{print $1}' | xargs kill 2>/dev/null; sleep 1\n"
-                + "/etc/init.d/S97whatplays start 2>/dev/null; sleep 2\n"
+                + "ps | grep 'commandslistene[r]' | awk '{print $1}' | xargs kill 2>/dev/null; sleep 1\n"
+                + "/etc/init.d/S97cmdlistener start 2>/dev/null; sleep 2\n"
                 + "echo '--- теперь:'; grep -E '^LMS=|^SAC=' $WP\n"
                 + "echo '--- squeeze:'; grep -oE '[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+' /etc/init.d/S98squeeze | sort -u\n"
-                + "echo '--- процессов:'; ps | grep -cE 'whatpl[a]ys|squeezelite'";
+                + "echo '--- процессов:'; ps | grep -cE 'commandslistene[r]|squeezelite'";
     }
 
     /** Автопоиск в своей /24: :2222 (рут ssh) и :5555 (adb), затем ARP → MAC/вендор. */

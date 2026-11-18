@@ -1,0 +1,7 @@
+9ac76b9a0f4aa9d8f9678baeb64e13e7a729770a6df6e2e1bcfc8e819da49410  ./sounds/beep.wav
+1e0a399c250a583d4b9d327461c9fbe5a14a3321d626b25045e088ae2ebdacbe  ./bin/btrcv
+3b5c09e68280c4f1ce5e0e765a3ad370d5bd06d6f06f2017ac068f10ccd1f6ed  ./bin/bt-listeners-start.sh
+b0a624bfea7f3be3fb1a9312033af98a16796e42bfb0eb06ce175cac44be2dc1  ./bin/bt-remove.sh
+ee313d7345763149762725a86ac48deb0ebcf0bbda2fe67f3f42ccbdf246f455  ./bin/bt-connect.sh
+8530ae56a7c134f85d7e659b4a617f92354233609b5d59bf28aca8703096ca6f  ./bin/btkeys-listener.sh
+8530ae56a7c134f85d7e659b4a617f92354233609b5d59bf28aca8703096ca6f  ./bin/btkeys-grab.sh

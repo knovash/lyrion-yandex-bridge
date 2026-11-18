@@ -19,12 +19,12 @@
     <plugins>
         <plugin
             name="LyrionYandexBridge"
-            version="1.14"
+            version="1.14.2"
             target="unix|mac"
             minTarget="8.0"
             maxTarget="*"
-            sha="fe2fb507b35ea737dd225edd8ade801c8bbc3894"
-            url="https://github.com/knovash/lyrion-yandex-bridge/releases/download/v1.14/lyrion-yandex-bridge-v1.14.zip"
+            sha="5144b66679042d2efa023c70632b9d0c5d36ef3c"
+            url="https://github.com/knovash/lyrion-yandex-bridge/releases/download/v1.14.2/lyrion-yandex-bridge-v1.14.2.zip"
             icon="https://raw.githubusercontent.com/knovash/lyrion-yandex-bridge/main/lms-plugin/LyrionYandexBridge/HTML/EN/plugins/LyrionYandexBridge/html/images/icon.png"
             creator="Konstantin"
             email="novash.ki@gmail.com"
