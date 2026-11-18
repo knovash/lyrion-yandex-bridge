@@ -60,8 +60,49 @@ public class PageStations {
             "https://raw.githubusercontent.com/knovash/lyrion-yandex-bridge/main/alice-root-wizard/manual.txt";
 
     public static Context action(Context context) {
-        render(context);
+        // /stations?bt=1 — страница «Настройки BT пульта» (раскладка кнопок, поддерживаемые пульты)
+        if (context.queryMap != null && "1".equals(context.queryMap.get("bt"))) {
+            renderBtSettings(context);
+        } else {
+            render(context);
+        }
         return context;
+    }
+
+    /** Страница «Настройки BT пульта»: стандартная раскладка + список поддерживаемых пультов. */
+    private static void renderBtSettings(Context context) {
+        String inner =
+                "<fieldset><legend><b>Настройки BT пульта</b></legend>" +
+                        "<h3>Стандартная раскладка кнопок BT-пульта</h3>" +
+                        "<p>Раскладка одинакова для всех пультов, подключённых к рутованным станциям. " +
+                        "Если на пульте реально нет какой-то кнопки — её команда просто недоступна.</p>" +
+                        "<table border='1' cellpadding='4' cellspacing='0'>" +
+                        "<tr><th>Кнопка пульта</th><th>Команда</th></tr>" +
+                        "<tr><td><b>OK</b></td><td>Play / Pause</td></tr>" +
+                        "<tr><td><b>VOL+ / VOL−</b></td><td>Громкость плеера LMS +/−</td></tr>" +
+                        "<tr><td><b>◀ (влево)</b></td><td>Предыдущий трек/канал</td></tr>" +
+                        "<tr><td><b>▶ (вправо)</b></td><td>Следующий трек/канал</td></tr>" +
+                        "<tr><td><b>▲ (вверх)</b></td><td>Предыдущий канал (избранное)</td></tr>" +
+                        "<tr><td><b>▼ (вниз)</b></td><td>Следующий канал (избранное)</td></tr>" +
+                        "<tr><td><b>Home</b></td><td>«Переключи сюда» (музыку в эту комнату)</td></tr>" +
+                        "<tr><td><b>Search</b></td><td>«Что играет» (голосовой ответ)</td></tr>" +
+                        "<tr><td><b>1 … 9, 0</b></td><td>Каналы избранного LMS №1…№10</td></tr>" +
+                        "</table><br>" +
+                        "<p><b>Поддерживаемые пульты</b> (подключение кнопкой «🔑 Пульт» в списке станций " +
+                        "или bt-connect.sh на колонке):</p>" +
+                        "<ul>" +
+                        "<li><b>G20S PRO</b> — все кнопки</li>" +
+                        "<li><b>ATV Remote r3</b> — все кнопки + Search</li>" +
+                        "<li><b>Xiaomi RC</b> — OK, VOL±, ◀▶, Home, цифры</li>" +
+                        "<li><b>BPR2S</b> — OK, VOL±, ◀▶, ▲▼</li>" +
+                        "</ul>" +
+                        "<p><b>Подключение нового пульта:</b> нажмите «🔑 Пульт» напротив станции → " +
+                        "зажмите комбо паринга на пульте (LED мигает) → колонка пикнет 3 раза = подключено.</p>" +
+                        "<p>Комбо паринга: G20S = OK+Return · ATV3 = Back+Home · Xiaomi = Home+Menu · BPR2S = OK+Vol−</p>" +
+                        "<p><a href='/stations'>← Назад к списку станций</a></p>" +
+                        "</fieldset>";
+        context.bodyResponse = PageIndex.pageOuter(inner, "Настройки BT пульта", "Настройки BT пульта");
+        context.code = 200;
     }
 
     private static void render(Context context) {
@@ -133,6 +174,8 @@ public class PageStations {
                         "<p><b>Нет рута на станции?</b> Скачайте комплект для самостоятельной установки с ноутбука (Linux): " +
                         "<a href='" + ROOT_ZIP_URL + "'>Скачать скрипты получения рут (zip)</a> — " +
                         "распакуйте и действуйте по <a href='" + ROOT_MANUAL_URL + "'>manual.txt</a>.</p>" +
+                        "<p><b>Настройки BT пульта:</b> " +
+                        "<a href='/stations?bt=1'>стандартная раскладка кнопок и поддерживаемые пульты</a></p>" +
                         "</fieldset>";
 
         context.bodyResponse = PageIndex.pageOuter(inner, "Рутованные станции", "Рутованные станции");
