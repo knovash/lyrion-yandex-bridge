@@ -72,8 +72,11 @@ public class ProcessForm {
                 case "station_remove": // убрать станцию из списка (на станции ничего не делается)
                     PageStations.remove(context, bodyMap.get("station_ip"));
                     break;
-                case "station_service": // вкл/выкл сервиса на станции (sq|ap|wp)
+                case "station_service": // вкл/выкл сервиса на станции (sq|ap|wp|bt)
                     PageStations.service(context, bodyMap.get("station_ip"), bodyMap.get("station_service"), bodyMap.get("station_state"));
+                    break;
+                case "station_bt_connect": // подключить пульт (bt-connect.sh в фоне)
+                    PageStations.btConnect(context, bodyMap.get("station_ip"));
                     break;
                 case statusbar_refresh:
                     PageIndex.refresh((HashMap<String, String>) bodyMap);

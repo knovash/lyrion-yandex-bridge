@@ -255,6 +255,14 @@ input-события → btkeys.sh → HTTP `/cmd` клиента sa_client (у�
   выбор по номеру/MAC/all; удаляет бонды из ОБОИХ хранилищ, disconnect+remove в bluez,
   гасит слушатели этого пульта). Оба на /data/opt/bin/.
 
+- **18.11 (06:30, ГРАБЛЯ .115: Алиса молчала)**: bt-listeners-start.sh v1 делал
+  `killall bluetoothd` → косвенно убивал вендорский D-Bus (pid-файл конфликтовал) →
+  без шины умирали bluealsa (аудио) и maind --platformd (voice pipeline) → Алиса
+  молчала. На .122 оба D-Bus сосуществуют (вендор на /var/run, Entware на /opt/var/run)
+  — эталон. ФИКС: v2 bt-listeners-start.sh НЕ трогает вендорские D-Bus/bluealsa/maind,
+  поднимает только Entware D-Bus + bluetoothd + слушателей. Для .115: ребут →
+  bt-listeners-start.sh v2 → Алиса + пульт работают вместе.
+
 ## Дальше (план)
 1. **Откат Entware bluez на 5.78**: `opkg list | grep bluez` (есть ли версия), иначе кросс-
    компиляция статик aarch64 5.78 (по образцу alice_ipc_mon). Повторить «свежая пара → dd event-узла».

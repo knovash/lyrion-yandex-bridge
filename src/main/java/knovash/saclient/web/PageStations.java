@@ -82,12 +82,13 @@ public class PageStations {
                     .append(svcCell(st.optJSONObject("services"), "sq", ip, "squeezelite"))
                     .append(svcCell(st.optJSONObject("services"), "ap", ip, "AirPlay"))
                     .append(svcCell(st.optJSONObject("services"), "wp", ip, "лок.команды"))
+                    .append(btCell(st, ip))
                     .append(actionCell("station_check", ip, "Проверить"))
                     .append(actionCell("station_repoint", ip, "Перенацелить сюда"))
                     .append(deleteCell(ip))
                     .append("</tr>");
         }
-        if (rows.length() == 0) rows.append("<tr><td colspan='8'>станции не заданы — нажмите «Найти» или добавьте вручную ниже</td></tr>");
+        if (rows.length() == 0) rows.append("<tr><td colspan='9'>станции не заданы — нажмите «Найти» или добавьте вручную ниже</td></tr>");
 
         String scanBlock = lastScanRows.isEmpty() ? "" :
                 "<h3>Скан сети (" + escape(lastScanAt) + ")</h3>" +
@@ -106,7 +107,7 @@ public class PageStations {
                         "<b>«Перенацелить сюда»</b> — станция перепропишет адреса на этот сервер и перезапустит " +
                         "сервисы (если IP уже этот — просто рестарт). Ничего автоматического не происходит.</p>" +
                         "<table border='1' cellpadding='4' cellspacing='0'>" +
-                        "<tr><th>Станция</th><th>Адрес</th><th>squeezelite</th><th>AirPlay</th><th>лок.команды</th><th></th><th></th><th></th></tr>" + rows + "</table>" +
+                        "<tr><th>Станция</th><th>Адрес</th><th>squeezelite</th><th>AirPlay</th><th>лок.команды</th><th>пульт</th><th></th><th></th><th></th></tr>" + rows + "</table>" +
                         "<form method='POST' action='/form' style='display:inline'><input type='hidden' name='action' value='station_check'>" +
                         "<input type='hidden' name='station_ip' value='ALL'><button type='submit'>Проверить ВСЕ</button></form> " +
                         "<form method='POST' action='/form' style='display:inline'><input type='hidden' name='action' value='station_repoint'>" +
@@ -204,7 +205,28 @@ public class PageStations {
         return context;
     }
 
-    /** Включить/выключить сервис на станции (только старт/стоп установленного). service: sq|ap|wp. */
+    /** Запустить bt-connect.sh на станции (автопоиск + подключение пульта, фон). */
+    public static Context btConnect(Context context, String ip) {
+        JSONObject root = read();
+        String pass = root.optString("sshPassword", "");
+        JSONObject st = findByIp(root.optJSONArray("stations"), ip);
+        if (ip == null || ip.isBlank() || st == null) {
+            lastResult = "станция не найдена: " + ip;
+        } else {
+            String res = sshExec(ip, st.optInt("port", 2222), pass,
+                    "setsid sh -c 'setsid /bin/sh /data/opt/bin/bt-connect.sh </dev/null >/tmp/btc-page.log 2>&1 &' >/dev/null 2>&1; sleep 1; echo ЗАПУЩЕНО");
+            lastResult = "=== " + st.optString("name", ip) + " (" + ip + "): подключение пульта ===\n"
+                    + res + "\n"
+                    + "Зажмите комбо паринга на пульте (LED мигает) и жмите кнопки!\n"
+                    + "Результат: колонка пикнет 3 раза, статус обновится после «Проверить».\n"
+                    + "Лог станции: /tmp/btc-page.log";
+            log.info("STATIONS bt-connect launched: " + ip);
+        }
+        render(context);
+        return context;
+    }
+
+    /** Включить/выключить сервис на станции (только старт/стоп установленного). service: sq|ap|wp|bt. */
     public static Context service(Context context, String ip, String service, String state) {
         JSONObject root = read();
         String pass = root.optString("sshPassword", "");
@@ -279,6 +301,9 @@ public class PageStations {
                 + "echo \"WP_RUN=$(ps | grep -q 'whatpl[a]ys' && echo 1 || echo 0)\"\n"
                 + "echo \"AP_INST=$([ -f /etc/init.d/S99zairplay-lite1 ] || [ -d /data/opt/airplay ] && echo 1 || echo 0)\"\n"
                 + "echo \"AP_RUN=$(ps | grep -qE 'shairpo[r]t|avah[i]|nqpt[p]' && echo 1 || echo 0)\"\n"
+                + "echo \"BT_INST=$([ -x /data/opt/bin/btrcv ] && echo 1 || echo 0)\"\n"
+                + "echo \"BT_RUN=$(ps | grep -q 'btrc[v]' && echo 1 || echo 0)\"\n"
+                + "echo \"BT_REMOTES=$(grep -vcE '^#|^$|default' /data/opt/bt.conf 2>/dev/null || echo 0)\"\n"
                 + "echo \"PROCS=$(ps | grep -cE 'whatpl[a]ys|squeezelite')\"\n";
     }
 
@@ -300,6 +325,12 @@ public class PageStations {
                 extraKill = "killall shairport-sync 2>/dev/null; killall nqptp 2>/dev/null; "
                         + "killall avahi-daemon 2>/dev/null; killall avahi 2>/dev/null";
                 break;
+            case "bt":
+                init = "S99btkeys";  // может не существовать — просто скрипт
+                extraKill = "for p in $(ps | grep -E 'btke[y]s-grab|btrc[v]' | awk '{print $1}'); do kill -9 $p 2>/dev/null; done; "
+                        + "killall -9 bluetoothd bluetoothctl tail 2>/dev/null; "
+                        + "setsid sh -c 'setsid /usr/libexec/bluetooth/bluetoothd -E -d </dev/null >/dev/null 2>&1 &' >/dev/null 2>&1; echo 'вендор bluetoothd возвращён'";
+                break;
             default:
                 init = "S97whatplays";
                 extraKill = "ps | grep 'whatpl[a]ys' | awk '{print $1}' | xargs -r kill 2>/dev/null; "
@@ -307,6 +338,9 @@ public class PageStations {
                         + "ps | grep 'main[d] --cli' | awk '{print $1}' | xargs -r kill 2>/dev/null";
         }
         if (on) {
+            if ("bt".equals(service)) {
+                return "sh /data/opt/bin/bt-listeners-start.sh 2>&1; sleep 2\n";
+            }
             return "D=/data/opt/disabled\n"
                     + "if [ -f $D/" + init + " ]; then\n"
                     + "  mount -o remount,rw /\n"
@@ -489,8 +523,10 @@ public class PageStations {
         JSONObject svc = new JSONObject()
                 .put("sq", new JSONObject().put("inst", "1".equals(kv.get("SQ_INST"))).put("run", "1".equals(kv.get("SQ_RUN"))))
                 .put("ap", new JSONObject().put("inst", "1".equals(kv.get("AP_INST"))).put("run", "1".equals(kv.get("AP_RUN"))))
+                .put("bt", new JSONObject().put("inst", "1".equals(kv.get("BT_INST"))).put("run", "1".equals(kv.get("BT_RUN"))))
                 .put("wp", new JSONObject().put("inst", "1".equals(kv.get("WP_INST"))).put("run", "1".equals(kv.get("WP_RUN"))));
         st.put("services", svc);
+        st.put("btRemotes", kv.getOrDefault("BT_REMOTES", "0"));
         st.put("statusAt", LocalDateTime.now().format(TS));
     }
 
@@ -510,6 +546,33 @@ public class PageStations {
             return "<td title='" + title + "'><span style='color:#b8860b'>● установлен</span><br>"
                     + svcForm(ip, key, "on", "Вкл") + "</td>";
         return "<td title='" + title + "'><span style='color:#888'>—</span></td>";
+    }
+
+    /** Ячейка пульта: статус (▶ работает/● установлен/—) + кнопка «Подключить пульт» (bt-connect). */
+    private static String btCell(JSONObject st, String ip) {
+        JSONObject services = st.optJSONObject("services");
+        StringBuilder sb = new StringBuilder("<td title='BT-пульт'>");
+        if (services == null || !services.has("bt")) {
+            sb.append("<span style='color:#888'>?</span>");
+        } else {
+            JSONObject s = services.optJSONObject("bt");
+            boolean inst = s != null && s.optBoolean("inst", false);
+            boolean run = s != null && s.optBoolean("run", false);
+            String remotes = st.optString("btRemotes", "0");
+            if (run)
+                sb.append("<span style='color:green'>▶ ").append(remotes).append(" пульт(ов)</span><br>").append(svcForm(ip, "bt", "off", "Выкл"));
+            else if (inst)
+                sb.append("<span style='color:#b8860b'>● установлен</span><br>").append(svcForm(ip, "bt", "on", "Вкл"));
+            else
+                sb.append("<span style='color:#888'>—</span>");
+        }
+        sb.append("<br>")
+          .append("<form method='POST' action='/form' style='display:inline'>")
+          .append("<input type='hidden' name='action' value='station_bt_connect'>")
+          .append("<input type='hidden' name='station_ip' value='").append(escape(ip)).append("'>")
+          .append("<button type='submit' style='font-size:x-small'>🔑 Пульт</button></form>");
+        sb.append("</td>");
+        return sb.toString();
     }
 
     private static String svcForm(String ip, String service, String state, String label) {
