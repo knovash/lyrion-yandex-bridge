@@ -174,8 +174,6 @@ public class PageStations {
                         "<p><b>Нет рута на станции?</b> Скачайте комплект для самостоятельной установки с ноутбука (Linux): " +
                         "<a href='" + ROOT_ZIP_URL + "'>Скачать скрипты получения рут (zip)</a> — " +
                         "распакуйте и действуйте по <a href='" + ROOT_MANUAL_URL + "'>manual.txt</a>.</p>" +
-                        "<p><b>Настройки BT пульта:</b> " +
-                        "<a href='/stations?bt=1'>стандартная раскладка кнопок и поддерживаемые пульты</a></p>" +
                         "</fieldset>";
 
         context.bodyResponse = PageIndex.pageOuter(inner, "Рутованные станции", "Рутованные станции");
