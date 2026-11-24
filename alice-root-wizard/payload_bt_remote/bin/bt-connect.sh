@@ -95,7 +95,8 @@ if [ -z "$FOUND" ]; then
 fi
 [ -n "$MAC" ] || MAC="$FOUND"
 UNIQ=$(echo "$MAC" | tr 'A-Z' 'a-z')
-ADAPTER=$(ls /data/opt/bluetooth | grep -E '^[0-9A-F:]{17}$' | head -1)
+ADAPTER=$(hciconfig hci0 2>/dev/null | grep -oE '[0-9A-F:]{17}' | head -1)
+[ -n "$ADAPTER" ] || ADAPTER=$(ls /data/opt/bluetooth | grep -E '^[0-9A-F:]{17}$' | head -1)
 # имя: из бонда (надёжно), иначе из скана
 NAME=$(grep '^Name=' "/data/opt/bluetooth/$ADAPTER/$MAC/info" 2>/dev/null | cut -d= -f2)
 [ -n "$NAME" ] || NAME=$(clean | grep "Device $MAC" | grep -vE "UUIDs|RSSI|Connected|Paired|AdvertisingFlags|TxPower|Pairable|Trusted|Blocked|Alias|Modalias|ManufacturerData|ServiceData|ServicesResolved|Battery" | tail -1 | sed "s/.*Device $MAC //" | grep -E '[А-Яа-яA-Za-z0-9]' | head -1)

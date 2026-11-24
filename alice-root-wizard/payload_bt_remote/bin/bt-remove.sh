@@ -9,7 +9,8 @@
 #     поднимет «слушателя-призрака»); удаляет heartbeat-файл.
 BCTL=/opt/bin/bluetoothctl
 CONF=/data/opt/bt.conf
-ADAPTER=$(ls /data/opt/bluetooth | grep -E '^[0-9A-F:]{17}$' | head -1)
+ADAPTER=$(hciconfig hci0 2>/dev/null | grep -oE '[0-9A-F:]{17}' | head -1)
+[ -n "$ADAPTER" ] || ADAPTER=$(ls /data/opt/bluetooth | grep -E '^[0-9A-F:]{17}$' | head -1)
 ST1="/data/opt/bluetooth/$ADAPTER"
 ST2="/data/bluez_data/lib/bluetooth/$ADAPTER"
 log(){ echo "[$(date +%H:%M:%S)] $*"; }
@@ -24,10 +25,18 @@ remove_one(){
   rm -rf "$ST1/$M" "$ST2/$M" 2>/dev/null
   # гасим слушатель (обе эпохи имён) + его супервизор + heartbeat
   for p in $(ps | grep -E "btke[y]s-(grab|listener)[.]sh $U|btrc[v] $U" | awk '{print $1}'); do kill -9 $p 2>/dev/null; done
+  # whitelist ядра: НЕ вычищенный btmgmt-вitelist заставляет станцию перехватывать
+  # рекламу «отвязанного» пульта (directed adv) — чистим
+  if [ -x /opt/bin/btmgmt ]; then
+    printf 'del-device %s\n' "$M" | /opt/bin/btmgmt >/dev/null 2>&1 &
+    BP=$!; i=0
+    while [ $i -lt 5 ] && kill -0 $BP 2>/dev/null; do sleep 1; i=$((i+1)); done
+    kill -9 $BP 2>/dev/null
+  fi
   rm -f "/tmp/bt.status.$(echo "$U" | tr ':' '.')" 2>/dev/null
   # строка пульта из bt.conf — иначе слушатель-призрак вернётся при следующем старте
   if [ -f "$CONF" ]; then
-    grep -v " $U " "$CONF" > /tmp/bt.conf.new 2>/dev/null
+    grep -v "^$U " "$CONF" > /tmp/bt.conf.new 2>/dev/null
     cp /tmp/bt.conf.new "$CONF"
   fi
   log "   удалено (бонды + слушатель + bt.conf)"
