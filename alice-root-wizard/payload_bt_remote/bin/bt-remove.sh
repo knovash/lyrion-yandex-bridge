@@ -1,10 +1,14 @@
 #!/bin/sh
-# bt-remove.sh — удалить спаренный BT-пульт (бонд из обоих хранилищ + слушатель).
+# bt-remove.sh (v2) — удалить спаренный BT-пульт (бонды + слушатель + строка bt.conf).
 # Использование:
 #   bt-remove.sh            — интерактивное меню (показать спаренные, выбрать номер/MAC)
 #   bt-remove.sh <MAC>      — удалить конкретный
 #   bt-remove.sh all        — удалить ВСЕ пульты (осторожно!)
+# v2: гасит слушатель ОБЕИХ эпох имён (grab/listener) + его супервизор;
+#     чистит строку пульта из /data/opt/bt.conf (иначе bt-listeners-start
+#     поднимет «слушателя-призрака»); удаляет heartbeat-файл.
 BCTL=/opt/bin/bluetoothctl
+CONF=/data/opt/bt.conf
 ADAPTER=$(ls /data/opt/bluetooth | grep -E '^[0-9A-F:]{17}$' | head -1)
 ST1="/data/opt/bluetooth/$ADAPTER"
 ST2="/data/bluez_data/lib/bluetooth/$ADAPTER"
@@ -18,10 +22,15 @@ remove_one(){
   $BCTL disconnect "$M" >/dev/null 2>&1
   $BCTL remove "$M" >/dev/null 2>&1
   rm -rf "$ST1/$M" "$ST2/$M" 2>/dev/null
-  # гасим слушатель этого пульта (supervisor + btkeys-listener + btrcv)
-  for p in $(ps | grep -E "btke[y]s-grab.sh $U|btrc[v] $U" | awk '{print $1}'); do kill -9 $p 2>/dev/null; done
-  for p in $(ps | grep -E "btke[y]s-grab.sh $U" | awk '{print $1}'); do kill -9 $p 2>/dev/null; done
-  log "   удалено (бонды + слушатель)"
+  # гасим слушатель (обе эпохи имён) + его супервизор + heartbeat
+  for p in $(ps | grep -E "btke[y]s-(grab|listener)[.]sh $U|btrc[v] $U" | awk '{print $1}'); do kill -9 $p 2>/dev/null; done
+  rm -f "/tmp/bt.status.$(echo "$U" | tr ':' '.')" 2>/dev/null
+  # строка пульта из bt.conf — иначе слушатель-призрак вернётся при следующем старте
+  if [ -f "$CONF" ]; then
+    grep -v " $U " "$CONF" > /tmp/bt.conf.new 2>/dev/null
+    cp /tmp/bt.conf.new "$CONF"
+  fi
+  log "   удалено (бонды + слушатель + bt.conf)"
 }
 
 # --- список спаренных ---
