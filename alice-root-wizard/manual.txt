@@ -28,7 +28,7 @@
 0. ЧТО ЭТО И КАК УСТРОЕНО
 --------------------------------------------------------------------------------
 
-7 скриптов этапов + make_zip.sh + 5 папок payload_* с файлами для колонки.
+8 скриптов этапов + make_zip.sh + 5 папок payload_* с файлами для колонки.
 Плюс lite-kit/ (стенд рута). Прошивка .46 (64 МБ) — ОТДЕЛЬНЫЙ файл в git:
 в wizard-zip её НЕТ; перед рутом скачать (raw-URL или зеркало — см. Этап 1).
 
@@ -36,7 +36,9 @@
     root.sh               — минимальный рут: dropbear SSH + OTA-off + маркеры
     squeezelite.sh        — LMS-плеер squeezelite
     local_commands.sh     — commandslistener (экс-whatplays, голосовые фразы)
-    bt_remote.sh          — BT-пульт (btrcv + btkeys, Entware через yse)
+    bt_remote.sh          — BT-пульт (btrcv + btkeys, Entware через yse);
+                           «просто IP» — плеер определяется сам
+    install_all.sh        — ВСЕ фичи одной командой: ./install_all.sh <IP>
     airplay.sh            — AirPlay 2 (shairport-sync + nqptp + avahi)
     make_zip.sh           — пересобрать alice-root-wizard.zip (БЕЗ прошивки)
     save_to_payloads.sh   — ЗАПАСНОЙ dev-инструмент: подтянуть файлы с живой
@@ -63,7 +65,7 @@
 
     alice-root-wizard/
     ├── stand.sh, root.sh, squeezelite.sh, local_commands.sh, bt_remote.sh,
-    │   airplay.sh, make_zip.sh, save_to_payloads.sh, manual.txt
+    │   install_all.sh, airplay.sh, make_zip.sh, save_to_payloads.sh, manual.txt
     ├── lite-kit/                     — стенд рута ЦЕЛИКОМ (krevetkqqq/lite-kit)
     │   ├── start.sh / stop.sh / check.sh / diag.sh / install-firmware.sh
     │   ├── scripts/equasar_server.py — HTTPS-сервер (get_sync_info → adbd on)
@@ -322,10 +324,18 @@
 --------------------------------------------------------------------------------
 
     cd ~/IdeaProjects/sa_client/alice-root-wizard
-    ./bt_remote.sh <IP_колонки> --player <Имя LMS-плеера> --room <Комната>
+    ./bt_remote.sh <IP_колонки>            # плеер/комната — АВТО (правило ниже)
+    ./bt_remote.sh <IP> --room <Комната>   # комната явно, плеер найдётся сам
+    ./bt_remote.sh <IP> --player <Имя>     # плеер явно (остальное — авто)
+
+ПРАВИЛО АВТОВЫБОРА ПЛЕЕРА (владельца): пульт рулит LMS-плеером в комнате, где
+стоит колонка. Комната: --room > commandslistener станции (строка ROOM=).
+Плеер: --player > status.json моста (плеер комнаты) > squeezelite самой
+станции (имя из cmdline; дефолт "Yandex Lite 2 SL"). Если LMS-плеера в
+комнате нет — пульт рулит squeezelite станции.
 
 Пример (эталон Гостиная, пульт G20S → HomePod1):
-    ./bt_remote.sh 192.168.1.115 --player HomePod1 --room Гостиная
+    ./bt_remote.sh 192.168.1.115    # room=Гостиная (commandslistener) → HomePod1
 
 Требуется:
   - рут (Этап 1) и SSH; интернет НА СТАНЦИИ (Entware ставится через yse)
@@ -661,7 +671,9 @@ ALICEID (UUID для voice_say) — берётся ТОЛЬКО через API �
 
 Краткий чек-лист для новой колонки (zip: скрипты+payload+lite-kit БЕЗ прошивки;
 прошивка — отдельный файл в git, скачать по raw-URL, см. Этап 1;
-./make_zip.sh пересобирает alice-root-wizard.zip):
+./make_zip.sh пересобирает alice-root-wizard.zip).
+БЫСТРЫЙ ПУТЬ после рута: ./install_all.sh <IP> --room <Комната> --aliceid <UUID>
+(поставит squeezelite+команды+пульт разом; плеер пульта — авто).
 
     [ ] 1. ./stand.sh (терминал 1) + руками DNS/сброс/привязка
     [ ] 3. Проверка стенда: ss :53/:80/:443, dig @.130

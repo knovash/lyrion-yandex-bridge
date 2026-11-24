@@ -19,6 +19,12 @@
   alice-root-wizard.zip — МАЛЕНЫЙ (~4МБ: скрипты+payload+lite-kit, БЕЗ прошивки).
   Оба обновляются пушем, НЕ привязаны к релизам. make_zip.sh v3 — малый zip;
   stand.sh при отсутствии прошивки печатает raw-URL для скачивания.
+- 24.11 (17:1x, режим «просто IP»): bt_remote.sh v4 — --player/--room НЕ обязательны:
+  комната (флаг > commandslistener станции) и плеер по правилу владельца
+  (LMS-плеер комнаты через status.json моста; иначе squeezelite станции).
+  НОВЫЙ install_all.sh <IP> — все фичи одной командой (squeezelite +
+  commandslistener при --room/--aliceid + bt-авто + airplay по --airplay).
+  Пуш разделения bac5475 дошёл: firmware 63.7МБ на GitHub (warning >50МБ — ок).
 ## 17.11 (13:3x, ИТОГ СЕССИИ БТ-ПУЛЬТА) G20S PRO: дошли до последнего звена, задача = откат bluez 5.78
 - ФИНАЛЬНЫЙ ДИАГНОЗ: ядро РАБОТАЕТ (dmesg: input G20S PRO / uhid / hid-generic), вендор-hog
   не аттачится (initiator), Entware 5.87 аттачится (uhid_create, CCC written), НО отчёты
