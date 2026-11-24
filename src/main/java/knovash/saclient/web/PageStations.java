@@ -1,6 +1,7 @@
 package knovash.saclient.web;
 
 import knovash.saclient.Context;
+import knovash.saclient.lms.Player;
 import knovash.saclient.yandex.Yandex;
 import knovash.saclient.yandex.YandexInfo;
 import knovash.saclient.Main;
@@ -601,6 +602,12 @@ public class PageStations {
         st.put("btRemotes", kv.getOrDefault("BT_REMOTES", "0"));
         String btPlayer = parseBtPlayer(kv.getOrDefault("BT_CONF", ""));
         if (!btPlayer.isEmpty()) st.put("btPlayer", btPlayer);
+        // ПРАВИЛО ВЛАДЕЛЬЦА: пульт лайта рулит LMS-плеером его КОМНАТЫ (привязка
+        // комнаты к плееру — страница /players). Лайт может переехать — плеер
+        // меняется вместе с комнатой УДЯ, а не «прицепом» из bt.conf.
+        String yRoom = st.optString("room", "");
+        String roomPlayer = playerOfRoom(yRoom);
+        if (!roomPlayer.isEmpty()) st.put("btPlayer", roomPlayer);
         st.put("statusAt", LocalDateTime.now().format(TS));
     }
 
@@ -625,6 +632,21 @@ public class PageStations {
             }
         }
         return out.length() > 0 ? out.toString() : def;
+    }
+
+    /** LMS-плеер, закреплённый за комнатой (страница /players): в комнате может
+     *  стоять любой Лайт — пульт всегда рулит плеером КОМНАТЫ. Пусто = в комнате
+     *  нет плеера (покажется плеер из bt.conf станции, если есть). */
+    private static String playerOfRoom(String room) {
+        if (room == null || room.isEmpty()
+                || Main.lmsPlayers == null || Main.lmsPlayers.players == null) return "";
+        String best = "";
+        for (Player p : Main.lmsPlayers.players) {
+            if (p == null || p.room == null || !p.room.equals(room) || p.name == null || p.name.isEmpty()) continue;
+            if (p.connected) return p.name; // подключённый плеер комнаты — приоритет
+            if (best.isEmpty()) best = p.name;
+        }
+        return best;
     }
 
     // ==================== UI-помощники ====================
