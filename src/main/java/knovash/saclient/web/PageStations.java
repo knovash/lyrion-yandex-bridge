@@ -1,6 +1,8 @@
 package knovash.saclient.web;
 
 import knovash.saclient.Context;
+import knovash.saclient.yandex.Yandex;
+import knovash.saclient.yandex.YandexInfo;
 import knovash.saclient.Main;
 import knovash.saclient.utils.Utils;
 import lombok.extern.log4j.Log4j2;
@@ -17,6 +19,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -227,6 +230,10 @@ public class PageStations {
         StringBuilder out = new StringBuilder();
         int done = 0;
         boolean changed = false;
+        // свежие устройства/комнаты УДЯ (сопоставление станций по серийнику в applyStatus)
+        if ("check".equals(kind)) {
+            try { Yandex.devicesGetFromYandexInfo(); } catch (Exception e) { log.warn("yandexInfo refresh: " + e); }
+        }
         for (int i = 0; stations != null && i < stations.length(); i++) {
             JSONObject st = stations.optJSONObject(i);
             if (st == null) continue;
@@ -567,6 +574,24 @@ public class PageStations {
         if (!room.isEmpty()) st.put("room", room);
         String name = st.optString("name", "");
         if (!room.isEmpty() && (name.isEmpty() || "?".equals(name) || name.startsWith("станция "))) st.put("name", room);
+        // УДЯ: НАСТОЯЩЕЕ имя станции и её ТЕКУЩАЯ комната — по серийнику
+        // (SERIAL с cmdline = quasar_info.device_id; переименование/переопределение
+        // комнаты в УДЯ подхватится при «Проверить» — yandexInfo обновляется в op())
+        if (!serial.isEmpty() && Yandex.yandexInfo != null && Yandex.yandexInfo.devices != null) {
+            Map<String, String> roomNameById = new HashMap<>();
+            if (Yandex.yandexInfo.rooms != null) {
+                for (YandexInfo.Room r : Yandex.yandexInfo.rooms) {
+                    if (r != null && r.id != null) roomNameById.put(r.id, r.name == null ? "" : r.name);
+                }
+            }
+            for (YandexInfo.Device dv : Yandex.yandexInfo.devices) {
+                if (dv == null || dv.quasar_info == null || !serial.equals(dv.quasar_info.device_id)) continue;
+                if (dv.name != null && !dv.name.isEmpty()) st.put("name", dv.name);
+                String yRoom = roomNameById.getOrDefault(dv.room, "");
+                if (!yRoom.isEmpty()) st.put("room", yRoom);
+                break;
+            }
+        }
         JSONObject svc = new JSONObject()
                 .put("sq", new JSONObject().put("inst", "1".equals(kv.get("SQ_INST"))).put("run", "1".equals(kv.get("SQ_RUN"))))
                 .put("ap", new JSONObject().put("inst", "1".equals(kv.get("AP_INST"))).put("run", "1".equals(kv.get("AP_RUN"))))
