@@ -1,13 +1,16 @@
 #!/bin/sh
-# bt-connect.sh (v4) — подключение BT-пульта к Лайту.
+# bt-connect.sh (v5) — подключение BT-пульта к Лайту.
 # Использование:
 #   bt-connect.sh                — АВТООПРЕДЕЛЕНИЕ: подключит пульт, который сейчас
 #                                  в режиме паринга (мигает LED); BT_WAIT=120 $0 — дольше
 #   bt-connect.sh <MAC> [player] [room] — подключить конкретный пульт
-# v4: НЕ убивает чужие tail (было: killall tail ронял ssh-сессии диагностики);
-#     перед своим демоном гасит чужой супервизор демона (нет двух bluetoothd);
-#     после trust — whitelist ядра (directed advertising ловится мгновенно);
-#     перед слушателем гасит его старую копию (нет двух супервизоров на uniq).
+# v5: шаг 0a — САМ доводит конфиги BlueZ до эталона .115 (input.conf: UserspaceHID/
+#     LEAutoSecurity/ClassicBondedOnly/IdleTimeout; main.conf: ControllerMode=dual,
+#     TemporaryTimeout=0, Experimental, [GATT] Cache=off) + рестарт стека — БЕЗ них
+#     BLE HID-пары падают, а временное устройство выпадает из кэша («not available»);
+#     PAIR — до 3 попыток с видимым выводом (лог /tmp/bt-pair.log), между попытками
+#     чистка кэша/бонда (лечит AlreadyExists/старый LTK) и повторный скан.
+# v4: НЕ убивает чужие tail; whitelist ядра после trust; дедуп супервизоров.
 # Пульты владельца (MAC):
 #   G20S PRO   69:98:98:23:A7:1D   паринг: OK+Return 3-5с
 #   ATV3       54:03:84:E2:39:1F   паринг: Back+Home 3-5с (сброс памяти: 10-12с)
@@ -15,6 +18,7 @@
 #   BPR2S      C4:2E:C3:E1:F9:C4   паринг: OK+Vol- (или OK+Return)
 BCTL=/opt/bin/bluetoothctl
 CONF=/data/opt/bt.conf
+CFGDIR=/opt/etc/bluetooth
 MAC="${1:-}"
 PLAYER="${2:-}"
 ROOM="${3:-}"
@@ -33,6 +37,23 @@ findnode(){
   awk -v u="Uniq=$UNIQ" 'BEGIN{RS=""} $0 ~ u {n=split($0,L,"\n"); for(i=1;i<=n;i++) if(L[i] ~ /Handlers=/){m=split(L[i],H," "); for(j=1;j<=m;j++) if(H[j] ~ /^event/){print H[j]; exit}}}' /proc/bus/input/devices
 }
 killpat(){ for p in $(ps | grep -E "$1" | awk '{print $1}'); do kill -9 $p 2>/dev/null; done; }
+
+# --- 0a: конфиги BlueZ до эталона (БЕЗ них BLE HID-пары падают) ---
+CFGFIX=0
+grep -q '^UserspaceHID = true' $CFGDIR/input.conf 2>/dev/null || CFGFIX=1
+grep -q '^LEAutoSecurity = true' $CFGDIR/input.conf 2>/dev/null || CFGFIX=1
+grep -q '^ControllerMode = dual' $CFGDIR/main.conf 2>/dev/null || CFGFIX=1
+grep -q '^TemporaryTimeout = 0' $CFGDIR/main.conf 2>/dev/null || CFGFIX=1
+if [ "$CFGFIX" = 1 ]; then
+  log "0a. довожу конфиги BlueZ до эталона .115 (BLE HID-пары) + рестарт стека"
+  mkdir -p $CFGDIR
+  printf '[General]\nUserspaceHID = true\nLEAutoSecurity = true\nClassicBondedOnly = false\nIdleTimeout = 0\n' > $CFGDIR/input.conf
+  printf '[General]\nControllerMode = dual\nTemporaryTimeout = 0\nExperimental = true\nKernelExperimental = true\nPrivacy = device\n\n[GATT]\nCache = off\n' > $CFGDIR/main.conf
+  sh /data/opt/bin/bt-listeners-start.sh
+  sleep 3
+else
+  log "0a. конфиги BlueZ уже эталонные ✓"
+fi
 
 log "0. проверяю стек (Entware bluetoothd)"
 if ! ps | grep -v grep | grep -q "opt/bin/bluetooth[d].*input,hog"; then
@@ -80,14 +101,37 @@ BONDED=0
 [ -d "/data/opt/bluetooth/$ADAPTER/$MAC" ] && BONDED=1
 if [ "$BONDED" = "1" ]; then
   log "2. уже спарен — pair пропускаю"
+  PAIRED=1
 else
-  log "2. PAIR (до 25с) — окно паринга держать открытым..."
-  $BCTL --agent NoInputNoOutput pair "$MAC" >/dev/null 2>&1
-  sleep 3
-  if ! $BCTL info "$MAC" 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -q "Paired: yes"; then
-    log "ПАРА НЕ ПРОШЛА — повторите запуск, зажав комбо до мигания и держа"
+  log "2. PAIR (до 3 попыток) — окно паринга держать открытым..."
+  PAIRED=0
+  try=0
+  while [ $try -lt 3 ]; do
+    try=$((try+1))
+    OUT=$($BCTL --agent NoInputNoOutput pair "$MAC" 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -vE '^[[:space:]]*$')
+    [ -n "$OUT" ] && echo "[$(date +%H:%M:%S)] try$try $(echo "$OUT" | tail -2 | tr '\n' ' ')" >> /tmp/bt-pair.log
+    k=0
+    while [ $k -lt 12 ]; do
+      $BCTL info "$MAC" 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -q "Paired: yes" && { PAIRED=1; break; }
+      sleep 1; k=$((k+1))
+    done
+    [ "$PAIRED" = 1 ] && break
+    log "   попытка $try не прошла: $(echo "$OUT" | tail -1 | cut -c1-80)"
+    log "   чищу кэш/бонд и ретрай — ПУЛЬТ ДЕРЖИТЕ В РЕЖИМЕ ПАРИНГА (LED мигает)!"
+    $BCTL remove "$MAC" >/dev/null 2>&1
+    rm -rf "/data/opt/bluetooth/$ADAPTER/$MAC" 2>/dev/null
+    sleep 1
+    $BCTL --timeout 5 scan le > $SCAN 2>&1
+    clean | grep -q "$MAC" || log "   (пульт пропал из скана — зажмите комбо заново)"
+    sleep 1
+  done
+  [ "$PAIRED" = 1 ] || {
+    log "ПАРА НЕ ПРОШЛА за 3 попытки (детали: /tmp/bt-pair.log)"
+    log "Если пульт раньше был спарен с ДРУГОЙ станцией — сбросьте его память:"
+    log "  ATV3: Back+Home 10-12с (LED длинная вспышка); G20S: OK+Return 15с;"
+    log "  затем обычное комбо паринга (3-5с) и перезапустите $0"
     exit 2
-  fi
+  }
   log "   Paired: yes"
 fi
 $BCTL trust "$MAC" >/dev/null 2>&1
@@ -110,7 +154,7 @@ while [ $i -lt 12 ]; do
   [ -n "$NODE" ] && break
   i=$((i+1))
 done
-[ -n "$NODE" ] || { log "узел не появился (лог демона: /tmp/bt-connect.log)"; exit 3; }
+[ -n "$NODE" ] || { log "узел не появился (лог демона: /tmp/bt-connect.log, /tmp/bt-boot.log)"; exit 3; }
 log "   УЗЕЛ: /dev/input/$NODE"
 
 # три бипа — пульт подключён (и новый, и уже спаренный)

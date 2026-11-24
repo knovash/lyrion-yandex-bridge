@@ -14,6 +14,7 @@
 #   3) Создаёт хранилище бондов (/data/opt/bluetooth) + симлинк
 #   4) Настраивает Entware D-Bus (machine-id + сокет; вендорский не трогаем)
 #   5) Пишет bt.conf: server <bridge> + default <player> <room>
+#      + тюнинг-конфиги BlueZ (input.conf/main.conf, эталон .115)
 #   6) Ставит S99btkeys в /etc/init.d — автозапуск стека при загрузке станции
 #   7) Запускает стек + слушателей
 #
@@ -158,6 +159,12 @@ $SSH "root@$LITE_IP" "
   cat \$T >> /data/opt/bt.conf && rm -f \$T
   cat /data/opt/bt.conf
 "
+
+say "5a/7: тюнинг-конфиги BlueZ (эталон .115 — без них BLE HID-пары падают)"
+$SSH "root@$LITE_IP" 'mkdir -p /opt/etc/bluetooth
+printf "[General]\nUserspaceHID = true\nLEAutoSecurity = true\nClassicBondedOnly = false\nIdleTimeout = 0\n" > /opt/etc/bluetooth/input.conf
+printf "[General]\nControllerMode = dual\nTemporaryTimeout = 0\nExperimental = true\nKernelExperimental = true\nPrivacy = device\n\n[GATT]\nCache = off\n" > /opt/etc/bluetooth/main.conf
+echo "  input.conf: $(grep -c = /opt/etc/bluetooth/input.conf) ключей; main.conf: ControllerMode/TemporaryTimeout/Cache ok"'
 
 say "6/7: S99btkeys → /etc/init.d (автозапуск при загрузке)"
 if cat "$PAYLOAD/init/S99btkeys" | $SSH "root@$LITE_IP" '
