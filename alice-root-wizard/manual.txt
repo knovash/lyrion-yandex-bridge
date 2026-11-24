@@ -343,6 +343,9 @@
 
 Что ставит:
   1) yse + Entware (bootstrap, если его нет) + bluez-daemon/libs/utils
+     + тюнинг-конфиги BlueZ (input.conf: UserspaceHID/LEAutoSecurity;
+     main.conf: ControllerMode=dual, TemporaryTimeout=0, [GATT] Cache=off —
+     эталон .115; БЕЗ них BLE HID-пары падают, пульт «not available»)
   2) btrcv + btkeys-grab.sh + bt-connect.sh + bt-remove.sh
      + bt-listeners-start.sh + beep.wav (каждая заливка с SHA-сверкой)
   3) хранилище бондов /data/opt/bluetooth (+симлинк /var/lib/bluetooth)
@@ -356,6 +359,10 @@
   → зажать комбо паринга на пульте (LED мигает):
      G20S PRO: OK+Return 3-5с; ATV3: Back+Home; Xiaomi RC: Home+Menu; BPR2S: OK+Vol-
   → три бипа = подключено; слушатель сам поднимется и попадёт в bt.conf
+  → bt-connect v5: САМ доводит конфиги BlueZ до эталона (шаг 0a) и делает
+    пару до 3 попыток (видимый вывод; лог /tmp/bt-pair.log). Если пульт
+    раньше был спарен с ДРУГОЙ станцией — сбросьте его память: ATV3
+    Back+Home 10-12с, G20S OK+Return 15с, затем обычное комбо (3-5с)
 
 Кнопки (btkeys-grab.sh): ◀▶=треки, OK=play/pause, VOL±, Home=switch_here,
   Search=«что играет», 1-9=избранное. Бип на каждое нажатие; ошибки /cmd —
