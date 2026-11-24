@@ -360,6 +360,16 @@ input-события → btkeys.sh → HTTP `/cmd` клиента sa_client (у�
   MiBox×2 (нетронутые) спарятся с нуля мгновенно. Xiaomi RC отвергает все станции
   (Connected:yes → AuthenticationFailed — видимо, требует BREDR-ветку).
 
+- **24.11 (15:5x, ФИНАЛ Xiaomi RC)**: перепробованы агенты NoInputNoOutput /
+  DisplayYesNo / KeyboardDisplay — везде connect-then-drop (Connected:yes →
+  Reason.Unknown → AuthenticationCanceled). Тип подтверждения НЕ при чём:
+  пульт флеш-бондован со старым хостом осени (как ATV3). СТАРЫЕ пульты
+  (Xiaomi RC 44:28, ATV3 54:03) — «однолюбы», перевоспитать нельзя. СПАЛЬНЯ:
+  только СВЕЖИЙ пульт = MiBox×2 (нетронутые). Гостиная .115 в /stations
+  показывает BT_REMOTES=2 (считает и старый whitelist) — фактически подключён
+  только G20S; BT_RUN=0 у .118/.122 — косметика проверки страницы (считает
+  слушателей, а их нет без спаренного пульта) — кандидат на фикс в sa_client.
+
 ## Дальше (план)
 Устарело: откат bluez 5.78 не понадобился — решение было в EVIOCGRAB (см. РЕШЕНИЕ).
 По желанию:
