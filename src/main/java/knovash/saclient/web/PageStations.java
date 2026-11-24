@@ -16,6 +16,7 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -118,8 +119,12 @@ public class PageStations {
             String name = st.optString("name", "");
             if (name.isEmpty() || "?".equals(name)) name = "станция " + ip;
             int port = st.optInt("port", 2222);
+            String room = st.optString("room", "");
+            String btPlayer = st.optString("btPlayer", "");
             rows.append("<tr><td>").append(escape(name))
                     .append("</td><td><code>").append(escape(ip)).append(':').append(port).append("</code></td>")
+                    .append("<td>").append(room.isEmpty() ? "—" : escape(room)).append("</td>")
+                    .append("<td>").append(btPlayer.isEmpty() ? "—" : escape(btPlayer)).append("</td>")
                     .append(svcCell(st.optJSONObject("services"), "sq", ip, "squeezelite"))
                     .append(svcCell(st.optJSONObject("services"), "ap", ip, "AirPlay"))
                     .append(svcCell(st.optJSONObject("services"), "wp", ip, "лок.команды"))
@@ -129,7 +134,7 @@ public class PageStations {
                     .append(deleteCell(ip))
                     .append("</tr>");
         }
-        if (rows.length() == 0) rows.append("<tr><td colspan='9'>станции не заданы — нажмите «Найти» или добавьте вручную ниже</td></tr>");
+        if (rows.length() == 0) rows.append("<tr><td colspan='11'>станции не заданы — нажмите «Найти» или добавьте вручную ниже</td></tr>");
 
         String scanBlock = lastScanRows.isEmpty() ? "" :
                 "<h3>Скан сети (" + escape(lastScanAt) + ")</h3>" +
@@ -148,7 +153,7 @@ public class PageStations {
                         "<b>«Перенацелить сюда»</b> — станция перепропишет адреса на этот сервер и перезапустит " +
                         "сервисы (если IP уже этот — просто рестарт). Ничего автоматического не происходит.</p>" +
                         "<table border='1' cellpadding='4' cellspacing='0'>" +
-                        "<tr><th>Станция</th><th>Адрес</th><th>squeezelite</th><th>AirPlay</th><th>лок.команды</th><th>пульт</th><th></th><th></th><th></th></tr>" + rows + "</table>" +
+                        "<tr><th>Станция</th><th>Адрес</th><th>Комната</th><th>Плеер (пульт)</th><th>squeezelite</th><th>AirPlay</th><th>лок.команды</th><th>пульт</th><th></th><th></th><th></th></tr>" + rows + "</table>" +
                         "<form method='POST' action='/form' style='display:inline'><input type='hidden' name='action' value='station_check'>" +
                         "<input type='hidden' name='station_ip' value='ALL'><button type='submit'>Проверить ВСЕ</button></form> " +
                         "<form method='POST' action='/form' style='display:inline'><input type='hidden' name='action' value='station_repoint'>" +
@@ -329,7 +334,7 @@ public class PageStations {
     static String scriptStatus() {
         return "MAC=$(cat /sys/class/net/wlan0/address 2>/dev/null)\n"
                 + "SERIAL=$(tr ' ' '\\n' </proc/cmdline | grep androidboot.serialno | cut -d= -f2)\n"
-                + "ROOM=$(sed -n \"s/^ROOM=//p\" /data/opt/bin/commandslistener.sh 2>/dev/null | head -1 | sed \"s/[[:space:]]*#.*$//; s/^'//; s/'$//\")\n"
+                + "ROOM=$(sed -n \"s/^ROOM=//p\" /data/opt/bin/commandslistener.sh /data/opt/bin/whatplays.sh 2>/dev/null | head -1 | sed \"s/[[:space:]]*#.*$//; s/^['\\\"]//; s/['\\\"]$//\")\n"
                 + "echo \"MAC=$MAC\"\n"
                 + "echo \"SERIAL=$SERIAL\"\n"
                 + "echo \"ROOM=$ROOM\"\n"
@@ -345,6 +350,7 @@ public class PageStations {
                 + "echo \"BT_INST=$([ -x /data/opt/bin/btrcv ] && echo 1 || echo 0)\"\n"
                 + "echo \"BT_RUN=$(ps | grep -q 'btrc[v]' && echo 1 || echo 0)\"\n"
                 + "echo \"BT_REMOTES=$(grep -vcE '^#|^$|default' /data/opt/bt.conf 2>/dev/null || echo 0)\"\n"
+                + "echo \"BT_CONF=$(grep -vE '^#|^$' /data/opt/bt.conf 2>/dev/null | tr '\n' '|')\"\n"
                 + "echo \"PROCS=$(ps | grep -cE 'commandslistene[r]|squeezelite')\"\n";
     }
 
@@ -568,7 +574,32 @@ public class PageStations {
                 .put("wp", new JSONObject().put("inst", "1".equals(kv.get("WP_INST"))).put("run", "1".equals(kv.get("WP_RUN"))));
         st.put("services", svc);
         st.put("btRemotes", kv.getOrDefault("BT_REMOTES", "0"));
+        String btPlayer = parseBtPlayer(kv.getOrDefault("BT_CONF", ""));
+        if (!btPlayer.isEmpty()) st.put("btPlayer", btPlayer);
         st.put("statusAt", LocalDateTime.now().format(TS));
+    }
+
+    /** Плеер(ы), которыми рулят пульты станции: строки bt.conf «uniq|default <плеер…> <комната>»
+     *  (последнее слово строки — комната, середина — имя плеера; uniq-строки приоритетнее default). */
+    private static String parseBtPlayer(String conf) {
+        if (conf == null || conf.isBlank()) return "";
+        StringBuilder out = new StringBuilder();
+        String def = "";
+        for (String line : conf.split("\\|")) {
+            String[] w = line.trim().split("\\s+");
+            if (w.length < 2) continue;
+            boolean uniq = w[0].matches("([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}");
+            boolean isDef = "default".equals(w[0]);
+            if (!uniq && !isDef) continue;
+            String player = w.length >= 3 ? String.join(" ", Arrays.copyOfRange(w, 1, w.length - 1)) : w[1];
+            if (uniq) {
+                if (out.length() == 0) out.append(player);
+                else if (!out.toString().contains(player)) out.append(", ").append(player);
+            } else if (def.isEmpty()) {
+                def = player;
+            }
+        }
+        return out.length() > 0 ? out.toString() : def;
     }
 
     // ==================== UI-помощники ====================
