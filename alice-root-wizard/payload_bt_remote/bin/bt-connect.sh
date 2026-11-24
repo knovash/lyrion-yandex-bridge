@@ -14,7 +14,9 @@
 # Пульты владельца (MAC):
 #   G20S PRO   69:98:98:23:A7:1D   паринг: OK+Return 3-5с
 #   ATV3       54:03:84:E2:39:1F   паринг: Back+Home 3-5с (сброс памяти: 10-12с)
-#   Xiaomi RC  44:28:A3:9B:EA:B2   паринг: Home+Menu 3-5с
+#   Xiaomi RC  44:28:A3:9B:EA:B2   паринг: Home+Menu 3-5с (сброс: 10-15с)
+#                                  ⚠ исторически НЕ BLE-парился на этом стеке
+#                                  (см. lite-bt.md): рабочие пульты — G20S/ATV3
 #   BPR2S      C4:2E:C3:E1:F9:C4   паринг: OK+Vol- (или OK+Return)
 BCTL=/opt/bin/bluetoothctl
 CONF=/data/opt/bt.conf
@@ -104,6 +106,9 @@ if [ "$BONDED" = "1" ]; then
   PAIRED=1
 else
   log "2. PAIR (до 3 попыток) — окно паринга держать открытым..."
+  log "   ВАЖНО: ЩЁЛКАЙТЕ кнопками пульта во время попытки (окна рекламы 1-2с);"
+  log "   если пульт был спарен с другой станцией — сначала ПОЛНЫЙ СБРОС ПАМЯТИ"
+  log "   (ATV3: Back+Home 10-12с до ДЛИННОЙ вспышки; Xiaomi: Home+Menu 10-15с)"
   PAIRED=0
   try=0
   while [ $try -lt 3 ]; do
