@@ -29,8 +29,8 @@
 --------------------------------------------------------------------------------
 
 7 скриптов этапов + make_zip.sh + 5 папок payload_* с файлами для колонки.
-Плюс lite-kit/ ЦЕЛИКОМ (стенд рута + прошивка .46, 64 МБ) — архив САМОДОСТАТОЧЕН:
-клон lite-kit и поиск прошивки по диску больше не нужны.
+Плюс lite-kit/ (стенд рута). Прошивка .46 (64 МБ) — ОТДЕЛЬНЫЙ файл в git:
+в wizard-zip её НЕТ; перед рутом скачать (raw-URL или зеркало — см. Этап 1).
 
     stand.sh              — стенд lite-kit (DNS + HTTPS-сервер прошивки)
     root.sh               — минимальный рут: dropbear SSH + OTA-off + маркеры
@@ -38,7 +38,7 @@
     local_commands.sh     — commandslistener (экс-whatplays, голосовые фразы)
     bt_remote.sh          — BT-пульт (btrcv + btkeys, Entware через yse)
     airplay.sh            — AirPlay 2 (shairport-sync + nqptp + avahi)
-    make_zip.sh           — пересобрать alice-root-wizard.zip (С ПРОШИВКОЙ)
+    make_zip.sh           — пересобрать alice-root-wizard.zip (БЕЗ прошивки)
     save_to_payloads.sh   — ЗАПАСНОЙ dev-инструмент: подтянуть файлы с живой
                              станции в payload_* (обычно НЕ нужен — они полные)
 
@@ -52,8 +52,10 @@
   SSH-порт станции:      2222
   ADB-порт станции:      5555
   Прошивка для рута:     yandexmicro 0.369.1.46.4778262442.20261013.297
-                           (лежит в lite-kit/firmware/yandexmicro/, 64 МБ;
-                            в git НЕ коммитится — только в zip от make_zip.sh)
+                           (ХРАНИТСЯ В GIT ОТДЕЛЬНЫМ ФАЙЛОМ — свой стабильный
+                            raw-URL; в alice-root-wizard.zip НЕ входит, там
+                            только скрипты+payload+lite-kit. Оба файла
+                            обновляются пушем, НЕ привязаны к релизам)
 
 --------------------------------------------------------------------------------
 1. СТРУКТУРА ПРОЕКТА
@@ -66,7 +68,7 @@
     │   ├── start.sh / stop.sh / check.sh / diag.sh / install-firmware.sh
     │   ├── scripts/equasar_server.py — HTTPS-сервер (get_sync_info → adbd on)
     │   ├── certs/ + config/ + docs/ + README.md
-    │   └── firmware/yandexmicro/     — ПРОШИВКА .46, 64 МБ (в git не коммитится)
+    │   └── firmware/yandexmicro/     — ПРОШИВКА .46, 64 МБ (ОТДЕЛЬНЫЙ файл в git)
     └── payload_*/
         ├── payload_root/             — dropbear + dropbearkey + S99zdropbear
         │                               + bin/yandex-noupdate.sh
@@ -138,7 +140,10 @@
   2) освободит :53 (dnsmasq), :80 и :443 (apache2 + старые python lite-kit)
   3) возьмёт lite-kit ЛОКАЛЬНО из alice-root-wizard/lite-kit/ (клон — только
      если папки нет; интернет для клона НЕ нужен)
-  4) прошивка .46 уже в lite-kit/firmware/yandexmicro/ (64 МБ, из архива)
+  4) прошивка .46 — lite-kit/firmware/yandexmicro/ (ОТДЕЛЬНЫЙ файл в git;
+     если пусто — скачать raw-URL'ом или ./lite-kit/install-firmware.sh):
+       curl -L -o lite-kit/firmware/yandexmicro/0.369.1.46.4778262442.20261013.297.zip \
+         https://raw.githubusercontent.com/knovash/lyrion-yandex-bridge/main/alice-root-wizard/lite-kit/firmware/yandexmicro/0.369.1.46.4778262442.20261013.297.zip
   5) напечатает IP ноутбука и инструкции
   6) запустит стенд в форграунде
 
@@ -654,8 +659,9 @@ ALICEID (UUID для voice_say) — берётся ТОЛЬКО через API �
 КОНЕЦ ИНСТРУКЦИИ
 --------------------------------------------------------------------------------
 
-Краткий чек-лист для новой колонки (архив самодостаточен: lite-kit и прошивка
-уже внутри; ./make_zip.sh пересобирает alice-root-wizard.zip с прошивкой):
+Краткий чек-лист для новой колонки (zip: скрипты+payload+lite-kit БЕЗ прошивки;
+прошивка — отдельный файл в git, скачать по raw-URL, см. Этап 1;
+./make_zip.sh пересобирает alice-root-wizard.zip):
 
     [ ] 1. ./stand.sh (терминал 1) + руками DNS/сброс/привязка
     [ ] 3. Проверка стенда: ss :53/:80/:443, dig @.130

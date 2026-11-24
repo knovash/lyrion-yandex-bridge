@@ -94,6 +94,9 @@ else
     cp -v "$FOUND" "$FW_ZIP"
   else
     warn "Прошивка НЕ найдена: $FW_ZIP"
+    warn "Прошивка — ОТДЕЛЬНЫЙ файл в git (в wizard-zip её нет). Скачать:"
+    warn "  curl -L -o $FW_ZIP https://raw.githubusercontent.com/knovash/lyrion-yandex-bridge/main/alice-root-wizard/lite-kit/firmware/yandexmicro/$FW_NAME"
+    warn "  или: ./lite-kit/install-firmware.sh -p yandexmicro -v $FW_VERSION (зеркало)"
     die "нет $FW_NAME — положите zip в lite-kit/firmware/yandexmicro/"
   fi
 fi

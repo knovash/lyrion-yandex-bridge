@@ -14,9 +14,11 @@
 - ДЕПЛОЙ на .115: BT v3/v4 + commandslistener-патч + S97/S99 init + bt.conf
   `server` — всё живое (см. lite-bt.md 24.11). manual.txt: BT-этап 5а, make_zip.sh,
   новое дерево; чек-лист без save_to_payloads.
-- ОТКРЫТО: alice-root-wizard.zip теперь ~70МБ с прошивкой — пушить в git
-  (raw-URL кнопки /stations) или держать локально? zip НЕ пересобран, в коммит
-  НЕ входит — ждём решения владельца.
+- РЕШЕНИЕ ВЛАДЕЛЬЦА (24.11, ФИНАЛ): РАЗДЕЛЕНИЕ. Прошивка .46 (64МБ) — ОТДЕЛЬНЫМ
+  файлом в git (lite-kit/firmware/yandexmicro/<версия>.zip, свой raw-URL);
+  alice-root-wizard.zip — МАЛЕНЫЙ (~4МБ: скрипты+payload+lite-kit, БЕЗ прошивки).
+  Оба обновляются пушем, НЕ привязаны к релизам. make_zip.sh v3 — малый zip;
+  stand.sh при отсутствии прошивки печатает raw-URL для скачивания.
 ## 17.11 (13:3x, ИТОГ СЕССИИ БТ-ПУЛЬТА) G20S PRO: дошли до последнего звена, задача = откат bluez 5.78
 - ФИНАЛЬНЫЙ ДИАГНОЗ: ядро РАБОТАЕТ (dmesg: input G20S PRO / uhid / hid-generic), вендор-hog
   не аттачится (initiator), Entware 5.87 аттачится (uhid_create, CCC written), НО отчёты
