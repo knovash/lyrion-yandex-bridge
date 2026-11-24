@@ -27,8 +27,10 @@ ROOM="${3:-}"
 # дефолты плеера/комнаты — из bt.conf (строка "default <player> <room>")
 if [ -f "$CONF" ]; then
   DEF=$(grep -E '^default ' "$CONF" | head -1 | sed 's/^default //')
-  [ -z "$PLAYER" ] && PLAYER=$(echo "$DEF" | awk '{print $1}')
-  [ -z "$ROOM" ] && ROOM=$(echo "$DEF" | awk '{print $2}')
+  # плеер может быть многословным (JBL white, Yandex Lite 2 SL): последняя
+  # лексема default-строки — комната, середина — имя плеера
+  [ -z "$PLAYER" ] && PLAYER=$(printf '%s\n' "$DEF" | awk 'NF>1{NF--; print}' OFS=' ')
+  [ -z "$ROOM" ] && ROOM=$(printf '%s\n' "$DEF" | awk '{print $NF}')
 fi
 WAIT="${BT_WAIT:-30}"
 SCAN=/tmp/bt-scan.out
@@ -96,7 +98,7 @@ UNIQ=$(echo "$MAC" | tr 'A-Z' 'a-z')
 ADAPTER=$(ls /data/opt/bluetooth | grep -E '^[0-9A-F:]{17}$' | head -1)
 # имя: из бонда (надёжно), иначе из скана
 NAME=$(grep '^Name=' "/data/opt/bluetooth/$ADAPTER/$MAC/info" 2>/dev/null | cut -d= -f2)
-[ -n "$NAME" ] || NAME=$(clean | grep "Device $MAC" | grep -vE "UUIDs|RSSI|Connected|Paired" | tail -1 | sed "s/.*Device $MAC //" | grep -E '[А-Яа-яA-Za-z0-9]' | head -1)
+[ -n "$NAME" ] || NAME=$(clean | grep "Device $MAC" | grep -vE "UUIDs|RSSI|Connected|Paired|AdvertisingFlags|TxPower|Pairable|Trusted|Blocked|Alias|Modalias|ManufacturerData|ServiceData|ServicesResolved|Battery" | tail -1 | sed "s/.*Device $MAC //" | grep -E '[А-Яа-яA-Za-z0-9]' | head -1)
 log "   НАЙДЕН: ${NAME:-новый пульт} ($MAC)"
 
 BONDED=0

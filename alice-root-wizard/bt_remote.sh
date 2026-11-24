@@ -63,7 +63,8 @@ if [ -z "$ROOM" ] || [ -z "$PLAYER" ]; then
   say "0/7: автоопределение (правило: LMS-плеер комнаты колонки, иначе squeezelite станции)"
   if [ -z "$ROOM" ]; then
     # оба имени: свежие станции — commandslistener.sh, легаси — whatplays.sh
-    ROOM=$($SSH "root@$LITE_IP" 'grep -hE "^ROOM=" /data/opt/bin/commandslistener.sh /data/opt/bin/whatplays.sh 2>/dev/null | head -1 | sed "s/^ROOM=.//; s/.$//"' | tr -d '\r\n')
+    RAW=$($SSH "root@$LITE_IP" 'grep -hE "^ROOM=" /data/opt/bin/commandslistener.sh /data/opt/bin/whatplays.sh 2>/dev/null | head -1')
+    ROOM=$(printf '%s' "$RAW" | sed -e "s/^ROOM=//" -e "s/^['\"]//" -e "s/['\"].*$//" | tr -d '\r\n')
     [ -n "$ROOM" ] && say "  комната (со станции): $ROOM"
   fi
   if [ -z "$PLAYER" ] && [ -n "$ROOM" ]; then
@@ -121,8 +122,8 @@ for f in bin/btrcv bin/btkeys-grab.sh bin/bt-connect.sh bin/bt-remove.sh bin/bt-
 done
 cat "$PAYLOAD/sounds/beep.wav" | $SSH "root@$LITE_IP" "mkdir -p /data/opt/sounds && cat > /data/opt/sounds/beep.wav"
 say "  ✓ /data/opt/sounds/beep.wav"
-# легаси-имя слушателя (до унификации) — убрать, чтобы не путалось
-$SSH "root@$LITE_IP" 'rm -f /data/opt/bin/btkeys-listener.sh; true' >/dev/null 2>&1 || true
+# легаси-имя слушателя + исторические артефакты октября (см. lite-bt.md) — убрать
+$SSH "root@$LITE_IP" 'rm -f /data/opt/bin/btkeys-listener.sh /data/opt/bin/btkeys.sh /data/opt/bin/bt-g20s.sh /data/opt/bin/btg20s.sh /data/opt/bin/mybtg20s.sh /data/opt/bin/mybpr2s.sh /data/opt/bin/g20kick.sh /data/opt/bin/g20wait.sh /data/opt/bin/uhidtest /data/opt/bin/uhidtest2 /data/opt/bin/uinputtest /data/opt/bin/uinputgrab 2>/dev/null; true' >/dev/null 2>&1 || true
 
 say "3/7: Хранилище бондов + симлинк"
 $SSH "root@$LITE_IP" '
@@ -154,7 +155,7 @@ $SSH "root@$LITE_IP" 'ls /opt/var/run/dbus/system_bus_socket >/dev/null 2>&1' ||
 say "5/7: bt.conf (server + default; uniq-строки существующих пультов сохраняются)"
 $SSH "root@$LITE_IP" "
   T=/tmp/bt.conf.new
-  if [ -f /data/opt/bt.conf ]; then grep -vE '^(server|default) ' /data/opt/bt.conf > \$T; else : > \$T; fi
+  if [ -f /data/opt/bt.conf ]; then grep -vE '^(server|default) ' /data/opt/bt.conf | awk 'NF>=2 && !s[\$1]++' > \$T; else : > \$T; fi
   printf 'server %s\ndefault %s %s\n' '$BRIDGE' '$PLAYER' '$ROOM' > /data/opt/bt.conf
   cat \$T >> /data/opt/bt.conf && rm -f \$T
   cat /data/opt/bt.conf

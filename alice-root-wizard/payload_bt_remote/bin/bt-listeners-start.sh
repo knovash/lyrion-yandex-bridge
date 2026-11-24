@@ -39,7 +39,12 @@ sleep 4
 
 # слушатели по конфигу (по одному на uniq)
 echo "стек поднят, слушатели:"
-grep -v '^#' "$CONF" 2>/dev/null | while read -r u p r; do
+# dedup по uniq (мусор/дубли не плодят слушателей) + мульти-word плеер:
+# последнее слово строки — комната, середина — плеер (как bt-connect v6)
+grep -v '^#' "$CONF" 2>/dev/null | awk 'NF>=2 && $1!="server" && $1!="default" && !s[$1]++' \
+| while read -r u rest; do
+  r=$(printf '%s\n' "$rest" | awk '{print $NF}')
+  p=$(printf '%s\n' "$rest" | awk 'NF>1{NF--; print}' OFS=' ')
   case "$u" in server|default|'') continue ;; esac
   setsid sh -c "while :; do /data/opt/bin/btkeys-grab.sh $u '$p' '$r' >> /tmp/btkeys.err 2>&1; sleep 3; done" </dev/null >/dev/null 2>&1 &
   echo "  $u → $p${r:+ ($r)}"
