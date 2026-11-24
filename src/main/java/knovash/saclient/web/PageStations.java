@@ -93,7 +93,7 @@ public class PageStations {
                         "<tr><td><b>Search</b></td><td>«Что играет» (голосовой ответ)</td></tr>" +
                         "<tr><td><b>1 … 9, 0</b></td><td>Каналы избранного LMS №1…№10</td></tr>" +
                         "</table><br>" +
-                        "<p><b>Поддерживаемые пульты</b> (подключение кнопкой «🔑 Пульт» в списке станций " +
+                        "<p><b>Поддерживаемые пульты</b> (подключение кнопкой «Подключить пульт» в списке станций " +
                         "или bt-connect.sh на колонке):</p>" +
                         "<ul>" +
                         "<li><b>G20S PRO</b> — все кнопки</li>" +
@@ -101,7 +101,7 @@ public class PageStations {
                         "<li><b>Xiaomi RC</b> — OK, VOL±, ◀▶, Home, цифры</li>" +
                         "<li><b>BPR2S</b> — OK, VOL±, ◀▶, ▲▼</li>" +
                         "</ul>" +
-                        "<p><b>Подключение нового пульта:</b> нажмите «🔑 Пульт» напротив станции → " +
+                        "<p><b>Подключение нового пульта:</b> нажмите «Подключить пульт» напротив станции → " +
                         "зажмите комбо паринга на пульте (LED мигает) → колонка пикнет 3 раза = подключено.</p>" +
                         "<p>Комбо паринга: G20S = OK+Return · ATV3 = Back+Home · Xiaomi = Home+Menu · BPR2S = OK+Vol−</p>" +
                         "<p><a href='/stations'>← Назад к списку станций</a></p>" +
@@ -135,10 +135,9 @@ public class PageStations {
                     .append(btCell(st, ip))
                     .append(actionCell("station_check", ip, "Проверить"))
                     .append(actionCell("station_repoint", ip, "Обновить LMS ip"))
-                    .append(deleteCell(ip))
                     .append("</tr>");
         }
-        if (rows.length() == 0) rows.append("<tr><td colspan='11'>станции не заданы — нажмите «Найти» или добавьте вручную ниже</td></tr>");
+        if (rows.length() == 0) rows.append("<tr><td colspan='10'>станции не заданы — нажмите «Найти» или добавьте вручную ниже</td></tr>");
 
         String scanBlock = lastScanRows.isEmpty() ? "" :
                 "<h3>Скан сети (" + escape(lastScanAt) + ")</h3>" +
@@ -157,7 +156,7 @@ public class PageStations {
                         "<b>«Обновить LMS ip»</b> — станция перепропишет адреса на этот сервер и перезапустит " +
                         "сервисы (если IP уже этот — просто рестарт). Ничего автоматического не происходит.</p>" +
                         "<table border='1' cellpadding='4' cellspacing='0'>" +
-                        "<tr><th>Станция</th><th>Адрес</th><th>Комната</th><th>Плеер (пульт)</th><th>squeezelite</th><th>AirPlay</th><th>лок.команды</th><th>пульт</th><th></th><th></th><th></th></tr>" + rows + "</table>" +
+                        "<tr><th>Станция</th><th>Адрес</th><th>Комната</th><th>Плеер (пульт)</th><th>squeezelite</th><th>AirPlay</th><th>лок.команды</th><th>пульт</th><th></th><th></th></tr>" + rows + "</table>" +
                         "<form method='POST' action='/form' style='display:inline'><input type='hidden' name='action' value='station_check'>" +
                         "<input type='hidden' name='station_ip' value='ALL'><button type='submit'>Проверить ВСЕ</button></form> " +
                         "<form method='POST' action='/form' style='display:inline'><input type='hidden' name='action' value='station_repoint'>" +
@@ -730,7 +729,7 @@ public class PageStations {
           .append("<form method='POST' action='/form' style='display:inline'>")
           .append("<input type='hidden' name='action' value='station_bt_connect'>")
           .append("<input type='hidden' name='station_ip' value='").append(escape(ip)).append("'>")
-          .append("<button type='submit' style='font-size:x-small'>🔑 Пульт</button></form>");
+          .append("<button type='submit' style='font-size:x-small'>Подключить пульт</button></form>");
         sb.append("</td>");
         return sb.toString();
     }
