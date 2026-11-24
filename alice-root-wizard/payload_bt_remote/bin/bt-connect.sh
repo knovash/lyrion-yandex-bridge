@@ -175,7 +175,7 @@ log "6. слушатель btkeys-grab (бип + /cmd, player=$PLAYER room=$ROOM
 # погасить СТАРУЮ копию слушателя этого uniq (обе эпохи имён) — нет драки за EVIOCGRAB
 killpat "btke[y]s-(grab|listener)[.]sh $UNIQ|btrc[v] $UNIQ"
 # записать пульт в bt.conf (заменить строку с этим uniq или добавить; server/default не трогаем)
-grep -v " $UNIQ " "$CONF" 2>/dev/null > /tmp/bt.conf.new
+grep -v "^$UNIQ " "$CONF" 2>/dev/null > /tmp/bt.conf.new
 [ -f "$CONF" ] || echo "default $PLAYER $ROOM" > /tmp/bt.conf.new
 echo "$UNIQ $PLAYER $ROOM" >> /tmp/bt.conf.new
 cp /tmp/bt.conf.new "$CONF"
