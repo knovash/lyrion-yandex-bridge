@@ -117,6 +117,9 @@ $SSH "root@$LITE_IP" '
 ' || die "Entware bluez не установить"
 
 say "2/7: Заливка файлов (с SHA-сверкой)"
+# ГРАБЛЯ: работающий btrcv держит бинаррь -> 'Text file busy' при перезаписи.
+# Гасим слушателей ПЕРЕД заливкой (bt-listeners-start поднимет их заново в 7/7).
+$SSH "root@$LITE_IP" 'for p in $(ps | grep -E "btke[y]s-(grab|listener)[.]sh|btrc[v]" | awk "{print \$1}"); do kill -9 $p 2>/dev/null; done; sleep 1; true' >/dev/null 2>&1 || true
 for f in bin/btrcv bin/btkeys-grab.sh bin/bt-connect.sh bin/bt-remove.sh bin/bt-listeners-start.sh; do
   up "$f"
 done
