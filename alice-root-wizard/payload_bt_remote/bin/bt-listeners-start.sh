@@ -11,7 +11,7 @@
 CONF=/data/opt/bt.conf
 
 # гасим старые слушатели + супервизоры + демон (обе эпохи имён)
-for p in $(ps | grep -E "btke[y]s-(grab|listener)[.]sh|btrc[v]|bluetooth[d] " | awk '{print $1}'); do
+for p in $(ps | grep -E "btke[y]s-(grab|listener)[.]sh|btke[y]s[.]sh|btrc[v]|bluetooth[d] " | awk '{print $1}'); do
   kill -9 $p 2>/dev/null
 done
 killall -9 bluetoothd bluetoothctl 2>/dev/null
