@@ -1,5 +1,7 @@
 #!/bin/bash
-# local_commands.sh — ставит whatplays + alice_ipc_mon + tcpcat + S97whatplays.
+# local_commands.sh (v2) — ставит commandslistener (экс-whatplays v5) + alice_ipc_mon + tcpcat + S97cmdlistener.
+# v2: файл на живых станциях переименован commandslistener.sh → commandslistener.sh (содержимое то же);
+#     при установке гасятся процессы ОБЕИХ имён (миграция без дублей).
 # Использование: ./local_commands.sh <IP> --room <Имя> --aliceid <UUID>
 #                [--player "Имя LMS-плеера"] [--bridge 192.168.1.131:8888] [--lms 192.168.1.131:9000]
 set -e
@@ -30,7 +32,7 @@ done
 [ -n "$LITE_IP" ] || { echo "использование: $0 <IP> --room <Имя> --aliceid <UUID> [--player <Имя плеера>]"; exit 1; }
 [ -n "$ROOM" ]    || { echo "--room обязателен (например: --room Розовая)"; exit 1; }
 
-for f in bin/whatplays.sh bin/alice_ipc_mon bin/tcpcat init/S97whatplays; do
+for f in bin/commandslistener.sh bin/alice_ipc_mon bin/tcpcat init/S97cmdlistener; do
   [ -s "$PAYLOAD/$f" ] || { echo "нет/пуст $PAYLOAD/$f — запустите save_to_payloads.sh"; exit 1; }
 done
 
@@ -78,9 +80,9 @@ sed \
   -e "s#^SQP=.*#SQP='$SQP'#" \
   -e "s#^ALICEID=.*#ALICEID='$ALICEID'#" \
   "${SED_PLAYER[@]}" \
-  "$PAYLOAD/bin/whatplays.sh" > "$TMP"
+  "$PAYLOAD/bin/commandslistener.sh" > "$TMP"
 
-sh -n "$TMP" || die "синтаксис whatplays.sh сломан после sed"
+sh -n "$TMP" || die "синтаксис commandslistener.sh сломан после sed"
 echo "--- проверка результата ---"
 grep -nE '^(LMS|SAC|ROOM|ALICEID|SQP)=' "$TMP"
 if [ -n "$PLAYER" ]; then
@@ -93,42 +95,42 @@ $SSH "root@$LITE_IP" "mount -o remount,rw /"
 say "Push бинарники → /data/opt/bin/"
 cat "$PAYLOAD/bin/alice_ipc_mon" | $SSH "root@$LITE_IP" "cat > /data/opt/bin/alice_ipc_mon"
 cat "$PAYLOAD/bin/tcpcat"        | $SSH "root@$LITE_IP" "cat > /data/opt/bin/tcpcat"
-cat "$TMP"                       | $SSH "root@$LITE_IP" "cat > /data/opt/bin/whatplays.sh"
-$SSH "root@$LITE_IP" "chmod 755 /data/opt/bin/whatplays.sh /data/opt/bin/alice_ipc_mon /data/opt/bin/tcpcat"
+cat "$TMP"                       | $SSH "root@$LITE_IP" "cat > /data/opt/bin/commandslistener.sh"
+$SSH "root@$LITE_IP" "chmod 755 /data/opt/bin/commandslistener.sh /data/opt/bin/alice_ipc_mon /data/opt/bin/tcpcat"
 rm -f "$TMP"
 
-say "Push S97whatplays → /etc/init.d/"
-cat "$PAYLOAD/init/S97whatplays" | $SSH "root@$LITE_IP" "cat > /etc/init.d/S97whatplays && chmod 755 /etc/init.d/S97whatplays"
+say "Push S97cmdlistener → /etc/init.d/"
+cat "$PAYLOAD/init/S97cmdlistener" | $SSH "root@$LITE_IP" "cat > /etc/init.d/S97cmdlistener && chmod 755 /etc/init.d/S97cmdlistener"
 
-say "Проверка whatplays.sh на колонке"
-$SSH "root@$LITE_IP" "sh -n /data/opt/bin/whatplays.sh && grep -nE '^(LMS|SAC|ROOM|ALICEID|SQP)=' /data/opt/bin/whatplays.sh"
+say "Проверка commandslistener.sh на колонке"
+$SSH "root@$LITE_IP" "sh -n /data/opt/bin/commandslistener.sh && grep -nE '^(LMS|SAC|ROOM|ALICEID|SQP)=' /data/opt/bin/commandslistener.sh"
 
 say "remount ro /"
 $SSH "root@$LITE_IP" "sync; mount -o remount,ro /"
 
 # --- Рестарт whatplays: busybox sh не отвязывает stdin/stdout от SSH-пайпа
 # при "setsid ... &". Рабочий паттерн — двойной setsid + </dev/null + exit 0. ---
-say "Рестарт whatplays (двойной setsid, не блокируется)"
+say "Рестарт commandslistener (двойной setsid, не блокируется)"
 
 $SSH "root@$LITE_IP" '
-  ps | grep -E "whatpl[a]ys\.sh" | awk "{print \$1}" | xargs -r kill -9 2>/dev/null || true
-  ps | grep -E "while :; do /data/opt/bin/whatplays" | awk "{print \$1}" | xargs -r kill -9 2>/dev/null || true
+  ps | grep -E "commandslis[t]ener\.sh|whatpl[a]ys\.sh" | awk "{print \$1}" | xargs -r kill -9 2>/dev/null || true
+  ps | grep -E "while :; do /data/opt/bin/(whatplays|commandslistener)" | awk "{print \$1}" | xargs -r kill -9 2>/dev/null || true
   killall -9 alice_ipc_mon 2>/dev/null || true
   ps | grep -E "maind --cli" | awk "{print \$1}" | xargs -r kill -9 2>/dev/null || true
   sleep 3
-  rm -f /tmp/whatplays.log /tmp/whatplays.err /tmp/whatplays.last /tmp/wp.cancel.fifo
+  rm -f /tmp/whatplays.log /tmp/commandslistener.err /tmp/whatplays.last /tmp/wp.cancel.fifo
 ' || true
 
-$SSH "root@$LITE_IP" 'setsid sh -c "setsid /bin/sh -c \"while :; do /data/opt/bin/whatplays.sh >> /tmp/whatplays.err 2>&1; sleep 3; done\"" </dev/null >/dev/null 2>&1 & sleep 1; exit 0' || true
+$SSH "root@$LITE_IP" 'setsid sh -c "setsid /bin/sh -c \"while :; do /data/opt/bin/commandslistener.sh >> /tmp/commandslistener.err 2>&1; sleep 3; done\"" </dev/null >/dev/null 2>&1 & sleep 1; exit 0' || true
 
 sleep 5
 $SSH "root@$LITE_IP" '
   echo "--- процессы ---"
-  ps | grep -E "whatpl[a]ys|alice_ip[c]|tcpca[t]|main[d] --cli"
+  ps | grep -E "commandslis[t]ener|whatpl[a]ys|alice_ip[c]|tcpca[t]|main[d] --cli"
   echo "--- лог ---"
   [ -f /tmp/whatplays.log ] && tail -n 10 /tmp/whatplays.log || echo "лога нет"
   echo "--- err ---"
-  [ -f /tmp/whatplays.err ] && tail -n 5 /tmp/whatplays.err || true
+  [ -f /tmp/commandslistener.err ] && tail -n 5 /tmp/commandslistener.err || true
 '
 
 say "Смоук whats_playing_text"
@@ -140,7 +142,7 @@ echo
 cat <<EOF
 
 ============================================================
-ГОТОВО. whatplays развёрнут.
+ГОТОВО. commandslistener (экс-whatplays v5) развёрнут.
 
 ВАЖНО: если имя плеера (--name в squeezelite.sh) НЕ равно "Yandex Lite 2 SL",
 перезапустите этот скрипт с --player "<то же имя>" — он сам поправит announce()
@@ -148,12 +150,12 @@ cat <<EOF
 
   ssh -p $PORT root@$LITE_IP '
     mount -o remount,rw /
-    sed -i "s#Yandex Lite 2 SL#<ИМЯ_ПЛЕЕРА>#g" /data/opt/bin/whatplays.sh
-    sh -n /data/opt/bin/whatplays.sh
+    sed -i "s#Yandex Lite 2 SL#<ИМЯ_ПЛЕЕРА>#g" /data/opt/bin/commandslistener.sh
+    sh -n /data/opt/bin/commandslistener.sh
     sync; mount -o remount,ro /
     ps | grep -E "whatpl[a]ys\\.sh" | awk "{print \\\$1}" | xargs -r kill -9 2>/dev/null || true
     sleep 2
-    setsid sh -c "setsid /bin/sh -c \\"while :; do /data/opt/bin/whatplays.sh >> /tmp/whatplays.err 2>&1; sleep 3; done\\"" </dev/null >/dev/null 2>&1 &
+    setsid sh -c "setsid /bin/sh -c \\"while :; do /data/opt/bin/commandslistener.sh >> /tmp/commandslistener.err 2>&1; sleep 3; done\\"" </dev/null >/dev/null 2>&1 &
   '
 
 ПРОВЕРКА:

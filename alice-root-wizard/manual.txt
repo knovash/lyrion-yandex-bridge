@@ -1,6 +1,6 @@
 ================================================================================
   ИНСТРУКЦИЯ ПО ИСПОЛЬЗОВАНИЮ alice-root-wizard
-  Версия: 2026-11-17 (перенос в sa_client, --player, правки скриптов)
+  Версия: 2026-11-24 (самодостаточный: lite-kit+прошивка внутри, commandslistener, BT-этап, make_zip.sh)
   Назначение: рут + софт для Яндекс Станции Лайт 1 (yandexmicro, YNDX-00025)
   Размещение: sa_client/alice-root-wizard/ (репозиторий Lyrion Yandex Bridge)
 ================================================================================
@@ -8,10 +8,11 @@
 СОДЕРЖАНИЕ
   0. Что это и как устроено
   1. Структура проекта
-  2. Подготовка: save_to_payloads.sh
+  2. Подготовка: save_to_payloads.sh (запасной dev-инструмент)
   3. Этап 1 — рут: stand.sh + root.sh
   4. Этап 2 — squeezelite.sh
   5. Этап 3 — local_commands.sh
+ 5а. Этап 3а — bt_remote.sh (Bluetooth-пульт)
   6. Этап 4 (опционально) — airplay.sh
   7. Этап 5 — реестр на .131 (/form)
   8. Этап 6 — голосовой тест
@@ -19,22 +20,27 @@
  10. Типичные ошибки и решения
  11. Откат
  12. Параметры, дефолты и сводка станций
- 13. Обновление payload с эталона
- 14. Справка по фразам whatplays
+ 13. Обновление payload с эталона (запасной dev-инструмент)
+ 14. Справка по фразам commandslistener
  15. Получение ALICEID через API УДЯ
 
 --------------------------------------------------------------------------------
 0. ЧТО ЭТО И КАК УСТРОЕНО
 --------------------------------------------------------------------------------
 
-6 независимых скриптов + 4 папки payload_* с файлами для копирования на колонку.
+7 скриптов этапов + make_zip.sh + 5 папок payload_* с файлами для колонки.
+Плюс lite-kit/ ЦЕЛИКОМ (стенд рута + прошивка .46, 64 МБ) — архив САМОДОСТАТОЧЕН:
+клон lite-kit и поиск прошивки по диску больше не нужны.
 
     stand.sh              — стенд lite-kit (DNS + HTTPS-сервер прошивки)
     root.sh               — минимальный рут: dropbear SSH + OTA-off + маркеры
     squeezelite.sh        — LMS-плеер squeezelite
-    local_commands.sh     — whatplays (голосовые фразы)
+    local_commands.sh     — commandslistener (экс-whatplays, голосовые фразы)
+    bt_remote.sh          — BT-пульт (btrcv + btkeys, Entware через yse)
     airplay.sh            — AirPlay 2 (shairport-sync + nqptp + avahi)
-    save_to_payloads.sh   — копирует рабочие файлы с эталона в payload_*
+    make_zip.sh           — пересобрать alice-root-wizard.zip (С ПРОШИВКОЙ)
+    save_to_payloads.sh   — ЗАПАСНОЙ dev-инструмент: подтянуть файлы с живой
+                             станции в payload_* (обычно НЕ нужен — они полные)
 
 Каждый этап изолирован:
   - stand.sh + root.sh  — обязательная пара (сначала стенд, потом рут)
@@ -46,43 +52,40 @@
   SSH-порт станции:      2222
   ADB-порт станции:      5555
   Прошивка для рута:     yandexmicro 0.369.1.46.4778262442.20261013.297
+                           (лежит в lite-kit/firmware/yandexmicro/, 64 МБ;
+                            в git НЕ коммитится — только в zip от make_zip.sh)
 
 --------------------------------------------------------------------------------
 1. СТРУКТУРА ПРОЕКТА
 --------------------------------------------------------------------------------
 
     alice-root-wizard/
-    ├── stand.sh
-    ├── root.sh
-    ├── squeezelite.sh
-    ├── local_commands.sh
-    ├── airplay.sh
-    ├── save_to_payloads.sh
-    ├── manual.txt
+    ├── stand.sh, root.sh, squeezelite.sh, local_commands.sh, bt_remote.sh,
+    │   airplay.sh, make_zip.sh, save_to_payloads.sh, manual.txt
+    ├── lite-kit/                     — стенд рута ЦЕЛИКОМ (krevetkqqq/lite-kit)
+    │   ├── start.sh / stop.sh / check.sh / diag.sh / install-firmware.sh
+    │   ├── scripts/equasar_server.py — HTTPS-сервер (get_sync_info → adbd on)
+    │   ├── certs/ + config/ + docs/ + README.md
+    │   └── firmware/yandexmicro/     — ПРОШИВКА .46, 64 МБ (в git не коммитится)
     └── payload_*/
-        ├── payload_root/
-        │   ├── SHA256SUMS
-        │   ├── bin/yandex-noupdate.sh
-        │   ├── init/S99zdropbear
-        │   └── ssh/{dropbear, dropbearkey}
-        ├── payload_squeezelite/
-        │   ├── SHA256SUMS
-        │   ├── bin/squeezelite
-        │   └── init/S98squeeze
-        ├── payload_local_commands/
-        │   ├── SHA256SUMS
-        │   ├── bin/{whatplays.sh, alice_ipc_mon, tcpcat}
-        │   └── init/S97whatplays
-        └── payload_airplay/          (опционально)
-            ├── SHA256SUMS
-            ├── init/S99zairplay-lite1
-            └── opt/airplay/
+        ├── payload_root/             — dropbear + dropbearkey + S99zdropbear
+        │                               + bin/yandex-noupdate.sh
+        ├── payload_squeezelite/      — bin/squeezelite + init/S98squeeze
+        ├── payload_local_commands/   — bin/commandslistener.sh (экс-whatplays)
+        │                               + alice_ipc_mon + tcpcat + init/S97cmdlistener
+        ├── payload_bt_remote/        — bin/yse + btrcv + btkeys-grab.sh
+        │                               + bt-connect.sh + bt-remove.sh
+        │                               + bt-listeners-start.sh
+        │                               + init/S99btkeys + sounds/beep.wav
+        └── payload_airplay/          (опционально) init/S99zairplay-lite1
+                                        + opt/airplay/
 
 --------------------------------------------------------------------------------
-2. ПОДГОТОВКА: save_to_payloads.sh
+2. ПОДГОТОВКА: save_to_payloads.sh (ЗАПАСНОЙ, для разработчика)
 --------------------------------------------------------------------------------
 
-Один раз (и при обновлении эталона):
+Обычно НЕ нужен — все файлы уже лежат в payload_*. Запасной сценарий —
+подтянуть изменения с живой эталонной станции (Гостиная, .115):
 
     cd ~/IdeaProjects/sa_client/alice-root-wizard
     chmod +x *.sh
@@ -111,7 +114,7 @@
   squeezelite             ~2.8 МБ
   alice_ipc_mon            ~700 КБ
   tcpcat                   ~700 КБ
-  whatplays.sh             ~14 КБ
+  commandslistener.sh             ~14 КБ
   yandex-noupdate.sh       ~7 КБ
   S97/S98/S99              ~500-1000 Б
 
@@ -133,8 +136,9 @@
 Скрипт:
   1) поставит зависимости
   2) освободит :53 (dnsmasq), :80 и :443 (apache2 + старые python lite-kit)
-  3) склонирует lite-kit в ~/lite-kit (если нет)
-  4) найдёт прошивку .46 в ~/tools/lite-kit/firmware/yandexmicro/ и скопирует
+  3) возьмёт lite-kit ЛОКАЛЬНО из alice-root-wizard/lite-kit/ (клон — только
+     если папки нет; интернет для клона НЕ нужен)
+  4) прошивка .46 уже в lite-kit/firmware/yandexmicro/ (64 МБ, из архива)
   5) напечатает IP ноутбука и инструкции
   6) запустит стенд в форграунде
 
@@ -228,9 +232,9 @@
        -s нужен только если LMS в другой подсети или broadcast блокируется.
 
 ИМЯ ПЛЕЕРА:
-  Должно совпадать с тем, что ждёт announce() в whatplays.sh.
+  Должно совпадать с тем, что ждёт announce() в commandslistener.sh.
   На эталоне .115: [ "$RP" = "Yandex Lite 2 SL" ] && return
-  Если задать своё имя — надо поправить whatplays.sh (см. Этап 3).
+  Если задать своё имя — надо поправить commandslistener.sh (см. Этап 3).
 
 Проверка:
   - в LMS http://192.168.1.131:9000 → плеер '<NAME>' должен появиться
@@ -244,11 +248,15 @@
   - Если её нет — добавить, иначе плеер падает.
 
 --------------------------------------------------------------------------------
-5. ЭТАП 3 — local_commands.sh (голосовые фразы)
+5. ЭТАП 3 — local_commands.sh (голосовые фразы, commandslistener)
 --------------------------------------------------------------------------------
 
     cd ~/IdeaProjects/sa_client/alice-root-wizard
     ./local_commands.sh <IP_колонки> --room <Имя> --aliceid <UUID>
+
+На колонке файл называется commandslistener.sh (экс-whatplays v5; на живых
+станциях переименован 18.11, содержимое то же). Установщик гасит процессы
+ОБОИХ имён — миграция без дублей. Лог: /tmp/whatplays.log (имя сохранено).
 
 Параметры:
   --room <Имя>       ИМЯ комнаты (обязательно) — как в УДЯ, например «Душ»
@@ -261,10 +269,10 @@
 Что делает скрипт:
   1) ssh connect
   2) читает MAC wlan0 → SQP
-  3) готовит whatplays.sh локально (sed по LMS/SAC/ROOM/SQP/ALICEID + PLAYER при --player)
+  3) готовит commandslistener.sh локально (sed по LMS/SAC/ROOM/SQP/ALICEID + PLAYER при --player)
   4) проверяет синтаксис
   5) remount rw + push бинарников в /data/opt/bin/
-  6) push S97whatplays в /etc/init.d/
+  6) push S97cmdlistener в /etc/init.d/
   7) remount ro
   8) kill старых процессов + очистка /tmp
   9) ЗАПУСК whatplays через ДВОЙНОЙ setsid (SSH не блокируется)
@@ -281,28 +289,69 @@
   Без этого SSH висит после запуска whatplays.
 
 Проверка после запуска:
-  - процессы: супервизор (while :; do ... done), whatplays.sh, maind --cli,
-              alice_ipc_mon, subshell ({whatplays.sh})
+  - процессы: супервизор (while :; do ... done), commandslistener.sh, maind --cli,
+              alice_ipc_mon, subshell ({commandslistener.sh})
   - лог: === старт v5 === + CLI-сессия cancel: одиночная
   - смоук вернёт текст «сейчас играет/не играет ...»
 
 ВАЖНО про announce():
   Если имя плеера (--name в squeezelite.sh) НЕ равно "Yandex Lite 2 SL",
   проще всего перезапустить local_commands.sh с --player "<то же имя>".
-  Или поправить announce() в /data/opt/bin/whatplays.sh вручную:
+  Или поправить announce() в /data/opt/bin/commandslistener.sh вручную:
 
     ssh -p 2222 root@<IP> '
       mount -o remount,rw /
-      sed -i "s#Yandex Lite 2 SL#<ИМЯ_ПЛЕЕРА>#g" /data/opt/bin/whatplays.sh
-      sh -n /data/opt/bin/whatplays.sh
+      sed -i "s#Yandex Lite 2 SL#<ИМЯ_ПЛЕЕРА>#g" /data/opt/bin/commandslistener.sh
+      sh -n /data/opt/bin/commandslistener.sh
       sync; mount -o remount,ro /
-      ps | grep -E "whatpl[a]ys\.sh" | awk "{print \$1}" | xargs -r kill -9 2>/dev/null || true
+      ps | grep -E "commandslis[t]ener\.sh|whatpl[a]ys\.sh" | awk "{print \$1}" | xargs -r kill -9 2>/dev/null || true
       sleep 2
-      /etc/init.d/S97whatplays start   # или двойной setsid вручную
+      /etc/init.d/S97cmdlistener start   # или двойной setsid вручную
     '
 
   Без этого announce() не сработает → колонка будет говорить поверх своей музыки
   (или падать с onTtsPlayerError).
+
+--------------------------------------------------------------------------------
+5а. ЭТАП 3а — bt_remote.sh (Bluetooth-пульт)
+--------------------------------------------------------------------------------
+
+    cd ~/IdeaProjects/sa_client/alice-root-wizard
+    ./bt_remote.sh <IP_колонки> --player <Имя LMS-плеера> --room <Комната>
+
+Пример (эталон Гостиная, пульт G20S → HomePod1):
+    ./bt_remote.sh 192.168.1.115 --player HomePod1 --room Гостиная
+
+Требуется:
+  - рут (Этап 1) и SSH; интернет НА СТАНЦИИ (Entware ставится через yse)
+  - bridge sa_client (по умолчанию 192.168.1.131:8888, --bridge <H:P>)
+
+Что ставит:
+  1) yse + Entware (bootstrap, если его нет) + bluez-daemon/libs/utils
+  2) btrcv + btkeys-grab.sh + bt-connect.sh + bt-remove.sh
+     + bt-listeners-start.sh + beep.wav (каждая заливка с SHA-сверкой)
+  3) хранилище бондов /data/opt/bluetooth (+симлинк /var/lib/bluetooth)
+  4) Entware D-Bus на /opt/var/run/dbus (вендорский НЕ трогается!)
+  5) /data/opt/bt.conf: server <bridge> + default <player> <room>
+     (смена bridge-сервера = правка ОДНОЙ строки server в bt.conf)
+  6) S99btkeys в /etc/init.d — автозапуск стека при загрузке (~25с)
+
+Подключение пульта:
+  ssh -p 2222 root@<IP>  →  /data/opt/bin/bt-connect.sh
+  → зажать комбо паринга на пульте (LED мигает):
+     G20S PRO: OK+Return 3-5с; ATV3: Back+Home; Xiaomi RC: Home+Menu; BPR2S: OK+Vol-
+  → три бипа = подключено; слушатель сам поднимется и попадёт в bt.conf
+
+Кнопки (btkeys-grab.sh): ◀▶=треки, OK=play/pause, VOL±, Home=switch_here,
+  Search=«что играет», 1-9=избранное. Бип на каждое нажатие; ошибки /cmd —
+  в /tmp/btkeys.log («✗ … подряд: N»), после 3 подряд двойной бип;
+  heartbeat слушателей — /tmp/bt.status.<uniq>.
+
+ГРАБЛИ (полный журнал — lite-bt.md в корне sa_client):
+  - вендорское ядро 4.9 отдаёт input-события ТОЛЬКО через EVIOCGRAB — btrcv
+    делает это сам; dd/cat на event-узел ничего не дадут (это норма);
+  - directed advertising: пульт «виден» только в момент нажатия кнопки;
+  - bt-listeners-start v3 НЕ трогает вендорский D-Bus/bluealsa/maind (Алиса жива).
 
 --------------------------------------------------------------------------------
 6. ЭТАП 4 (ОПЦИОНАЛЬНО) — airplay.sh
@@ -379,13 +428,14 @@ SSH-пароль root станции.
     sleep 90
 
     ssh -p 2222 root@<IP> "id"                           # uid=0(root)
-    ssh -p 2222 root@<IP> "ps | grep -E 'whatpl[a]ys|alice_ip[c]|main[d] --cli'"
+    ssh -p 2222 root@<IP> "ps | grep -E 'commandslis[t]ener|whatpl[a]ys|alice_ip[c]|main[d] --cli'"
     ssh -p 2222 root@<IP> "cat /proc/\$(pidof squeezelite)/cmdline | tr '\\0' ' '"
 
 Ожидаем:
   - SSH отвечает (S99zdropbear)
-  - whatplays процессы есть (S97whatplays + супервизор)
+  - commandslistener процессы есть (S97cmdlistener + супервизор)
   - squeezelite с -n "<NAME>" (без -s, если discovery)
+  - при установленном BT: bluetoothd + btrcv поднялись сами (S99btkeys, ~25с)
 
 Если что-то не так — перезапустить соответствующий скрипт.
 
@@ -420,18 +470,18 @@ SSH-пароль root станции.
    Решение: Ctrl+C, adb shell "ps | grep dropbear" — процесс обычно работает.
             Исправленный root.sh использует timeout 15.
 
-Е. local_commands.sh зависает на "Рестарт whatplays"
+Е. local_commands.sh зависает на "Рестарт commandslistener"
    Причина: setsid ... & через SSH не отвязывает stdin/stdout.
    Решение: исправленный local_commands.sh использует двойной setsid:
               setsid sh -c "setsid ..." </dev/null >/dev/null 2>&1 & sleep 1; exit 0
             Если повторилось — запустить вручную:
-              ssh -p 2222 root@<IP> 'setsid sh -c "setsid /bin/sh -c \"while :; do /data/opt/bin/whatplays.sh >> /tmp/whatplays.err 2>&1; sleep 3; done\"" </dev/null >/dev/null 2>&1 & sleep 1; exit 0'
+              ssh -p 2222 root@<IP> 'setsid sh -c "setsid /bin/sh -c \"while :; do /data/opt/bin/commandslistener.sh >> /tmp/commandslistener.err 2>&1; sleep 3; done\"" </dev/null >/dev/null 2>&1 & sleep 1; exit 0'
 
-Ж. whatplays не запускается, файла /tmp/whatplays.log нет
+Ж. commandslistener не запускается, файла /tmp/whatplays.log нет
    Причина: процесс ни разу не стартовал.
-   Решение: проверить err-лог: cat /tmp/whatplays.err
+   Решение: проверить err-лог: cat /tmp/commandslistener.err
             запустить вручную в форграунде через SSH, чтобы увидеть ошибку:
-              ssh -p 2222 root@<IP> '/data/opt/bin/whatplays.sh'
+              ssh -p 2222 root@<IP> '/data/opt/bin/commandslistener.sh'
 
 З. «maind --updatesd РАБОТАЕТ» в status
    Причина: launch.json обновлён, но процесс уже в памяти.
@@ -443,8 +493,8 @@ SSH-пароль root станции.
               export ALSA_CONFIG_PATH=/usr/share/alsa/alsa.conf
 
 К. «что играет» говорит поверх музыки / onTtsPlayerError
-   Причина: имя плеера не совпадает с announce() в whatplays.sh.
-   Решение: sed -i "s#Yandex Lite 2 SL#<ИМЯ>#g" /data/opt/bin/whatplays.sh
+   Причина: имя плеера не совпадает с announce() в commandslistener.sh.
+   Решение: sed -i "s#Yandex Lite 2 SL#<ИМЯ>#g" /data/opt/bin/commandslistener.sh
             (и рестарт whatplays).
 
 --------------------------------------------------------------------------------
@@ -468,11 +518,11 @@ SSH-пароль root станции.
       sync; mount -o remount,ro /
     '
 
---- Удалить whatplays ---
+--- Удалить commandslistener (экс-whatplays) ---
     ssh -p 2222 root@<IP> '
-      ps | grep -E "whatpl[a]ys\.sh" | awk "{print \$1}" | xargs -r kill -9
-      rm -f /etc/init.d/S97whatplays
-      rm -f /data/opt/bin/whatplays.sh /data/opt/bin/alice_ipc_mon /data/opt/bin/tcpcat
+      ps | grep -E "commandslis[t]ener\.sh|whatpl[a]ys\.sh" | awk "{print \$1}" | xargs -r kill -9
+      rm -f /etc/init.d/S97cmdlistener
+      rm -f /data/opt/bin/commandslistener.sh /data/opt/bin/alice_ipc_mon /data/opt/bin/tcpcat
     '
 
 --- Полный сброс колонки ---
@@ -497,7 +547,9 @@ SSH-пароль root станции.
   LMS=10.0.0.5:9000 ./squeezelite.sh <IP>
   BRIDGE=10.0.0.5:8888 ./local_commands.sh <IP> ...
 
-СВОДКА СТАНЦИЙ (актуально на 2026-11-15):
+СВОДКА СТАНЦИЙ (актуально на 2026-11-15; ЭТАЛОН с 24.11 = Гостиная .115:
+root + commandslistener + BT G20S→HomePod1, squeezelite ОТКЛЮЧЁН — музыку
+играет HomePod1 через LMS .131; визард воспроизводит это состояние):
 
   Станция             IP        Серийник              UUID (ALICEID)                        ROOM        NAME в LMS
   ─────────────────────────────────────────────────────────────────────────────────────────────────
@@ -508,13 +560,14 @@ SSH-пароль root станции.
   Веранда            ?         LG…44f9f78b           a30d1c33-a153-4af5-adef-c3a757907f4b  Веранда     ?
 
 ВНИМАНИЕ: имя плеера в squeezelite.sh --name должно совпадать с тем, что
-ждёт announce() в whatplays.sh. Если не совпадает — поправить whatplays.sh.
+ждёт announce() в commandslistener.sh. Если не совпадает — поправить commandslistener.sh.
 
 --------------------------------------------------------------------------------
 13. ОБНОВЛЕНИЕ PAYLOAD С ЭТАЛОНА
 --------------------------------------------------------------------------------
 
-Когда на эталоне (.115 или .122) обновили whatplays.sh или другие файлы:
+ЗАПАСНОЙ dev-инструмент: когда на эталоне (.115/.122) обновили commandslistener.sh
+или другие файлы (в payload они уже есть):
 
     cd ~/IdeaProjects/sa_client/alice-root-wizard
     ./save_to_payloads.sh
@@ -534,7 +587,7 @@ SSH-пароль root станции.
 14. СПРАВКА ПО ФРАЗАМ whatplays
 --------------------------------------------------------------------------------
 
-Голосовые фразы, которые ловит whatplays.sh:
+Голосовые фразы, которые ловит commandslistener.sh:
 
     дальше                  → next (трек или канал)
     назад                   → prev
@@ -601,10 +654,10 @@ ALICEID (UUID для voice_say) — берётся ТОЛЬКО через API �
 КОНЕЦ ИНСТРУКЦИИ
 --------------------------------------------------------------------------------
 
-Краткий чек-лист для новой колонки:
+Краткий чек-лист для новой колонки (архив самодостаточен: lite-kit и прошивка
+уже внутри; ./make_zip.sh пересобирает alice-root-wizard.zip с прошивкой):
 
-    [ ] 1. ./save_to_payloads.sh
-    [ ] 2. ./stand.sh (терминал 1) + руками DNS/сброс/привязка
+    [ ] 1. ./stand.sh (терминал 1) + руками DNS/сброс/привязка
     [ ] 3. Проверка стенда: ss :53/:80/:443, dig @.130
     [ ] 4. ./root.sh <IP> (терминал 2)
     [ ] 5. adb reboot → sleep 90 → ssh id = uid=0(root)
@@ -615,4 +668,6 @@ ALICEID (UUID для voice_say) — берётся ТОЛЬКО через API �
     [ ] 10. Если --name != "Yandex Lite 2 SL" — добавить --player "<ИМЯ>" (фикс announce())
     [ ] 11. http://192.168.1.131:8888/form → добавить станцию
     [ ] 12. Голосом: «Алиса, дальше», «Алиса, что играет»
+    [ ] 13. (пульт) ./bt_remote.sh <IP> --player <Плеер> --room <Комната>
+        → /data/opt/bin/bt-connect.sh + комбо паринга → кнопки, бип
 

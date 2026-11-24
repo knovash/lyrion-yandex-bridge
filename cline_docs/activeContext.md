@@ -1,4 +1,22 @@
 # Active Context — что сейчас
+
+## 24.11 (13:1x) ALICE-ROOT-WIZARD САМОДОСТАТОЧЕН + ЭТАЛОН .115 СИНХРОНИЗИРОВАН
+- По команде владельца: «прошивка и все файлы — в alice-root-wizard, скрипты из
+  архива сразу рутуют и ставят фичи; save_to_payloads — запасной dev-инструмент».
+- lite-kit/ (krevetkqqq) перенесён ЦЕЛИКОМ: equasar_server.py, certs, docs +
+  ПРОШИВКА yandexmicro .46 (64МБ). Прошивка в git НЕ коммитится (gitignore по
+  образцу апстрима), в zip — входит. stand.sh v2 берёт lite-kit ЛОКАЛЬНО.
+- Эталон = Гостиная .115 (G20S): whatplays переименован в commandslistener.sh
+  (+S97cmdlistener) — визард перенял имена, содержимое было бит-в-бит; kill-loop
+  расширен (само-дедуп), S97cmdlistener переписан (pgrep-гард + миграция без
+  дублей). yse (Entware-инсталлер) — в payload_bt_remote; bt_remote.sh v3 сам
+  делает yse bootstrap → bluez («из архива сразу», нужен лишь интернет на станции).
+- ДЕПЛОЙ на .115: BT v3/v4 + commandslistener-патч + S97/S99 init + bt.conf
+  `server` — всё живое (см. lite-bt.md 24.11). manual.txt: BT-этап 5а, make_zip.sh,
+  новое дерево; чек-лист без save_to_payloads.
+- ОТКРЫТО: alice-root-wizard.zip теперь ~70МБ с прошивкой — пушить в git
+  (raw-URL кнопки /stations) или держать локально? zip НЕ пересобран, в коммит
+  НЕ входит — ждём решения владельца.
 ## 17.11 (13:3x, ИТОГ СЕССИИ БТ-ПУЛЬТА) G20S PRO: дошли до последнего звена, задача = откат bluez 5.78
 - ФИНАЛЬНЫЙ ДИАГНОЗ: ядро РАБОТАЕТ (dmesg: input G20S PRO / uhid / hid-generic), вендор-hog
   не аттачится (initiator), Entware 5.87 аттачится (uhid_create, CCC written), НО отчёты

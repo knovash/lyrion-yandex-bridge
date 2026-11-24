@@ -1,10 +1,10 @@
 #!/bin/bash
-# bt_remote.sh (v2) — установка BT-пультов на рутованную Станцию Лайт.
+# bt_remote.sh (v3) — установка BT-пультов на рутованную Станцию Лайт.
 # Использование: ./bt_remote.sh <IP> --player <ИмяПлеераLMS> --room <Комната>
 #                [--bridge 192.168.1.131:8888]
 #
 # Что делает:
-#   1) Устанавливает Entware bluez (bluetoothd с input,hog)
+#   1) Заливает yse и ставит Entware (yse bootstrap, если его ещё нет) + bluez
 #   2) Заливает btrcv + btkeys-grab.sh + bt-connect.sh + bt-remove.sh
 #      + bt-listeners-start.sh + beep.wav (с SHA-сверкой каждой заливки!)
 #   3) Создаёт хранилище бондов (/data/opt/bluetooth) + симлинк
@@ -14,9 +14,9 @@
 #   7) Запускает стек + слушателей
 #
 # НЕ трогает: вендорский D-Bus, bluealsa, maind — Алиса продолжает работать.
-# v2: SHA-сверка заливки (грабля «жпун#!/bin/sh» больше не пройдёт); bridge
-#     пишется в bt.conf (смена сервера = одна строка, скрипты не трогаем);
-#     S99btkeys-автозапуск; dbus-uuidgen с явным путём; D-Bus-провал = ошибка.
+# v3: САМОДОСТАТОЧНО «из архива» — yse входит в payload и сам разворачивает
+#     Entware (нужен только интернет НА СТАНЦИИ); SHA-сверка заливок (грабля
+#     «жпун»); bridge в bt.conf (смена сервера = одна строка); S99-автозапуск.
 set -e
 
 HERE=$(cd "$(dirname "$0")" && pwd)
@@ -48,7 +48,7 @@ die()  { printf '\n\033[1;31m[ERR]\033[0m %s\n' "$*" >&2; exit 1; }
 
 SSH="ssh -p $PORT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
-for f in bin/btrcv bin/btkeys-grab.sh bin/bt-connect.sh bin/bt-remove.sh bin/bt-listeners-start.sh init/S99btkeys sounds/beep.wav; do
+for f in bin/yse bin/btrcv bin/btkeys-grab.sh bin/bt-connect.sh bin/bt-remove.sh bin/bt-listeners-start.sh init/S99btkeys sounds/beep.wav; do
   [ -f "$PAYLOAD/$f" ] || die "нет $PAYLOAD/$f — проверьте payload_bt_remote"
 done
 
@@ -61,12 +61,14 @@ up(){
   [ "$L" = "$R" ] && say "  ✓ $dst (sha ok)" || die "SHA НЕ СХОДИТСЯ: $dst — файл битый, перезапустите установку"
 }
 
-say "1/7: Установка Entware bluez"
+say "1/7: yse + Entware + bluez"
+up bin/yse
+if ! $SSH "root@$LITE_IP" 'ls /opt/bin/opkg >/dev/null 2>&1'; then
+  say "Entware нет — yse bootstrap (нужен интернет на станции, 1-3 мин)..."
+  $SSH "root@$LITE_IP" 'sh /data/opt/bin/yse bootstrap 2>&1 | tail -8' || die "yse bootstrap не прошёл (интернет на станции?)"
+fi
 $SSH "root@$LITE_IP" '
-  if ! ls /opt/bin/opkg >/dev/null 2>&1; then
-    echo "Entware не установлен — установите через yse: /data/opt/bin/yse update" >&2
-    exit 1
-  fi
+  ls /opt/bin/opkg >/dev/null 2>&1 || { echo "Entware не поднялся" >&2; exit 1; }
   if ! ls /opt/bin/bluetoothd >/dev/null 2>&1; then
     /opt/bin/opkg update >/dev/null 2>&1
     /opt/bin/opkg install bluez-daemon bluez-libs bluez-utils 2>&1 | tail -3

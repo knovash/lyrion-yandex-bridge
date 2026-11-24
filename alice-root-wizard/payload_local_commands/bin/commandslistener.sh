@@ -25,7 +25,7 @@ otify
 
 for d in /proc/[0-9]*/cmdline; do
   case "$(tr '\0' ' ' < "$d" 2>/dev/null)" in
-    *whatplays.sh*|*maind\ --cli*|*alice_ipc_mon*)
+    *commandslistener.sh*|*whatplays.sh*|*maind\ --cli*|*alice_ipc_mon*)
       q=${d#/proc/}; q=${q%/cmdline}
       [ "$q" != "$$" ] && [ "$q" != "$PPID" ] && kill "$q" 2>/dev/null ;;
   esac

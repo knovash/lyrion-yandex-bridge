@@ -1,0 +1,20 @@
+#!/bin/sh
+# S97cmdlistener — commandslistener (экс-whatplays v5): арбитр звука + голосовые фразы.
+# Супервизор: перезапускает скрипт, если тот упал. Идемпотентен (pgrep-гард).
+# При старте гасит старые whatplays-процессы (миграция имён без дублей).
+case "$1" in
+  start)
+    pgrep -f 'while :; do /data/opt/bin/commandslistener' >/dev/null 2>&1 && exit 0
+    # миграция: погасить старое имя (whatplays) — скрипт и его супервизор
+    ps | grep -E 'while :; do /data/opt/bin/whatplays' | awk '{print $1}' | xargs -r kill -9 2>/dev/null
+    ps | grep -E 'whatpl[a]ys\.sh' | awk '{print $1}' | xargs -r kill -9 2>/dev/null
+    setsid /bin/sh -c 'while :; do /data/opt/bin/commandslistener.sh >> /tmp/commandslistener.err 2>&1; sleep 3; done' >/dev/null 2>&1 </dev/null &
+    ;;
+  stop)
+    for p in $(ps | grep -E "commandslis[t]ener|whatpl[a]ys|while :; do /data/opt/bin/commandslistene[r]" | awk '{print $1}'); do kill "$p" 2>/dev/null; done
+    for p in $(ps | grep 'main[d] --cli' | awk '{print $1}'); do kill "$p" 2>/dev/null; done
+    killall alice_ipc_mon tcpcat 2>/dev/null
+    ;;
+  restart) "$0" stop; sleep 1; "$0" start ;;
+esac
+exit 0

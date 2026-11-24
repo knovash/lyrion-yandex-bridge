@@ -1,9 +1,12 @@
 #!/bin/bash
-# stand.sh — стенд lite-kit для рута Лайт 1 (yandexmicro).
-# Освобождает :53, :80, :443, автопоиск прошивки .46.
+# stand.sh (v2) — стенд lite-kit для рута Лайт 1 (yandexmicro).
+# v2: lite-kit УЖЕ В АРХИВЕ (alice-root-wizard/lite-kit/, с прошивкой .46) —
+#     интернет для клона НЕ нужен; git clone остался фолбэком для dev-машин.
+# Освобождает :53, :80, :443; прошивка ищется локально в первую очередь.
 set -e
 
-LITE_KIT_DIR="${LITE_KIT_DIR:-$HOME/lite-kit}"
+HERE=$(cd "$(dirname "$0")" && pwd)
+LITE_KIT_DIR="${LITE_KIT_DIR:-$HERE/lite-kit}"
 FW_VERSION="0.369.1.46.4778262442.20261013.297"
 FW_NAME="$FW_VERSION.zip"
 FW_DIR="$LITE_KIT_DIR/firmware/yandexmicro"
@@ -62,15 +65,17 @@ for port in 80 443; do
   fi
 done
 
-# --- lite-kit ---
-if [ ! -d "$LITE_KIT_DIR" ]; then
-  say "git clone lite-kit → $LITE_KIT_DIR"
+# --- lite-kit: ЛОКАЛЬНЫЙ из архива (фолбэк — clone) ---
+if [ -f "$LITE_KIT_DIR/start.sh" ]; then
+  say "lite-kit: $LITE_KIT_DIR (локальный, из архива — клон не нужен)"
+else
+  warn "lite-kit нет в $LITE_KIT_DIR — git clone (фолбэк, нужен интернет)"
   git clone https://github.com/krevetkqqq/lite-kit "$LITE_KIT_DIR"
 fi
 cd "$LITE_KIT_DIR"
 chmod +x ./*.sh 2>/dev/null || true
 
-# --- Прошивка .46 ---
+# --- Прошивка .46 (уже в архиве; фолбэки — dev-пути) ---
 say "Проверка прошивки $FW_NAME"
 mkdir -p "$FW_DIR"
 if [ -f "$FW_ZIP" ]; then
@@ -79,7 +84,8 @@ else
   FOUND=""
   for cand in \
       "$HOME/tools/lite-kit/firmware/yandexmicro/$FW_NAME" \
-      "$HOME/tools/lite-backup/$FW_NAME" \
+      "$HOME/lite-kit/firmware/yandexmicro/$FW_NAME" \
+      "$HOME/lite-backup/$FW_NAME" \
       "$HOME/$FW_NAME"; do
     [ -f "$cand" ] && { FOUND="$cand"; break; }
   done
@@ -88,15 +94,16 @@ else
     cp -v "$FOUND" "$FW_ZIP"
   else
     warn "Прошивка НЕ найдена: $FW_ZIP"
-    die "нет $FW_NAME — положите zip вручную"
+    die "нет $FW_NAME — положите zip в lite-kit/firmware/yandexmicro/"
   fi
 fi
 
-if [ ! -f "$LITE_KIT_DIR/firmware/manifest.json" ]; then
+if [ ! -f "$FW_DIR/manifest.json" ]; then
   for cand in \
-      "$HOME/tools/lite-kit/firmware/manifest.json" \
-      "$HOME/tools/lite-backup/manifest.json"; do
-    [ -f "$cand" ] && { cp -v "$cand" "$LITE_KIT_DIR/firmware/manifest.json"; break; }
+      "$HOME/tools/lite-kit/firmware/yandexmicro/manifest.json" \
+      "$HOME/lite-kit/firmware/yandexmicro/manifest.json" \
+      "$HOME/lite-backup/manifest.json"; do
+    [ -f "$cand" ] && { cp -v "$cand" "$FW_DIR/manifest.json"; break; }
   done
 fi
 
