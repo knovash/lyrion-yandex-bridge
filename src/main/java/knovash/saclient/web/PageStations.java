@@ -590,8 +590,20 @@ public class PageStations {
                 if (dv.name != null && !dv.name.isEmpty()) st.put("name", dv.name);
                 String yRoom = roomNameById.getOrDefault(dv.room, "");
                 if (!yRoom.isEmpty()) st.put("room", yRoom);
+                // СИНХРОНИЗАЦИЯ ROOM-ONLY: колонка переехала в УДЯ — обновить комнату
+                // на станции (ROOM= в whatplays/commandslistener + bt.conf uniq-строки),
+                // чтобы лок.команды и BT-пульт рулили плеером НОВОЙ комнаты.
+                if (!yRoom.isEmpty() && !yRoom.equals(room)) st.put("roomSync", yRoom);
                 break;
             }
+        }
+        String roomSync = st.optString("roomSync", "");
+        if (!roomSync.isEmpty()) {
+            String syncOut = sshExec(st.optString("ip"), st.optInt("port", 2222),
+                    root.optString("sshPassword", ""), scriptRoomSync(roomSync));
+            lastResult += "room-sync: " + room + " -> " + roomSync + " | " + syncOut + "\n";
+            st.remove("roomSync");
+            log.info("STATIONS room-sync " + st.optString("ip") + " " + roomSync);
         }
         JSONObject svc = new JSONObject()
                 .put("sq", new JSONObject().put("inst", "1".equals(kv.get("SQ_INST"))).put("run", "1".equals(kv.get("SQ_RUN"))))
@@ -632,6 +644,31 @@ public class PageStations {
             }
         }
         return out.length() > 0 ? out.toString() : def;
+    }
+
+    /** Обновить комнату на станции: ROOM= в whatplays/commandslistener (remount rw/ro)
+     *  + перезапись uniq-строк bt.conf на «uniq <room>» + рестарт слушателей. */
+    static String scriptRoomSync(String room) {
+        return "WP1=/data/opt/bin/whatplays.sh\n"
+                + "WP2=/data/opt/bin/commandslistener.sh\n"
+                + "NEW='" + room + "'\n"
+                + "OLD=$(grep -hE '^ROOM=' $WP1 $WP2 2>/dev/null | head -1 | sed -e \"s/^ROOM=//\" -e \"s/^['\"]//\" -e \"s/['\"].*$//\")\n"
+                + "echo \"room: ${OLD:-?} -> $NEW\"\n"
+                + "if [ \"$OLD\" != \"$NEW\" ]; then\n"
+                + "  mount -o remount,rw / 2>/dev/null\n"
+                + "  for F in $WP1 $WP2; do\n"
+                + "    [ -f \"$F\" ] && sed -i \"s/^ROOM=.*/ROOM=$NEW/\" \"$F\"\n"
+                + "  done\n"
+                + "  sync; mount -o remount,ro / 2>/dev/null\n"
+                + "  echo ROOM_updated\n"
+                + "fi\n"
+                + "BC=/data/opt/bt.conf\n"
+                + "if [ -f \"$BC\" ] && [ -n \"$OLD\" ] && [ \"$OLD\" != \"$NEW\" ]; then\n"
+                + "  grep -E '^(server|default) ' \"$BC\" > /tmp/bt.conf.n\n"
+                + "  awk -v r=\"$NEW\" '!/^(server|default|#)/ && NF>=2 {print $1, r}' \"$BC\" >> /tmp/bt.conf.n\n"
+                + "  cp /tmp/bt.conf.n \"$BC\" && cat \"$BC\"\n"
+                + "fi\n"
+                + "sh /data/opt/bin/bt-listeners-start.sh 2>&1 | tail -3\n";
     }
 
     /** LMS-плеер, закреплённый за комнатой (страница /players): в комнате может

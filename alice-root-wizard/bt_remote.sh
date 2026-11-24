@@ -1,11 +1,11 @@
 #!/bin/bash
-# bt_remote.sh (v4) — установка BT-пультов на рутованную Станцию Лайт.
-# Использование: ./bt_remote.sh <IP>              — АВТО: плеер по комнате колонки
-#                ./bt_remote.sh <IP> --room <Комната> [--player <Имя>] [--bridge H:P]
-# ПРАВИЛО ВЛАДЕЛЬЦА: пульт рулит LMS-плеером в комнате, где стоит колонка;
-# если LMS-плеера в комнате нет — пульт рулит squeezelite самой станции.
-# Комната: --room > commandslistener станции; плеер: --player > status.json
-# моста (по комнате) > squeezelite станции (имя из cmdline, дефолт задан).
+# bt_remote.sh (v7, ROOM-ONLY) — установка BT-пультов на рутованную Станцию Лайт.
+# Использование: ./bt_remote.sh <IP> [--room <Комната>] [--bridge H:P]
+# АРХИТЕКТУРА (правило владельца): станция хранит ТОЛЬКО комнату (bt.conf
+# «uniq room»); LMS-плеер комнаты резолвит sa_client (/cmd?room=... ->
+# привязка комнат к плеерам на /players). Комната: --room > со станции
+# (whatplays/commandslistener; обновляется «Проверить» на /stations из УДЯ
+# по серийнику). Плеер на станции НЕ хранится.
 #
 # Что делает:
 #   1) Заливает yse и ставит Entware (yse bootstrap, если его ещё нет) + bluez
@@ -13,7 +13,7 @@
 #      + bt-listeners-start.sh + beep.wav (с SHA-сверкой каждой заливки!)
 #   3) Создаёт хранилище бондов (/data/opt/bluetooth) + симлинк
 #   4) Настраивает Entware D-Bus (machine-id + сокет; вендорский не трогаем)
-#   5) Пишет bt.conf: server <bridge> + default <player> <room>
+#   5) Пишет bt.conf: server <bridge> + default <room> (ROOM-ONLY)
 #      + тюнинг-конфиги BlueZ (input.conf/main.conf, эталон .115)
 #   6) Ставит S99btkeys в /etc/init.d — автозапуск стека при загрузке станции
 #   7) Запускает стек + слушателей
@@ -29,13 +29,11 @@ PAYLOAD="$HERE/payload_bt_remote"
 PORT=2222
 
 LITE_IP=""
-PLAYER=""
 ROOM=""
 BRIDGE="${BRIDGE:-192.168.1.131:8888}"
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --player)  PLAYER="$2"; shift 2 ;;
     --room)    ROOM="$2"; shift 2 ;;
     --bridge)  BRIDGE="$2"; shift 2 ;;
     -*)        echo "неизвестный флаг $1"; exit 1 ;;
@@ -43,8 +41,8 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-[ -n "$LITE_IP" ] || { echo "использование: $0 <IP> [--player <Имя>] [--room <Комната>] [--bridge ip:8888]"; exit 1; }
-# --player/--room НЕ обязательны: без них — автоопределение (блок 0/7 ниже)
+[ -n "$LITE_IP" ] || { echo "использование: $0 <IP> [--room <Комната>] [--bridge ip:8888]"; exit 1; }
+# --room НЕ обязателен: без него — комната со станции (whatplays/commandslistener)
 
 say()  { printf '\n\033[1;36m[bt]\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m[WARN]\033[0m %s\n' "$*"; }
@@ -59,36 +57,15 @@ done
 # --- 0/7: автоопределение комнаты/плеера (режим «просто IP») ---
 # NB: этот блок писан python-RAW-строками: обычные строки ели \0/\1 (окталы
 #     -> байты 0x00/0x01 -> «unterminated quoted string» на станции).
-if [ -z "$ROOM" ] || [ -z "$PLAYER" ]; then
-  say "0/7: автоопределение (правило: LMS-плеер комнаты колонки, иначе squeezelite станции)"
+if [ -z "$ROOM" ]; then
+  say "0/7: автоопределение комнаты (ROOM-ONLY: плеер резолвит sa_client)"
   if [ -z "$ROOM" ]; then
     # оба имени: свежие станции — commandslistener.sh, легаси — whatplays.sh
     RAW=$($SSH "root@$LITE_IP" 'grep -hE "^ROOM=" /data/opt/bin/commandslistener.sh /data/opt/bin/whatplays.sh 2>/dev/null | head -1')
     ROOM=$(printf '%s' "$RAW" | sed -e "s/^ROOM=//" -e "s/^['\"]//" -e "s/['\"].*$//" | tr -d '\r\n')
     [ -n "$ROOM" ] && say "  комната (со станции): $ROOM"
   fi
-  if [ -z "$PLAYER" ] && [ -n "$ROOM" ]; then
-    # LMS-плеер этой комнаты — из status.json моста sa_client (как room_player)
-    PLAYER=$(curl -s -m 6 "http://$BRIDGE/status.json" 2>/dev/null | sed 's/},/}\n/g' \
-      | grep "\"room\":\"$ROOM\"" | sed -n 's/.*"name":"\([^"]*\)".*/\1/p' | head -1)
-    [ -n "$PLAYER" ] && say "  LMS-плеер комнаты «$ROOM»: $PLAYER"
-  fi
-  if [ -z "$PLAYER" ]; then
-    # LMS-плеера в комнате нет → пульт рулит squeezelite самой станции
-    PLAYER=$($SSH "root@$LITE_IP" '
-      N=""
-      Q=$(pidof squeezelite)
-      [ -n "$Q" ] && N=$(tr "\0" "\n" < /proc/$Q/cmdline | sed -n "/^-n$/{n;p;}")
-      if [ -z "$N" ] && [ -f /etc/init.d/S98squeeze ]; then
-        N=$(sed -n "s/.*NAME=.//;s/.$//p" /etc/init.d/S98squeeze | head -1)
-        [ -z "$N" ] && N=$(sed -n "s/.*-n \"\([^\"]*\)\".*/\1/p" /etc/init.d/S98squeeze | head -1)
-      fi
-      [ -z "$N" ] && N="Yandex Lite 2 SL"
-      echo "$N"
-    ' | tr -d '\r\n')
-    say "  LMS-плеера в комнате нет → пульт рулит squeezelite станции: $PLAYER"
-  fi
-  [ -n "$PLAYER" ] || die "не смог определить плеер — укажите --player <Имя LMS-плеера>"
+  [ -n "$ROOM" ] || die "не смог определить комнату — укажите --room <Комната>"
 fi
 
 # заливка с SHA-сверкой (грабля «жпун#!/bin/sh» из истории — больше не пройдёт)
@@ -155,11 +132,11 @@ $SSH "root@$LITE_IP" '
 '
 $SSH "root@$LITE_IP" 'ls /opt/var/run/dbus/system_bus_socket >/dev/null 2>&1' || die "Entware D-Bus не поднялся (/opt/var/run/dbus)"
 
-say "5/7: bt.conf (server + default; uniq-строки существующих пультов сохраняются)"
+say "5/7: bt.conf (server + default <room>; uniq-строки существующих пультов сохраняются)"
 $SSH "root@$LITE_IP" "
   T=/tmp/bt.conf.new
   if [ -f /data/opt/bt.conf ]; then grep -vE '^(server|default) ' /data/opt/bt.conf | awk 'NF>=2 && !s[\$1]++' > \$T; else : > \$T; fi
-  printf 'server %s\ndefault %s %s\n' '$BRIDGE' '$PLAYER' '$ROOM' > /data/opt/bt.conf
+  printf 'server %s\ndefault %s\n' '$BRIDGE' '$ROOM' > /data/opt/bt.conf
   cat \$T >> /data/opt/bt.conf && rm -f \$T
   cat /data/opt/bt.conf
 "
@@ -186,7 +163,7 @@ $SSH "root@$LITE_IP" 'sh /data/opt/bin/bt-listeners-start.sh' 2>/dev/null
 cat <<EOF
 
 ============================================================
-ГОТОВО! BT-стек развёрнут на $LITE_IP (bridge: $BRIDGE).
+ГОТОВО! BT-стек развёрнут на $LITE_IP (bridge: $BRIDGE, ROOM-ONLY: комната=$ROOM — плеер резолвит sa_client).
 
 ДЛЯ ПОДКЛЮЧЕНИЯ ПУЛЬТА:
   ssh -p $PORT root@$LITE_IP

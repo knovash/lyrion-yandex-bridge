@@ -40,8 +40,7 @@ SQ_ARGS=(); [ -n "$NAME" ]   && SQ_ARGS+=(--name "$NAME")
 LC_ARGS=(); [ -n "$NAME" ]   && LC_ARGS+=(--player "$NAME")
 [ -n "$BRIDGE" ] && LC_ARGS+=(--bridge "$BRIDGE")
 [ -n "$LMS" ]    && LC_ARGS+=(--lms "$LMS")
-BT_ARGS=(); [ -n "$PLAYER" ] && BT_ARGS+=(--player "$PLAYER")
-[ -n "$ROOM" ]   && BT_ARGS+=(--room "$ROOM")
+BT_ARGS=(); [ -n "$ROOM" ] && BT_ARGS+=(--room "$ROOM")
 [ -n "$BRIDGE" ] && BT_ARGS+=(--bridge "$BRIDGE")
 
 say "1/4: squeezelite (LMS-плеер станции)"
@@ -55,7 +54,7 @@ else
   warn "Доустановить позже: ./local_commands.sh $IP --room <Комната> --aliceid <UUID>"
 fi
 
-say "3/4: bt_remote (Bluetooth-пульт; плеер — авто по комнате)"
+say "3/4: bt_remote (Bluetooth-пульт; ROOM-ONLY — плеер резолвит sa_client)"
 ./bt_remote.sh "$IP" "${BT_ARGS[@]}"
 
 if [ "$AIRPLAY" = 1 ]; then

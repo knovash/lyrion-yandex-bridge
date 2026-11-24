@@ -1,10 +1,13 @@
 #!/bin/sh
 # bt-listeners-start.sh v3 — поднять BT-стек и слушателей пультов (идемпотентно).
 # ВАЖНО: НЕ трогает вендорский D-Bus, bluealsa, maind — Алиса продолжает работать.
-# Читает /data/opt/bt.conf:
-#   server <ip[:port]>          — bridge sa_client (дефолт зашит в btkeys-grab.sh)
-#   default <player> <room>     — дефолт для новых пультов
-#   <uniq-mac> <player> <room>  — по слушателю на пульт
+# Читает /data/opt/bt.conf (ROOM-ONLY, v4):
+#   server <ip[:port]>   — bridge sa_client (дефолт зашит в btkeys-grab.sh)
+#   default <room>       — комната по умолчанию (для новых пультов bt-connect)
+#   <uniq-mac> <room>    — по слушателю на пульт; ПЛЕЕР НЕ ХРАНИМ: sa_client
+#                          сам резолвит LMS-плеер комнаты (/players на сервере).
+#                          Старый формат «uniq <player> <room>» тоже читается
+#                          (последнее слово строки = комната).
 # v3: kill-паттерны матчат ОБЕ эпохи имён (btkeys-grab и btkeys-listener) + супервизоры
 #     (иначе дубли супервизоров/драка за EVIOCGRAB); демон под супервизором (упал —
 #     поднимется через 5с) и БЕЗ -d (лог не растёт); D-Bus не поднялся — честный отказ.
@@ -43,11 +46,12 @@ echo "стек поднят, слушатели:"
 # последнее слово строки — комната, середина — плеер (как bt-connect v6)
 grep -v '^#' "$CONF" 2>/dev/null | awk 'NF>=2 && $1!="server" && $1!="default" && !s[$1]++' \
 | while read -r u rest; do
+  # ROOM-ONLY: последняя лексема строки = комната (плеер не храним, старый формат
+  # «uniq <player> <room>» — тоже ок: берём последнее слово)
   r=$(printf '%s\n' "$rest" | awk '{print $NF}')
-  p=$(printf '%s\n' "$rest" | awk 'NF>1{NF--; print}' OFS=' ')
   case "$u" in server|default|'') continue ;; esac
-  setsid sh -c "while :; do /data/opt/bin/btkeys-grab.sh $u '$p' '$r' >> /tmp/btkeys.err 2>&1; sleep 3; done" </dev/null >/dev/null 2>&1 &
-  echo "  $u → $p${r:+ ($r)}"
+  setsid sh -c "while :; do /data/opt/bin/btkeys-grab.sh $u '$r' >> /tmp/btkeys.err 2>&1; sleep 3; done" </dev/null >/dev/null 2>&1 &
+  echo "  $u → комната $r (плеер резолвит sa_client)"
 done
 sleep 2
 echo "готово. Новый пульт: /data/opt/bin/bt-connect.sh. Проверка: ps | grep btrcv"

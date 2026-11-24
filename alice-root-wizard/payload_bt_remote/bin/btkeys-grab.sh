@@ -1,12 +1,16 @@
 #!/bin/sh
-# btkeys-grab.sh v3 — обвязка btrcv: строки "code value" -> /cmd sa_client + бип.
-# Использование: btkeys-grab.sh <uniq-mac> <player> [room]
-#   <player> — ИМЯ ПЛЕЕРА LMS напрямую (switch_here идёт по плееру; room — в журнал).
+# btkeys-grab.sh v4 — обвязка btrcv: строки "code value" -> /cmd sa_client + бип.
+# Использование: btkeys-grab.sh <uniq-mac> <room>
+#   <room> — КОМНАТА колонки из УДЯ. Плеер НЕ указываем: sa_client сам резолвит
+#   LMS-плеер комнаты (привязка комнат к плеерам — страница /players сервера).
+#   Комната хранится в /data/opt/bt.conf («uniq room»), обновляется при
+#   «Проверить» на /stations (серийник -> УДЯ -> комната) или bt-remote.
 # Сервер bridge: строка "server <ip[:port]>" в /data/opt/bt.conf, дефолт — ниже.
-# v3: адрес из bt.conf (переезд сервера = правка одной строки, без правки скриптов);
-#     ошибки /cmd видны в логе («✗ … подряд: N») + двойной бип после 3 подряд;
-#     бип не плодит параллельные aplay; трим лога при старте (RAM станции мала);
-#     heartbeat /tmp/bt.status.<uniq>; убраны мёртвый lms() и ложный «room mode».
+# v4: ROOM-ONLY архитектура (правило владельца): станция не знает плееров —
+#     только комнату; плеер комнаты выбирает sa_client. Старый формат
+#     «uniq <player> <room>» понимается (последнее слово = комната).
+# v3: адрес из bt.conf; ошибки /cmd в логе + двойной бип после 3 подряд;
+#     бип не плодит aplay; трим лога; heartbeat /tmp/bt.status.<uniq>.
 CONF=/data/opt/bt.conf
 SAC=http://192.168.1.131:8888
 SRV=$(grep -E '^server ' "$CONF" 2>/dev/null | head -1 | awk '{print $2}')
@@ -15,8 +19,7 @@ case "$SRV" in
   ?*)       SAC="http://$SRV" ;;
 esac
 UNIQ="${1:?uniq}"
-PLAYER="${2:?player}"
-ROOM="${3:-}"
+ROOM="${2:?room}"
 LOG=/tmp/btkeys.log
 BEEP=/data/opt/sounds/beep.wav
 FAILS=/tmp/btkeys.fails
@@ -34,19 +37,19 @@ rm -f "$FAILS"
 
 cmd(){
   # $1 = action; $2 = доп. параметры URL (например "&value=7")
-  if busybox wget -q -O /dev/null -T 4 "$SAC/cmd?action=$1&player=$(urlencode "$PLAYER")$2" 2>/dev/null; then
+  if busybox wget -q -O /dev/null -T 4 "$SAC/cmd?action=$1&room=$(urlencode "$ROOM")$2" 2>/dev/null; then
     rm -f "$FAILS"
-    log "⇒ $1 ($PLAYER)"
+    log "⇒ $1 (комната $ROOM)"
   else
     n=0; [ -f "$FAILS" ] && n=$(cat "$FAILS" 2>/dev/null)
     case "$n" in ''|*[!0-9]*) n=0 ;; esac
     n=$((n+1)); echo "$n" > "$FAILS"
-    log "✗ $1 ($PLAYER) — bridge недоступен ($SAC), подряд: $n"
+    log "✗ $1 (комната $ROOM) — bridge недоступен ($SAC), подряд: $n"
     [ "$n" = 3 ] && { beep; sleep 0.3; beep; }   # сигнал: сервер молчит
   fi
 }
 
-log "=== btkeys-grab v3 старт: player=$PLAYER room=$ROOM sac=$SAC ==="
+log "=== btkeys-grab v4 старт: room=$ROOM sac=$SAC (плеер резолвит sa_client) ==="
 hb
 /data/opt/bin/btrcv "$UNIQ" 2>>/tmp/btrcv.err | while read -r code value; do
   [ "$value" = "1" ] || continue   # только нажатия
@@ -57,7 +60,7 @@ hb
     353|164) cmd play_pause ;;              # OK (KEY_OK=353) / playpause=164
     115)     cmd volume_up ;;
     114)     cmd volume_dn ;;
-    172)     cmd switch_here ;;             # Home — комната берётся из плеера
+    172)     cmd switch_here ;;             # Home — «переключи сюда» (в комнату)
     408|418|217) cmd whats_playing ;;       # Search — «что играет»
     2|3|4|5|6|7|8|9|10|11)                 # цифры 1-9,0 = избранное
       N=$((code - 1))

@@ -22,14 +22,12 @@ BCTL=/opt/bin/bluetoothctl
 CONF=/data/opt/bt.conf
 CFGDIR=/opt/etc/bluetooth
 MAC="${1:-}"
-PLAYER="${2:-}"
-ROOM="${3:-}"
+ROOM="${2:-}"   # v4: плеер не указываем — только комната (sa_client резолвит)
 # дефолты плеера/комнаты — из bt.conf (строка "default <player> <room>")
 if [ -f "$CONF" ]; then
+  # ROOM-ONLY: default-строка = «default <room>»; понимаем и старый формат
+  # «default <player> <room>» — последнее слово = комната
   DEF=$(grep -E '^default ' "$CONF" | head -1 | sed 's/^default //')
-  # плеер может быть многословным (JBL white, Yandex Lite 2 SL): последняя
-  # лексема default-строки — комната, середина — имя плеера
-  [ -z "$PLAYER" ] && PLAYER=$(printf '%s\n' "$DEF" | awk 'NF>1{NF--; print}' OFS=' ')
   [ -z "$ROOM" ] && ROOM=$(printf '%s\n' "$DEF" | awk '{print $NF}')
 fi
 WAIT="${BT_WAIT:-30}"
@@ -172,15 +170,14 @@ BEEP=/data/opt/sounds/beep.wav
 log "5. бонд -> вендор-хранилище"
 [ "$BONDED" = "1" ] || cp -r "/data/opt/bluetooth/$ADAPTER/$MAC" "/data/bluez_data/lib/bluetooth/$ADAPTER/" 2>/dev/null
 
-log "6. слушатель btkeys-grab (бип + /cmd, player=$PLAYER room=$ROOM)"
+log "6. слушатель btkeys-grab v4 (бип + /cmd, room=$ROOM — плеер резолвит sa_client)"
 # погасить СТАРУЮ копию слушателя этого uniq (обе эпохи имён) — нет драки за EVIOCGRAB
 killpat "btke[y]s-(grab|listener)[.]sh $UNIQ|btrc[v] $UNIQ"
-# записать пульт в bt.conf (заменить строку с этим uniq или добавить; server/default не трогаем)
+# записать пульт в bt.conf (ROOM-ONLY: «uniq room»; server/default не трогаем)
 grep -v "^$UNIQ " "$CONF" 2>/dev/null > /tmp/bt.conf.new
-[ -f "$CONF" ] || echo "default $PLAYER $ROOM" > /tmp/bt.conf.new
-echo "$UNIQ $PLAYER $ROOM" >> /tmp/bt.conf.new
+echo "$UNIQ $ROOM" >> /tmp/bt.conf.new
 cp /tmp/bt.conf.new "$CONF"
-setsid sh -c "while :; do /data/opt/bin/btkeys-grab.sh $UNIQ '$PLAYER' '$ROOM' >> /tmp/btkeys.err 2>&1; sleep 3; done" </dev/null >/dev/null 2>&1 &
+setsid sh -c "while :; do /data/opt/bin/btkeys-grab.sh $UNIQ '$ROOM' >> /tmp/btkeys.err 2>&1; sleep 3; done" </dev/null >/dev/null 2>&1 &
 sleep 2
 
 log "ГОТОВО! Пульт $MAC подключён, узел $NODE, слушатель работает."

@@ -209,24 +209,26 @@ hook(){
       esac
       ;;
     андом)
-      # тумблер рандома на плеере комнаты: 0 ↔ 1
+      # тумблер рандома на плеере комнаты: 0 ↔ 1 (ROOM-ONLY: плеер резолвит sa_client)
       RP=$(room_player)
-      [ -n "$RP" ] || { log 'не нашёл плеер комнаты'; return; }
-      S=$(numfield "$(jstat "$RP")" "playlist shuffle")
+      S=0
+      [ -n "$RP" ] && S=$(numfield "$(jstat "$RP")" "playlist shuffle")
       case "$S" in ''|*[!0-9]*) S=0 ;; esac
       if [ "$S" = 0 ]; then ACT=shuffle_on; NEW=1; else ACT=shuffle_off; NEW=0; fi
-      busybox wget -q -O /dev/null "$SAC/cmd?action=$ACT&player=$RP" 2>/dev/null
-      log "→ рандом: $RP ($S → $NEW)"
+      RE=$(urlencode "$ROOM")
+      busybox wget -q -O /dev/null "$SAC/cmd?action=$ACT&room=$RE" 2>/dev/null
+      log "→ рандом: комната $ROOM ($S → $NEW)"
       ;;
     овтор)
-      # тумблер повтора на плеере комнаты: 0 (выкл) ↔ 2 (повтор всех)
+      # тумблер повтора на плеере комнаты: 0 (выкл) ↔ 2 (повтор всех) (ROOM-ONLY)
       RP=$(room_player)
-      [ -n "$RP" ] || { log 'не нашёл плеер комнаты'; return; }
-      R=$(numfield "$(jstat "$RP")" "playlist repeat")
+      R=0
+      [ -n "$RP" ] && R=$(numfield "$(jstat "$RP")" "playlist repeat")
       case "$R" in ''|*[!0-9]*) R=0 ;; esac
       if [ "$R" = 0 ]; then ACT=repeat_on; NEW=2; else ACT=repeat_off; NEW=0; fi
-      busybox wget -q -O /dev/null "$SAC/cmd?action=$ACT&player=$RP" 2>/dev/null
-      log "→ повтор: $RP ($R → $NEW)"
+      RE=$(urlencode "$ROOM")
+      busybox wget -q -O /dev/null "$SAC/cmd?action=$ACT&room=$RE" 2>/dev/null
+      log "→ повтор: комната $ROOM ($R → $NEW)"
       ;;
   esac
 }
