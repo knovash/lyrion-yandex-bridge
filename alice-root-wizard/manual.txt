@@ -329,10 +329,10 @@
     ./bt_remote.sh <IP> --player <Имя>     # плеер явно (остальное — авто)
 
 ПРАВИЛО АВТОВЫБОРА ПЛЕЕРА (владельца): пульт рулит LMS-плеером в комнате, где
-стоит колонка. Комната: --room > commandslistener станции (строка ROOM=).
-Плеер: --player > status.json моста (плеер комнаты) > squeezelite самой
-станции (имя из cmdline; дефолт "Yandex Lite 2 SL"). Если LMS-плеера в
-комнате нет — пульт рулит squeezelite станции.
+стоит колонка. Комната: --room > станции (строка ROOM= в commandslistener.sh
+или легаси whatplays.sh). Плеер: --player > status.json моста (плеер комнаты)
+> squeezelite самой станции (имя из cmdline; дефолт "Yandex Lite 2 SL").
+Если LMS-плеера в комнате нет — пульт рулит squeezelite станции.
 
 Пример (эталон Гостиная, пульт G20S → HomePod1):
     ./bt_remote.sh 192.168.1.115    # room=Гостиная (commandslistener) → HomePod1
