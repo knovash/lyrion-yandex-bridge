@@ -34,7 +34,7 @@ import java.util.regex.Pattern;
 /**
  * Страница /stations — «Рутованные станции»: список станций (ssh root@ip -p порт),
  * проверка их текущей привязки (какой сервер прописан в commandslistener/squeezelite)
- * и кнопка «Перенацелить сюда» — смена привязки станций при переезде сервера
+ * и кнопка «Обновить LMS ip» — смена привязки станций при переезде сервера
  * LMS/sa_client на другой IP. Перенастройка выполняется ТОЛЬКО по нажатию
  * (решение владельца 12.11 — ничего автоматического).
  *
@@ -134,7 +134,7 @@ public class PageStations {
                     .append(svcCell(st.optJSONObject("services"), "wp", ip, "лок.команды"))
                     .append(btCell(st, ip))
                     .append(actionCell("station_check", ip, "Проверить"))
-                    .append(actionCell("station_repoint", ip, "Перенацелить сюда"))
+                    .append(actionCell("station_repoint", ip, "Обновить LMS ip"))
                     .append(deleteCell(ip))
                     .append("</tr>");
         }
@@ -154,14 +154,14 @@ public class PageStations {
                 "<fieldset><legend><b>Рутованные станции</b></legend>" +
                         "<p>Привязка станций к серверу: commandslistener шлёт локальные фразы на веб этого клиента, " +
                         "squeezelite станции подключается к LMS. При смене IP сервера нажмите " +
-                        "<b>«Перенацелить сюда»</b> — станция перепропишет адреса на этот сервер и перезапустит " +
+                        "<b>«Обновить LMS ip»</b> — станция перепропишет адреса на этот сервер и перезапустит " +
                         "сервисы (если IP уже этот — просто рестарт). Ничего автоматического не происходит.</p>" +
                         "<table border='1' cellpadding='4' cellspacing='0'>" +
                         "<tr><th>Станция</th><th>Адрес</th><th>Комната</th><th>Плеер (пульт)</th><th>squeezelite</th><th>AirPlay</th><th>лок.команды</th><th>пульт</th><th></th><th></th><th></th></tr>" + rows + "</table>" +
                         "<form method='POST' action='/form' style='display:inline'><input type='hidden' name='action' value='station_check'>" +
                         "<input type='hidden' name='station_ip' value='ALL'><button type='submit'>Проверить ВСЕ</button></form> " +
                         "<form method='POST' action='/form' style='display:inline'><input type='hidden' name='action' value='station_repoint'>" +
-                        "<input type='hidden' name='station_ip' value='ALL'><button type='submit'>Перенацелить ВСЕ сюда</button></form>" +
+                        "<input type='hidden' name='station_ip' value='ALL'><button type='submit'>Обновить LMS ip ВСЕ</button></form>" +
                         (lastResult.isEmpty() ? "" :
                                 "<h3>Результат последней операции</h3><pre>" + escape(lastResult) + "</pre>") +
                         "</fieldset>" +
@@ -351,14 +351,16 @@ public class PageStations {
                 + "echo \"SQS=$(grep -oE '[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+' /etc/init.d/S98squeeze 2>/dev/null | sort -u | tr '\\n' ' ')\"\n"
                 + "echo \"SQ_INST=$([ -x /data/opt/bin/squeezelite ] && echo 1 || echo 0)\"\n"
                 + "echo \"SQ_RUN=$(pidof squeezelite >/dev/null 2>&1 && echo 1 || echo 0)\"\n"
-                + "echo \"WP_INST=$([ -f /data/opt/bin/commandslistener.sh ] && echo 1 || echo 0)\"\n"
+                + "echo \"WP_INST=$([ -f /data/opt/bin/commandslistener.sh ] || [ -f /data/opt/bin/whatplays.sh ] && echo 1 || echo 0)\"\n"
                 + "echo \"WP_RUN=$(ps | grep -q 'commandslistene[r]' && echo 1 || echo 0)\"\n"
                 + "echo \"AP_INST=$([ -f /etc/init.d/S99zairplay-lite1 ] || [ -d /data/opt/airplay ] && echo 1 || echo 0)\"\n"
                 + "echo \"AP_RUN=$(ps | grep -qE 'shairpo[r]t|avah[i]|nqpt[p]' && echo 1 || echo 0)\"\n"
                 + "echo \"BT_INST=$([ -x /data/opt/bin/btrcv ] && echo 1 || echo 0)\"\n"
                 + "echo \"BT_RUN=$(ps | grep -q 'btrc[v]' && echo 1 || echo 0)\"\n"
-                + "echo \"BT_REMOTES=$(grep -vcE '^#|^$|default' /data/opt/bt.conf 2>/dev/null || echo 0)\"\n"
+                + "echo \"BT_REMOTES=$(grep -vcE '^#|^$|server|default' /data/opt/bt.conf 2>/dev/null || echo 0)\"\n"
                 + "echo \"BT_CONF=$(grep -vE '^#|^$' /data/opt/bt.conf 2>/dev/null | tr '\n' '|')\"\n"
+                + "NAMES=$(for D in /opt/var/lib/bluetooth/*/; do for M in $(ls \"$D\" 2>/dev/null | grep -E ^[0-9A-F:]{17}$); do grep -h ^Name= \"$D$M/info\" 2>/dev/null | cut -d= -f2; done; done | sort -u | paste -sd,)\n"
+                + "echo \"BT_NAMES=$NAMES\"\n"
                 + "echo \"PROCS=$(ps | grep -cE 'commandslistene[r]|squeezelite')\"\n";
     }
 
@@ -612,6 +614,7 @@ public class PageStations {
                 .put("wp", new JSONObject().put("inst", "1".equals(kv.get("WP_INST"))).put("run", "1".equals(kv.get("WP_RUN"))));
         st.put("services", svc);
         st.put("btRemotes", kv.getOrDefault("BT_REMOTES", "0"));
+        st.put("btNames", kv.getOrDefault("BT_NAMES", ""));
         String btPlayer = parseBtPlayer(kv.getOrDefault("BT_CONF", ""));
         if (!btPlayer.isEmpty()) st.put("btPlayer", btPlayer);
         // ПРАВИЛО ВЛАДЕЛЬЦА: пульт лайта рулит LMS-плеером его КОМНАТЫ (привязка
@@ -714,9 +717,10 @@ public class PageStations {
             JSONObject s = services.optJSONObject("bt");
             boolean inst = s != null && s.optBoolean("inst", false);
             boolean run = s != null && s.optBoolean("run", false);
-            String remotes = st.optString("btRemotes", "0");
+            String names = st.optString("btNames", "").replaceAll(",", ", ").trim();
+            if (names.isEmpty()) names = st.optString("btRemotes", "0") + " шт";
             if (run)
-                sb.append("<span style='color:green'>▶ ").append(remotes).append(" пульт(ов)</span><br>").append(svcForm(ip, "bt", "off", "Выкл"));
+                sb.append("<span style='color:green'>▶ ").append(escape(names)).append("</span><br>").append(svcForm(ip, "bt", "off", "Выкл"));
             else if (inst)
                 sb.append("<span style='color:#b8860b'>● установлен</span><br>").append(svcForm(ip, "bt", "on", "Вкл"));
             else
