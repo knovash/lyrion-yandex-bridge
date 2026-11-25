@@ -48,6 +48,7 @@ import java.util.regex.Pattern;
 public class PageStations {
 
     private static final Path FILE = Paths.get("data", "stations.json");
+    private static volatile String roomSyncResult = "";
     private static volatile String lastResult = "";
     /** Последний скан сети: строки таблицы, найденные рутованные ip, подпись когда. */
     private static volatile String lastScanRows = "";
@@ -252,7 +253,8 @@ public class PageStations {
         }
         if (done == 0) out.append("станция не найдена: ").append(target);
         if (changed) write(root);
-        lastResult = out.toString();
+        lastResult = out.toString() + roomSyncResult;
+        roomSyncResult = "";
         log.info("STATIONS " + kind + " " + target + ":\n" + lastResult);
         render(context);
         return context;
@@ -602,7 +604,7 @@ public class PageStations {
         if (!roomSync.isEmpty()) {
             String syncOut = sshExec(st.optString("ip"), st.optInt("port", 2222),
                     root.optString("sshPassword", ""), scriptRoomSync(roomSync));
-            lastResult += "room-sync: " + room + " -> " + roomSync + " | " + syncOut + "\n";
+            roomSyncResult = "room-sync: " + room + " -> " + roomSync + " | " + syncOut + "\n";
             st.remove("roomSync");
             log.info("STATIONS room-sync " + st.optString("ip") + " " + roomSync);
         }
