@@ -10,6 +10,7 @@ import knovash.saclient.utils.Parser;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
+import java.nio.ByteBuffer;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -28,6 +29,7 @@ public class CloudClient {
     private final Config config;
     private volatile WebSocket ws;
     private volatile boolean running = true;
+    private volatile int generation = 0;   // поколение цикла: restart инкрементит — старый поток обязан выйти
     private volatile boolean instanceTokenRejected;
     private volatile Thread thread;
     private final Object lock = new Object();
@@ -47,6 +49,7 @@ public class CloudClient {
     /** Переподключение с актуальным instanceToken (после авторизации в Яндексе). */
     public void restart() {
         instanceTokenRejected = false; // новый instanceToken после переавторизации — снова пробуем им
+        generation++;   // старый цикл выходит по смене поколения, даже если running уже снова true
         stop();
         Thread t = thread;
         if (t != null) {
@@ -62,13 +65,14 @@ public class CloudClient {
     }
 
     private void runLoop() {
-        while (running) {
+        int myGen = generation;
+        while (running && myGen == generation) {
             try {
                 connectAndServe();
             } catch (Exception e) {
                 System.err.println("Connection error: " + e.getMessage());
             }
-            if (running) sleepQuiet(5000);
+            if (running && myGen == generation) sleepQuiet(5000);
         }
     }
 
@@ -82,15 +86,33 @@ public class CloudClient {
                 .header("Authorization", "Bearer " + token)
                 .buildAsync(URI.create(config.serverWsUrl), new Listener());
 
-        ws = future.get();
+        // ЛОКАЛЬНАЯ ссылка: поток следит и пингует ТОЛЬКО своё соединение — поле ws
+        // (для ответов серверу) может указывать на чужое при наложении рестартов
+        // (баг double-connect: старый поток ждал чужое соединение и не замечал свою смерть).
+        WebSocket conn = future.get();
+        ws = conn;
         log("CONNECTED TO " + config.serverWsUrl);
 
-        // Ждём, пока сессия не закроется
+        // Ждём, пока сессия не закроется. Heartbeat-ping каждые 20с: прокси облака
+        // (Amvera ingress) рвёт молчащие WS-соединения по idle-timeout (~60с, close 1006);
+        // ping-кадр держит соединение живым — Tomcat сервера отвечает pong автоматически.
         synchronized (lock) {
-            while (running && !ws.isOutputClosed()) {
+            long nextPing = System.currentTimeMillis() + 20_000;
+            while (running && !conn.isOutputClosed()) {
                 lock.wait(1000);
+                if (System.currentTimeMillis() >= nextPing) {
+                    nextPing = System.currentTimeMillis() + 20_000;
+                    try {
+                        conn.sendPing(ByteBuffer.wrap(new byte[]{(byte) 0x70}));
+                    } catch (Exception ignore) {
+                        // sendPing не сериализуется с параллельным sendText (JDK WebSocket
+                        // допускает только одно незавершённое send) — пропускаем, следующий через 20с
+                    }
+                }
             }
         }
+        // выход из serve-цикла — закрыть СВОЁ соединение (иначе сессия-зомби висит на сервере)
+        try { conn.sendClose(WebSocket.NORMAL_CLOSURE, "bye"); } catch (Exception ignore) {}
     }
 
     /**

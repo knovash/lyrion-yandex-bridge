@@ -14,8 +14,8 @@ import java.io.File;
  */
 public class Config {
     /** Адрес сервера задаётся ТОЛЬКО здесь: код — источник истины, config.json хранит только токены. */
-    public static final String SERVER_HTTP_URL = "https://alice-lms.zeabur.app";
-    public static final String SERVER_WS_URL = "wss://alice-lms.zeabur.app/ws";
+    public static final String SERVER_HTTP_URL = "https://lyrion-yandex-bridge-novash.msk1.amvera.tech";
+    public static final String SERVER_WS_URL = "wss://lyrion-yandex-bridge-novash.msk1.amvera.tech/ws";
     //public static final String SERVER_HTTP_URL = "https://sa-ws-server.zeabur.app";
     //public static final String SERVER_WS_URL = "wss://sa-ws-server.zeabur.app/ws";
 
